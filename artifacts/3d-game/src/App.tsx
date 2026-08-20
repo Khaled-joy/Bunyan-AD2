@@ -1,13 +1,14 @@
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import logoPath from '@assets/image_1787208364235.png';
 import {
-  ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, ChevronRight, CircleHelp,
-  Coins, Compass, Crown, Gamepad2, Globe2, Leaf, LockKeyhole, Menu, RotateCcw,
-  Sparkles, Star, Trophy, Users, X, Zap,
+  Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BarChart3, BookOpen, Check,
+  ChevronRight, CircleHelp, Clock3, Coins, Compass, Crown, Footprints, Gamepad2,
+  Globe2, Leaf, LockKeyhole, Menu, Pause, Play, RotateCcw, Sparkles, Star, Trophy,
+  Users, X, Zap,
 } from 'lucide-react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
 import NotFound from '@/pages/not-found';
@@ -44,15 +45,27 @@ const demoPlayers: PlayerRow[] = [
 ];
 
 function useLocal<T>(key: string, initial: T) {
-  const [value, setValue] = useState<T>(() => {
+  const readValue = () => {
     try {
       const stored = localStorage.getItem(key);
       return stored ? JSON.parse(stored) as T : initial;
     } catch { return initial; }
-  });
+  };
+  const [stored, setStored] = useState<{ key: string; value: T }>(() => ({ key, value: readValue() }));
+  const value = stored.key === key ? stored.value : readValue();
+  const setValue = (next: T | ((previous: T) => T)) => {
+    setStored((previous) => {
+      const current = previous.key === key ? previous.value : readValue();
+      return { key, value: typeof next === 'function' ? (next as (previous: T) => T)(current) : next };
+    });
+  };
   useEffect(() => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* demo persistence can fail in private mode */ }
-  }, [key, value]);
+    if (stored.key !== key) setStored({ key, value: readValue() });
+  }, [key, stored.key]);
+  useEffect(() => {
+    if (stored.key !== key) return;
+    try { localStorage.setItem(key, JSON.stringify(stored.value)); } catch { /* demo persistence can fail in private mode */ }
+  }, [key, stored]);
   return [value, setValue] as const;
 }
 
@@ -208,12 +221,12 @@ function GameCard({ game, lang, index = 0 }: { game: typeof gameBlueprints[numbe
 
 function Library({ lang }: { lang: Lang }) {
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'playable' | 'soon'>('all');
+  const [filter, setFilter] = useState<'all' | 'playable'>('all');
   const filtered = useMemo(() => gameBlueprints.filter((game) => {
     const matches = `${game.title.en} ${game.title.ar}`.toLowerCase().includes(query.toLowerCase());
     return matches && (filter === 'all' || (filter === 'playable' ? game.playable : !game.playable));
   }), [query, filter]);
-  return <div className="mx-auto max-w-[1440px] px-5 py-8 lg:px-10 lg:py-12"><section className="grid gap-8 rounded-[30px] bg-[#174b44] p-7 text-[#fff4df] md:grid-cols-[1fr_auto] md:items-end md:p-10"><div><div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#2d675d] px-3 py-1.5 text-xs font-bold uppercase tracking-[.15em] text-[#d7e8df]"><BookOpen className="h-3.5 w-3.5" /> {t({ en: 'The game library', ar: 'مكتبة الألعاب' }, lang)}</div><h1 className="max-w-2xl font-display text-5xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">{t({ en: 'Pick a world to wander into.', ar: 'اختر عالماً لتتجول فيه.' }, lang)}</h1><p className="mt-5 max-w-xl text-base leading-relaxed text-[#b7d1c5]">{t({ en: 'Game worlds inspired by the coast, desert, stories, and bright ideas of Abu Dhabi.', ar: 'عوالم ألعاب مستوحاة من الساحل والصحراء وقصص وأفكار أبوظبي المضيئة.' }, lang)}</p></div><div className="relative hidden h-36 w-44 md:block"><div className="absolute start-8 top-3 h-24 w-24 rounded-full border border-[#f2c95c]/50" /><div className="absolute start-16 top-11 h-3 w-3 rounded-full bg-[#f2c95c] pulse-soft" /><Compass className="absolute bottom-1 start-2 h-28 w-28 text-[#71a695] opacity-70" /></div></section><section className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex flex-wrap gap-2">{(['all', 'playable', 'soon'] as const).map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-full px-4 py-2 text-sm font-bold transition ${filter === item ? 'bg-[#e8755f] text-[#fff7e8]' : 'border border-[#dfd2bd] bg-[#fcf8f0] text-[#557068] hover:border-[#174b44]'}`} data-testid={`button-filter-${item}`}>{t(item === 'all' ? { en: 'All worlds', ar: 'كل العوالم' } : item === 'playable' ? { en: 'Play now', ar: 'العب الآن' } : { en: 'Coming soon', ar: 'قريباً' }, lang)}</button>)}</div><label className="relative block sm:w-64"><CircleHelp className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#688079]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t({ en: 'Search worlds', ar: 'ابحث عن عالم' }, lang)} className="w-full rounded-full border border-[#dfd2bd] bg-[#fcf8f0] py-2.5 pe-4 ps-9 text-sm outline-none placeholder:text-[#9aaba0] focus:border-[#33705f]" data-testid="input-search-games" /></label></section><section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filtered.map((game, index) => <GameCard key={game.id} game={game} lang={lang} index={index} />)}</section>{filtered.length === 0 && <div className="mt-7 rounded-[24px] border border-dashed border-[#c8d2c7] bg-[#fcf8f0] py-16 text-center"><Compass className="mx-auto h-9 w-9 text-[#9aaba0]" /><h2 className="mt-4 font-display text-xl font-bold text-[#174b44]">{t({ en: 'No worlds found', ar: 'لم نجد عوالم' }, lang)}</h2><p className="mt-1 text-sm text-[#688079]">{t({ en: 'Try a different trail marker.', ar: 'جرّب كلمة بحث أخرى.' }, lang)}</p></div>}<p className="mt-7 text-sm font-semibold text-[#5d7169]">{t({ en: 'Every world now has three levels. Each level becomes more challenging and rewards thoughtful play.', ar: 'كل عالم يحتوي الآن على ثلاثة مستويات. تزداد الصعوبة في كل مستوى وتكافئك اللعبة على اللعب الواعي.' }, lang)}</p></div>;
+  return <div className="mx-auto max-w-[1440px] px-5 py-8 lg:px-10 lg:py-12"><section className="grid gap-8 rounded-[30px] bg-[#174b44] p-7 text-[#fff4df] md:grid-cols-[1fr_auto] md:items-end md:p-10"><div><div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#2d675d] px-3 py-1.5 text-xs font-bold uppercase tracking-[.15em] text-[#d7e8df]"><BookOpen className="h-3.5 w-3.5" /> {t({ en: 'The game library', ar: 'مكتبة الألعاب' }, lang)}</div><h1 className="max-w-2xl font-display text-5xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">{t({ en: 'Pick a world to wander into.', ar: 'اختر عالماً لتتجول فيه.' }, lang)}</h1><p className="mt-5 max-w-xl text-base leading-relaxed text-[#b7d1c5]">{t({ en: 'Game worlds inspired by the coast, desert, stories, and bright ideas of Abu Dhabi.', ar: 'عوالم ألعاب مستوحاة من الساحل والصحراء وقصص وأفكار أبوظبي المضيئة.' }, lang)}</p></div><div className="relative hidden h-36 w-44 md:block"><div className="absolute start-8 top-3 h-24 w-24 rounded-full border border-[#f2c95c]/50" /><div className="absolute start-16 top-11 h-3 w-3 rounded-full bg-[#f2c95c] pulse-soft" /><Compass className="absolute bottom-1 start-2 h-28 w-28 text-[#71a695] opacity-70" /></div></section><section className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex flex-wrap gap-2">{(['all', 'playable'] as const).map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-full px-4 py-2 text-sm font-bold transition ${filter === item ? 'bg-[#e8755f] text-[#fff7e8]' : 'border border-[#dfd2bd] bg-[#fcf8f0] text-[#557068] hover:border-[#174b44]'}`} data-testid={`button-filter-${item}`}>{t(item === 'all' ? { en: 'All worlds', ar: 'كل العوالم' } : { en: 'Play now', ar: 'العب الآن' }, lang)}</button>)}</div><label className="relative block sm:w-64"><CircleHelp className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#688079]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t({ en: 'Search worlds', ar: 'ابحث عن عالم' }, lang)} className="w-full rounded-full border border-[#dfd2bd] bg-[#fcf8f0] py-2.5 pe-4 ps-9 text-sm outline-none placeholder:text-[#9aaba0] focus:border-[#33705f]" data-testid="input-search-games" /></label></section><section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filtered.map((game, index) => <GameCard key={game.id} game={game} lang={lang} index={index} />)}</section>{filtered.length === 0 && <div className="mt-7 rounded-[24px] border border-dashed border-[#c8d2c7] bg-[#fcf8f0] py-16 text-center"><Compass className="mx-auto h-9 w-9 text-[#9aaba0]" /><h2 className="mt-4 font-display text-xl font-bold text-[#174b44]">{t({ en: 'No worlds found', ar: 'لم نجد عوالم' }, lang)}</h2><p className="mt-1 text-sm text-[#688079]">{t({ en: 'Try a different trail marker.', ar: 'جرّب كلمة بحث أخرى.' }, lang)}</p></div>}<p className="mt-7 text-sm font-semibold text-[#5d7169]">{t({ en: 'Every world now has three levels. Each level becomes more challenging and rewards thoughtful play.', ar: 'كل عالم يحتوي الآن على ثلاثة مستويات. تزداد الصعوبة في كل مستوى وتكافئك اللعبة على اللعب الواعي.' }, lang)}</p></div>;
 }
 
 type Choice = { label: Copy; good: boolean; note: Copy };
@@ -252,35 +265,33 @@ function makeChallenges(gameId: string): Challenge[] {
 
 type GameProgress = { level: number; question: number; score: number; coins: number; finished: boolean };
 
-function GameRoom({ lang }: { lang: Lang }) {
-  const [, params] = useRoute<{ id: string }>('/game/:id');
-  const game = gameBlueprints.find((item) => item.id === params?.id) || gameBlueprints[0];
+function GameRoom({ lang, gameId }: { lang: Lang; gameId: string }) {
+  const game = gameBlueprints.find((item) => item.id === gameId && item.id !== 'basket-challenge') || gameBlueprints[1];
   const challenges = useMemo(() => makeChallenges(game.id), [game.id]);
   const storageKey = `bunayn-game-progress-${game.id}`;
   const [progress, setProgress] = useLocal<GameProgress>(storageKey, { level: 0, question: 0, score: 0, coins: 0, finished: false });
   const [selected, setSelected] = useState<number | null>(null);
+  const advancing = useRef(false);
   const level = Math.min(progress.level, challenges.length - 1);
   const current = challenges[level];
-  const levelTarget = current.options.length;
+  const levelTarget = 1;
 
   const choose = (index: number) => {
     if (selected !== null || progress.finished || !current.options[index]) return;
     setSelected(index);
-    if (current.options[index].good) {
-      setProgress((value) => ({ ...value, score: value.score + 100 + value.level * 50, coins: value.coins + 10 + value.level * 5 }));
-    }
   };
 
   const next = () => {
-    if (selected === null) return;
-    if (progress.question < levelTarget - 1) {
-      setProgress((value) => ({ ...value, question: value.question + 1 }));
-    } else if (progress.level < challenges.length - 1) {
-      setProgress((value) => ({ ...value, level: value.level + 1, question: 0 }));
-    } else {
-      setProgress((value) => ({ ...value, finished: true }));
-    }
+    if (selected === null || advancing.current) return;
+    advancing.current = true;
+    const wasCorrect = current.options[selected].good;
+    setProgress((value) => {
+      const reward = wasCorrect ? { score: value.score + 100 + value.level * 50, coins: value.coins + 10 + value.level * 5 } : {};
+      if (value.level < challenges.length - 1) return { ...value, ...reward, level: value.level + 1, question: 0 };
+      return { ...value, ...reward, finished: true };
+    });
     setSelected(null);
+    window.setTimeout(() => { advancing.current = false; }, 0);
   };
 
   const restart = () => {
@@ -291,11 +302,12 @@ function GameRoom({ lang }: { lang: Lang }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key >= '1' && event.key <= String(current.options.length)) choose(Number(event.key) - 1);
-      if (event.key === 'Enter') next();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  }, [current.options.length, progress.finished, selected]);
+
+  useEffect(() => { setSelected(null); }, [game.id]);
 
   const Icon = game.icon;
   return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12">
@@ -328,16 +340,212 @@ function GameRoom({ lang }: { lang: Lang }) {
               <div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Level', ar: 'المستوى' }, lang)} {level + 1} / 3</p><div className="mt-3 flex gap-1.5">{challenges.map((_, index) => <span key={index} className={`h-1.5 w-12 rounded-full ${index <= level ? 'bg-[#e8755f]' : 'bg-[#dfd2bd]'}`} />)}</div></div>
               <div className="flex items-center gap-2 rounded-full bg-[#e6f1eb] px-3 py-1.5 text-sm font-bold"><Star className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-generic-game-score">{progress.score}</span></div>
             </div>
-            <p className="mt-10 text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Challenge', ar: 'التحدي' }, lang)} {progress.question + 1} / {levelTarget}</p>
+            <p className="mt-10 text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Mission', ar: 'المهمة' }, lang)} {level + 1} / {levelTarget * challenges.length}</p>
             <h2 className="mt-3 max-w-xl font-display text-3xl font-bold leading-tight sm:text-4xl">{t(current.prompt, lang)}</h2>
             <p className="mt-3 max-w-xl text-[#688079]">{t(current.detail, lang)}</p>
             <div className="mt-7 grid gap-3">{current.options.map((option, index) => { const active = selected === index; const correct = active && option.good; return <button key={index} onClick={() => choose(index)} className={`group flex items-center gap-4 rounded-2xl border p-4 text-start transition-all ${active ? correct ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-generic-choice-${index + 1}`}><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display font-bold ${active ? correct ? 'bg-[#33705f] text-white' : 'bg-[#e8755f] text-white' : 'bg-[#efe4cf] text-[#557068]'}`}>{active ? correct ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" /> : index + 1}</span><span className="flex-1 text-sm font-semibold text-[#174b44]">{t(option.label, lang)}</span><ChevronRight className={`h-4 w-4 text-[#9aaba0] transition-transform group-hover:translate-x-1 rtl:rotate-180 ${active ? 'opacity-100' : 'opacity-0'}`} /></button>; })}</div>
-            {selected !== null && <div className={`mt-5 rounded-2xl p-4 ${current.options[selected].good ? 'bg-[#e6f1eb]' : 'bg-[#fff0eb]'}`} role="status" data-testid="status-generic-feedback"><p className="text-sm font-semibold leading-relaxed text-[#174b44]">{t(current.options[selected].note, lang)}</p><button onClick={next} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-4 py-2 text-xs font-bold text-[#fff4df]" data-testid="button-generic-next">{progress.level === challenges.length - 1 && progress.question === levelTarget - 1 ? t({ en: 'Finish game', ar: 'إنهاء اللعبة' }, lang) : t({ en: 'Next challenge', ar: 'التحدي التالي' }, lang)} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></button></div>}
+            {selected !== null && <div className={`mt-5 rounded-2xl p-4 ${current.options[selected].good ? 'bg-[#e6f1eb]' : 'bg-[#fff0eb]'}`} role="status" data-testid="status-generic-feedback"><p className="text-sm font-semibold leading-relaxed text-[#174b44]">{t(current.options[selected].note, lang)}</p><button onClick={next} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-4 py-2 text-xs font-bold text-[#fff4df]" data-testid="button-generic-next">{progress.level === challenges.length - 1 ? t({ en: 'Finish game', ar: 'إنهاء اللعبة' }, lang) : t({ en: 'Next level', ar: 'المستوى التالي' }, lang)} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></button></div>}
           </div>}
         </div>
       </div>
     </section>
-    <p className="mt-5 text-center text-xs font-semibold text-[#688079]">{t({ en: `Choose with 1–${current.options.length} · Press Enter to continue`, ar: `اختر من 1 إلى ${current.options.length} · اضغط Enter للمتابعة` }, lang)}</p>
+    <p className="mt-5 text-center text-xs font-semibold text-[#688079]">{t({ en: `Choose with 1–${current.options.length} or tap a choice card`, ar: `اختر من 1 إلى ${current.options.length} أو اضغط بطاقة اختيار` }, lang)}</p>
+  </div>;
+}
+
+type RunnerEvent = {
+  kind: 'food' | 'jump' | 'slide';
+  lane?: number;
+  label: Copy;
+  hint: Copy;
+};
+type RunnerProgress = {
+  level: number;
+  step: number;
+  lane: number;
+  collected: number;
+  score: number;
+  coins: number;
+  hearts: number;
+  timeLeft: number;
+  status: 'ready' | 'running' | 'level-complete' | 'finished';
+  jumping: boolean;
+  sliding: boolean;
+  message: Copy;
+};
+
+const runnerLevels: { label: Copy; target: Copy; speed: Copy; events: RunnerEvent[] }[] = [
+  {
+    label: { en: 'Market warm-up', ar: 'إحماء السوق' },
+    target: { en: 'Collect fruit for breakfast', ar: 'اجمع الفاكهة للإفطار' },
+    speed: { en: 'Easy stroll', ar: 'خطوات هادئة' },
+    events: [
+      { kind: 'food', lane: 2, label: { en: 'Fresh apple', ar: 'تفاحة طازجة' }, hint: { en: 'Move to the right lane', ar: 'انتقل إلى المسار الأيمن' } },
+      { kind: 'jump', label: { en: 'Low crate', ar: 'صندوق منخفض' }, hint: { en: 'Jump over the crate', ar: 'اقفز فوق الصندوق' } },
+      { kind: 'food', lane: 0, label: { en: 'Sweet dates', ar: 'تمر حلو' }, hint: { en: 'Move to the left lane', ar: 'انتقل إلى المسار الأيسر' } },
+      { kind: 'slide', label: { en: 'Market banner', ar: 'لافتة السوق' }, hint: { en: 'Slide under the banner', ar: 'انزلق تحت اللافتة' } },
+      { kind: 'food', lane: 2, label: { en: 'Red tomato', ar: 'طماطم حمراء' }, hint: { en: 'Move to the right lane', ar: 'انتقل إلى المسار الأيمن' } },
+    ],
+  },
+  {
+    label: { en: 'Sunny sprint', ar: 'سباق مشمس' },
+    target: { en: 'Build a balanced lunch basket', ar: 'كوّن سلة غداء متوازنة' },
+    speed: { en: 'Faster feet', ar: 'خطوات أسرع' },
+    events: [
+      { kind: 'food', lane: 2, label: { en: 'Crunchy carrot', ar: 'جزرة مقرمشة' }, hint: { en: 'Move to the right lane', ar: 'انتقل إلى المسار الأيمن' } },
+      { kind: 'jump', label: { en: 'Rolling basket', ar: 'سلة متدحرجة' }, hint: { en: 'Jump now', ar: 'اقفز الآن' } },
+      { kind: 'food', lane: 1, label: { en: 'Cool water', ar: 'ماء بارد' }, hint: { en: 'Move to the middle lane', ar: 'انتقل إلى المسار الأوسط' } },
+      { kind: 'slide', label: { en: 'Shade cloth', ar: 'قماش الظل' }, hint: { en: 'Slide under it', ar: 'انزلق تحته' } },
+      { kind: 'food', lane: 0, label: { en: 'Wholegrain bread', ar: 'خبز الحبوب الكاملة' }, hint: { en: 'Move to the left lane', ar: 'انتقل إلى المسار الأيسر' } },
+      { kind: 'jump', label: { en: 'Little puddle', ar: 'بركة صغيرة' }, hint: { en: 'Jump over it', ar: 'اقفز فوقها' } },
+    ],
+  },
+  {
+    label: { en: 'Festival finish', ar: 'نهاية المهرجان' },
+    target: { en: 'Find the healthy feast ingredients', ar: 'اعثر على مكونات وليمة صحية' },
+    speed: { en: 'Super speedy', ar: 'سرعة كبيرة' },
+    events: [
+      { kind: 'food', lane: 0, label: { en: 'Garden cucumber', ar: 'خيار الحديقة' }, hint: { en: 'Move to the left lane', ar: 'انتقل إلى المسار الأيسر' } },
+      { kind: 'jump', label: { en: 'Wooden crate', ar: 'صندوق خشبي' }, hint: { en: 'Jump over it', ar: 'اقفز فوقه' } },
+      { kind: 'food', lane: 2, label: { en: 'Fresh milk', ar: 'حليب طازج' }, hint: { en: 'Move to the right lane', ar: 'انتقل إلى المسار الأيمن' } },
+      { kind: 'slide', label: { en: 'Palm branch', ar: 'سعفة نخيل' }, hint: { en: 'Slide under it', ar: 'انزلق تحتها' } },
+      { kind: 'food', lane: 1, label: { en: 'Orange slices', ar: 'شرائح البرتقال' }, hint: { en: 'Move to the middle lane', ar: 'انتقل إلى المسار الأوسط' } },
+      { kind: 'jump', label: { en: 'Festival drum', ar: 'طبلة المهرجان' }, hint: { en: 'Jump over it', ar: 'اقفز فوقها' } },
+      { kind: 'food', lane: 0, label: { en: 'Leafy greens', ar: 'خضروات ورقية' }, hint: { en: 'Move to the left lane', ar: 'انتقل إلى المسار الأيسر' } },
+    ],
+  },
+];
+
+const runnerLanePositions = ['16.67%', '50%', '83.33%'];
+
+function BasketRunner({ lang }: { lang: Lang }) {
+  const [progress, setProgress] = useLocal<RunnerProgress>('bunayn-basket-runner-progress', {
+    level: 0, step: 0, lane: 1, collected: 0, score: 0, coins: 0, hearts: 3, timeLeft: 60,
+    status: 'ready', jumping: false, sliding: false,
+    message: { en: 'Choose a lane, then sprint to the next food target.', ar: 'اختر مساراً ثم انطلق نحو هدف الطعام التالي.' },
+  });
+  const [flash, setFlash] = useState<'good' | 'oops' | null>(null);
+  const sprinting = useRef(false);
+  const level = Math.min(progress.level, runnerLevels.length - 1);
+  const config = runnerLevels[level];
+  const event = config.events[Math.min(progress.step, config.events.length - 1)];
+  const isRunning = progress.status === 'running';
+
+  const prepareLevel = (nextLevel = progress.level) => {
+    setProgress((value) => ({
+      ...value, level: nextLevel, step: 0, lane: 1, collected: 0, hearts: 3,
+      timeLeft: 60 - nextLevel * 10, status: 'ready', jumping: false, sliding: false,
+      message: { en: 'Press Start run when you are ready.', ar: 'اضغط ابدأ الجري عندما تكون مستعداً.' },
+    }));
+  };
+
+  const startRun = () => setProgress((value) => ({
+    ...value, status: 'running', message: { en: 'Go! Follow the food and move safely.', ar: 'انطلق! اتبع الطعام وتحرك بأمان.' },
+  }));
+
+  const move = (direction: -1 | 1) => {
+    if (!isRunning) return;
+    setProgress((value) => ({ ...value, lane: Math.max(0, Math.min(2, value.lane + direction)), jumping: false, sliding: false }));
+  };
+
+  const pose = (kind: 'jump' | 'slide') => {
+    if (!isRunning) return;
+    setProgress((value) => ({ ...value, jumping: kind === 'jump', sliding: kind === 'slide' }));
+  };
+
+  const sprint = () => {
+    if (!isRunning || sprinting.current) return;
+    sprinting.current = true;
+    const success = event.kind === 'food'
+      ? progress.lane === event.lane
+      : event.kind === 'jump'
+        ? progress.jumping
+        : progress.sliding;
+    setFlash(success ? 'good' : 'oops');
+    window.setTimeout(() => { setFlash(null); sprinting.current = false; }, 450);
+    setProgress((value) => {
+      const lastStep = value.step >= config.events.length - 1;
+      const nextHearts = success ? value.hearts : Math.max(0, value.hearts - 1);
+      const reward = success ? { score: value.score + 50 + value.level * 25, coins: value.coins + 5 } : {};
+      const message = success
+        ? { en: event.kind === 'food' ? 'Healthy choice collected! Keep running.' : 'Quick move! You stayed on your path.', ar: event.kind === 'food' ? 'جمعت اختياراً صحياً! واصل الجري.' : 'حركة سريعة! بقيت على مسارك.' }
+        : { en: 'That was close. Reset your move and try the next marker.', ar: 'كانت قريبة. أعد ضبط حركتك وجرب العلامة التالية.' };
+      return {
+        ...value, ...reward, hearts: nextHearts, step: value.step + 1,
+        collected: value.collected + (success && event.kind === 'food' ? 1 : 0),
+        jumping: false, sliding: false, message,
+        status: lastStep || nextHearts === 0 ? 'level-complete' : 'running',
+      };
+    });
+  };
+
+  const continueRun = () => {
+    if (progress.hearts === 0) { prepareLevel(level); return; }
+    if (level === runnerLevels.length - 1) {
+      setProgress((value) => ({ ...value, status: 'finished', message: { en: 'Your healthy basket is ready for the day.', ar: 'سلتك الصحية جاهزة لليوم.' } }));
+      return;
+    }
+    prepareLevel(level + 1);
+  };
+
+  const restart = () => {
+    setProgress({
+      level: 0, step: 0, lane: 1, collected: 0, score: 0, coins: 0, hearts: 3, timeLeft: 60,
+      status: 'ready', jumping: false, sliding: false,
+      message: { en: 'A new food run is waiting for you.', ar: 'جولة طعام جديدة بانتظارك.' },
+    });
+  };
+
+  useEffect(() => {
+    if (!isRunning) return;
+    const timer = window.setInterval(() => {
+      setProgress((value) => {
+        if (value.timeLeft > 1) return { ...value, timeLeft: value.timeLeft - 1 };
+        return { ...value, status: 'level-complete', message: { en: 'Time paused. Take a breath and try this level again.', ar: 'توقف الوقت. خذ نفساً وحاول هذا المستوى مجدداً.' } };
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [isRunning]);
+
+  useEffect(() => {
+    const onKey = (keyboardEvent: KeyboardEvent) => {
+      if (!isRunning) return;
+      if (keyboardEvent.key === 'ArrowLeft' || keyboardEvent.key.toLowerCase() === 'a') { keyboardEvent.preventDefault(); move(-1); }
+      if (keyboardEvent.key === 'ArrowRight' || keyboardEvent.key.toLowerCase() === 'd') { keyboardEvent.preventDefault(); move(1); }
+      if (keyboardEvent.key === 'ArrowUp' || keyboardEvent.key === ' ') { keyboardEvent.preventDefault(); pose('jump'); }
+      if (keyboardEvent.key === 'ArrowDown') { keyboardEvent.preventDefault(); pose('slide'); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isRunning, progress.lane, progress.jumping, progress.sliding, progress.step]);
+
+  const EventIcon = event.kind === 'food' ? Apple : event.kind === 'jump' ? ArrowUp : ArrowDown;
+  const progressPercent = Math.min(100, Math.round((progress.step / config.events.length) * 100));
+  return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12">
+    <div className="mb-6 flex items-center justify-between gap-3">
+      <Link href="/library" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-library"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game library', ar: 'العودة إلى مكتبة الألعاب' }, lang)}</Link>
+      <div className="flex items-center gap-2 rounded-full bg-[#f2c95c] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4" /> <span data-testid="text-basket-coins">{progress.coins}</span></div>
+    </div>
+    <section className="overflow-hidden rounded-[30px] bg-[#174b44] p-4 shadow-float sm:p-6" data-testid="basket-runner">
+      <div className="rounded-[24px] bg-[#fff7e8] p-4 sm:p-6">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Basket Challenge', ar: 'تحدي السلة' }, lang)}</p><h1 className="mt-1 font-display text-3xl font-bold text-[#174b44]">{t(config.label, lang)}</h1></div>
+          <div className="flex items-center gap-2"><span className="rounded-full bg-[#e6f1eb] px-3 py-2 text-xs font-bold text-[#33705f]">{t(config.speed, lang)}</span><span className={`flex items-center gap-1 rounded-full px-3 py-2 text-sm font-bold ${progress.timeLeft <= 10 && isRunning ? 'bg-[#fff0eb] text-[#a94d40] pulse-soft' : 'bg-[#efe4cf] text-[#174b44]'}`}><Clock3 className="h-4 w-4" /> <span data-testid="text-basket-timer">{progress.timeLeft}s</span></span></div>
+        </div>
+        <div className="mb-5"><div className="flex items-center justify-between text-xs font-bold text-[#557068]"><span>{t({ en: `Level ${level + 1} of 3`, ar: `المستوى ${level + 1} من 3` }, lang)}</span><span>{progress.step} / {config.events.length}</span></div><div className="mt-2 h-3 overflow-hidden rounded-full bg-[#e3e6d9]"><div className="h-full rounded-full bg-[#e8755f] transition-all duration-500" style={{ width: `${progressPercent}%` }} /></div></div>
+        <div className={`basket-runner-world relative min-h-[360px] overflow-hidden rounded-[28px] border-4 border-[#f2c95c] ${flash === 'good' ? 'basket-flash-good' : flash === 'oops' ? 'basket-flash-oops' : ''}`}>
+          <div className="absolute -end-12 -top-16 h-44 w-44 rounded-full bg-[#f2c95c]" /><div className="absolute start-7 top-9 h-12 w-24 rounded-full bg-white/65 blur-sm" /><div className="absolute end-8 top-16 h-10 w-20 rounded-full bg-white/55 blur-sm" />
+          <div className="absolute inset-x-0 top-[42%] h-[20%] bg-[#9fcac0]/80" /><div className="absolute inset-x-0 top-[54%] h-[12%] bg-[#71a695]" />
+          <div className="basket-track absolute inset-x-0 bottom-0 h-[56%] bg-[#e4b06c]"><span className="basket-track-line start-1/3" /><span className="basket-track-line start-2/3" /></div>
+          {isRunning && <div className="absolute top-[18%] z-10 -translate-x-1/2 transition-all duration-300" style={{ left: event.kind === 'food' ? runnerLanePositions[event.lane ?? 1] : '50%' }}><div className={`grid h-16 w-16 place-items-center rounded-[22px] border-4 ${event.kind === 'food' ? 'border-[#fff4df] bg-[#e8755f] text-[#fff4df] shadow-[0_0_22px_rgba(232,117,95,.8)]' : 'border-[#d7e8df] bg-[#5d7169] text-[#fff4df]'}`}><EventIcon className="h-8 w-8" /></div><p className="mt-2 max-w-28 text-center text-xs font-bold text-[#174b44]">{t(event.label, lang)}</p></div>}
+          <div className={`absolute bottom-7 z-20 -translate-x-1/2 transition-all duration-200 ${progress.jumping ? '-translate-y-14 scale-110' : ''} ${progress.sliding ? 'translate-y-3 scale-x-110 scale-y-75' : ''}`} style={{ left: runnerLanePositions[progress.lane] }}><div className="grid h-16 w-20 place-items-center rounded-[40%] border-4 border-[#174b44] bg-[#f2c95c] shadow-[0_10px_0_#b57943]"><Footprints className="h-8 w-8 text-[#174b44]" /></div><span className="mx-auto mt-2 block w-max rounded-full bg-[#174b44] px-2 py-1 text-[10px] font-bold text-[#fff4df]">{t({ en: 'Your basket', ar: 'سلتك' }, lang)}</span></div>
+          {!isRunning && progress.status !== 'finished' && <div className="absolute inset-0 z-30 grid place-items-center bg-[#174b44]/55 p-5 text-center"><div className="max-w-sm rounded-[24px] bg-[#fff7e8] p-6 shadow-float"><span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#f2c95c] text-[#174b44]"><Play className="h-6 w-6" /></span><h2 className="mt-4 font-display text-2xl font-bold text-[#174b44]">{progress.status === 'level-complete' ? t({ en: 'Checkpoint reached', ar: 'وصلت إلى نقطة التحقق' }, lang) : t(config.target, lang)}</h2><p className="mt-3 text-sm leading-relaxed text-[#557068]">{progress.status === 'level-complete' ? t(progress.message, lang) : t({ en: 'Move left or right to collect food. Jump over crates and slide below banners. Press Sprint after every move.', ar: 'تحرك يميناً أو يساراً لجمع الطعام. اقفز فوق الصناديق وانزلق تحت اللافتات. اضغط انطلق بعد كل حركة.' }, lang)}</p>{progress.status === 'ready' ? <button onClick={startRun} className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#e8755f] px-6 py-3 font-bold text-[#fff7e8] shadow-[0_5px_0_#b85c4e]" data-testid="button-start-basket-run"><Play className="h-4 w-4" /> {t({ en: 'Start run', ar: 'ابدأ الجري' }, lang)}</button> : <button onClick={continueRun} className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-6 py-3 font-bold text-[#fff7e8]" data-testid="button-continue-basket-run">{progress.hearts === 0 ? t({ en: 'Retry level', ar: 'أعد المستوى' }, lang) : level === runnerLevels.length - 1 ? t({ en: 'Finish run', ar: 'أنهِ الجري' }, lang) : t({ en: 'Next level', ar: 'المستوى التالي' }, lang)} <ArrowRight className="h-4 w-4 rtl:rotate-180" /></button>}</div></div>}
+          {progress.status === 'finished' && <div className="absolute inset-0 z-30 grid place-items-center bg-[#174b44]/70 p-5 text-center"><div className="max-w-sm rounded-[24px] bg-[#fff7e8] p-7 shadow-float"><Trophy className="mx-auto h-10 w-10 text-[#e8755f]" /><p className="mt-4 text-xs font-bold uppercase tracking-[.15em] text-[#e8755f]">{t({ en: 'Healthy day complete', ar: 'اكتمل اليوم الصحي' }, lang)}</p><h2 className="mt-2 font-display text-3xl font-bold text-[#174b44]">{t({ en: 'Your basket is full of good choices!', ar: 'سلتك ممتلئة باختيارات جيدة!' }, lang)}</h2><div className="mt-5 flex justify-center gap-6 text-sm font-bold text-[#174b44]"><span>{progress.score} {t({ en: 'points', ar: 'نقطة' }, lang)}</span><span>{progress.coins} {t({ en: 'coins', ar: 'عملات' }, lang)}</span></div><button onClick={restart} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#e8755f] px-6 py-3 font-bold text-[#fff7e8]" data-testid="button-restart-basket-run"><RotateCcw className="h-4 w-4" /> {t({ en: 'Run again', ar: 'اركض مجدداً' }, lang)}</button></div></div>}
+        </div>
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end"><div><p className="text-xs font-bold uppercase tracking-[.14em] text-[#e8755f]">{t({ en: 'Next marker', ar: 'العلامة التالية' }, lang)}</p><p className="mt-1 font-display text-xl font-bold text-[#174b44]">{isRunning ? t(event.hint, lang) : t(progress.message, lang)}</p><div className="mt-3 flex items-center gap-2 text-xs font-bold text-[#557068]"><span className="rounded-full bg-[#fff0eb] px-3 py-1.5">{t({ en: 'Energy', ar: 'الطاقة' }, lang)}: {'●'.repeat(progress.hearts)}{'○'.repeat(3 - progress.hearts)}</span><span className="rounded-full bg-[#e6f1eb] px-3 py-1.5">{t({ en: 'Food found', ar: 'طعام تم جمعه' }, lang)}: {progress.collected}</span></div></div><div className="rounded-[22px] bg-[#efe4cf] p-3"><div className="grid grid-cols-4 gap-2"><button onClick={() => move(-1)} disabled={!isRunning} className="grid h-14 place-items-center rounded-2xl bg-[#fff7e8] text-[#174b44] shadow-sm disabled:opacity-40" data-testid="button-basket-left" aria-label="Move left"><ArrowLeft className="h-6 w-6" /></button><button onClick={() => move(1)} disabled={!isRunning} className="grid h-14 place-items-center rounded-2xl bg-[#fff7e8] text-[#174b44] shadow-sm disabled:opacity-40" data-testid="button-basket-right" aria-label="Move right"><ArrowRight className="h-6 w-6" /></button><button onClick={() => pose('jump')} disabled={!isRunning} className="grid h-14 place-items-center rounded-2xl bg-[#fff7e8] text-[#174b44] shadow-sm disabled:opacity-40" data-testid="button-basket-jump" aria-label="Jump"><ArrowUp className="h-6 w-6" /></button><button onClick={() => pose('slide')} disabled={!isRunning} className="grid h-14 place-items-center rounded-2xl bg-[#fff7e8] text-[#174b44] shadow-sm disabled:opacity-40" data-testid="button-basket-slide" aria-label="Slide"><ArrowDown className="h-6 w-6" /></button></div><button onClick={sprint} disabled={!isRunning} className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#174b44] px-5 font-bold text-[#fff7e8] transition hover:bg-[#24665b] disabled:opacity-40" data-testid="button-basket-sprint"><Footprints className="h-5 w-5" /> {t({ en: 'Sprint to the next marker', ar: 'انطلق إلى العلامة التالية' }, lang)}</button></div></div>
+      </div>
+    </section>
+    <p className="mt-4 text-center text-xs font-semibold text-[#688079]">{t({ en: 'Keyboard: ← → move · ↑ jump · ↓ slide · tap Sprint to run', ar: 'لوحة المفاتيح: ← → حركة · ↑ قفز · ↓ انزلاق · اضغط انطلق للجري' }, lang)}</p>
   </div>;
 }
 
@@ -395,8 +603,13 @@ function RootPage({ lang }: { lang: Lang }) {
   return profile ? <Home lang={lang} /> : <Welcome lang={lang} />;
 }
 
+function GameRoute({ lang }: { lang: Lang }) {
+  const [, params] = useRoute<{ id: string }>('/game/:id');
+  return params?.id === 'basket-challenge' ? <BasketRunner lang={lang} /> : <GameRoom lang={lang} gameId={params?.id || 'heritage'} />;
+}
+
 function RouterContent({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void }) {
-  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} />} /><Route path="/login" component={() => <Login lang={lang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoFuture lang={lang} />} /><Route path="/game/:id" component={() => <GameRoom lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/admin" component={() => <Admin lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
+  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} />} /><Route path="/login" component={() => <Login lang={lang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoFuture lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/admin" component={() => <Admin lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
 }
 
 function App() {
