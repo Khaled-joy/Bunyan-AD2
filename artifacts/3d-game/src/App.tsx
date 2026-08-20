@@ -18,7 +18,7 @@ type Copy = { en: string; ar: string };
 const t = (copy: Copy, lang: Lang) => copy[lang];
 const queryClient = new QueryClient();
 
-type PlayerProfile = { name: string; age: string; role: string; avatar: string };
+type PlayerProfile = { name: string; age: string; role: string; avatar: string; grade?: string; school?: string };
 type PlayerRow = { name: string; initials: string; level: string; coins: number; progress: number; lastActive: string; tone: string };
 
 const gameBlueprints = [
@@ -45,27 +45,42 @@ const demoPlayers: PlayerRow[] = [
 ];
 
 function useLocal<T>(key: string, initial: T) {
+  const storageMode = () => {
+    try { return sessionStorage.getItem('bunayn-guest-mode') === 'true' ? 'guest' : 'local'; } catch { return 'local'; }
+  };
+  const storageForMode = (mode: 'guest' | 'local') => mode === 'guest' ? sessionStorage : localStorage;
   const readValue = () => {
     try {
-      const stored = localStorage.getItem(key);
+      const stored = storageForMode(storageMode()).getItem(key);
       return stored ? JSON.parse(stored) as T : initial;
     } catch { return initial; }
   };
-  const [stored, setStored] = useState<{ key: string; value: T }>(() => ({ key, value: readValue() }));
-  const value = stored.key === key ? stored.value : readValue();
+  const stateKey = `${storageMode()}:${key}`;
+  const valueRef = useRef<{ key: string; value: T } | null>(null);
+  if (!valueRef.current) valueRef.current = { key: stateKey, value: readValue() };
+  const [stored, setStored] = useState<{ key: string; value: T }>(() => valueRef.current!);
+  const value = stored.key === stateKey ? stored.value : readValue();
   const setValue = (next: T | ((previous: T) => T)) => {
-    setStored((previous) => {
-      const current = previous.key === key ? previous.value : readValue();
-      return { key, value: typeof next === 'function' ? (next as (previous: T) => T)(current) : next };
-    });
+    const mode = storageMode();
+    const activeKey = `${mode}:${key}`;
+    const current = valueRef.current?.key === activeKey ? valueRef.current.value : readValue();
+    const resolved = typeof next === 'function' ? (next as (previous: T) => T)(current) : next;
+    const updated = { key: activeKey, value: resolved };
+    valueRef.current = updated;
+    try { storageForMode(mode).setItem(key, JSON.stringify(resolved)); } catch { /* demo persistence can fail in private mode */ }
+    setStored(updated);
   };
   useEffect(() => {
-    if (stored.key !== key) setStored({ key, value: readValue() });
-  }, [key, stored.key]);
+    if (stored.key !== stateKey) {
+      const updated = { key: stateKey, value: readValue() };
+      valueRef.current = updated;
+      setStored(updated);
+    }
+  }, [stateKey, stored.key]);
   useEffect(() => {
-    if (stored.key !== key) return;
-    try { localStorage.setItem(key, JSON.stringify(stored.value)); } catch { /* demo persistence can fail in private mode */ }
-  }, [key, stored]);
+    if (stored.key !== stateKey) return;
+    try { storageForMode(storageMode()).setItem(key, JSON.stringify(stored.value)); } catch { /* demo persistence can fail in private mode */ }
+  }, [key, stateKey, stored]);
   return [value, setValue] as const;
 }
 
@@ -92,31 +107,31 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
     { href: '/library', label: { en: 'Library', ar: 'المكتبة' }, id: 'library' },
     { href: '/admin', label: { en: 'Dashboard', ar: 'لوحة المتابعة' }, id: 'admin' },
   ];
-  return <div className="app-noise min-h-[100dvh] bg-[#f7f0e3]">
-    <header className="sticky top-0 z-40 border-b border-[#dfd2bd]/90 bg-[#f7f0e3]/95 backdrop-blur-md">
+  return <div className="app-noise min-h-[100dvh] bg-[#e8f4fa]">
+    <header className="sticky top-0 z-40 border-b border-[#d6e2e9]/90 bg-[#e8f4fa]/95 backdrop-blur-md">
       <div className="mx-auto flex h-[78px] max-w-[1440px] items-center justify-between px-5 lg:px-10">
         <Logo />
-        <nav className="hidden items-center gap-1 rounded-full border border-[#dfd2bd] bg-[#efe6d6] p-1 md:flex" aria-label="Main navigation">
-          {nav.map((item) => <Link key={item.href} href={item.href} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive(item.href) ? 'bg-[#174b44] text-[#fff4df] shadow-sm' : 'text-[#5d7169] hover:bg-[#e6dac6] hover:text-[#174b44]'}`} data-testid={`link-nav-${item.id}`}>{t(item.label, lang)}</Link>)}
+        <nav className="hidden items-center gap-1 rounded-full border border-[#d6e2e9] bg-white/70 p-1 md:flex" aria-label="Main navigation">
+          {nav.map((item) => <Link key={item.href} href={item.href} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive(item.href) ? 'bg-[#2140a8] text-white shadow-sm' : 'text-[#5f737c] hover:bg-[#e7f8fb] hover:text-[#0b6a79]'}`} data-testid={`link-nav-${item.id}`}>{t(item.label, lang)}</Link>)}
         </nav>
         <div className="flex items-center gap-2.5">
-          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="hidden items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8ef] px-3.5 py-2 text-xs font-bold text-[#174b44] transition hover:border-[#174b44] sm:flex" data-testid="button-language">
+          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="hidden items-center gap-2 rounded-full border border-[#d6e2e9] bg-white/80 px-3.5 py-2 text-xs font-bold text-[#0b6a79] transition hover:border-[#16a7bc] sm:flex" data-testid="button-language">
             <Globe2 className="h-4 w-4" /> {lang === 'en' ? 'العربية' : 'English'}
           </button>
-          <Link href={activeProfile ? '/' : '/login'} className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#f2c95c] bg-[#d9ece4] font-display text-sm font-bold text-[#174b44]" data-testid="link-player-profile" aria-label={activeProfile ? `Open ${activeProfile.name}'s game hub` : 'Open player login'}>{initials}</Link>
-          <button onClick={() => setMenuOpen((open) => !open)} className="rounded-full p-2 text-[#174b44] md:hidden" aria-label="Open menu" data-testid="button-menu"><Menu className="h-5 w-5" /></button>
+          <Link href={activeProfile ? '/' : '/login'} className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#f4b60b] bg-[#e7f8fb] font-display text-sm font-bold text-[#2140a8]" data-testid="link-player-profile" aria-label={activeProfile ? `Open ${activeProfile.name}'s game hub` : 'Open player login'}>{initials}</Link>
+          <button onClick={() => setMenuOpen((open) => !open)} className="rounded-full p-2 text-[#2140a8] md:hidden" aria-label="Open menu" data-testid="button-menu"><Menu className="h-5 w-5" /></button>
         </div>
       </div>
-      {menuOpen && <div className="border-t border-[#dfd2bd] bg-[#f7f0e3] px-5 py-4 md:hidden"><div className="flex flex-col gap-1">
-        {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-3 font-semibold text-[#174b44]" data-testid={`link-mobile-${item.id}`}>{t(item.label, lang)}</Link>)}
-        <button onClick={() => { setLang(lang === 'en' ? 'ar' : 'en'); setMenuOpen(false); }} className="rounded-xl px-3 py-3 text-start font-semibold text-[#174b44]" data-testid="button-mobile-language">{lang === 'en' ? 'العربية' : 'English'}</button>
+      {menuOpen && <div className="border-t border-[#d6e2e9] bg-[#e8f4fa] px-5 py-4 md:hidden"><div className="flex flex-col gap-1">
+        {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-3 font-semibold text-[#2140a8]" data-testid={`link-mobile-${item.id}`}>{t(item.label, lang)}</Link>)}
+        <button onClick={() => { setLang(lang === 'en' ? 'ar' : 'en'); setMenuOpen(false); }} className="rounded-xl px-3 py-3 text-start font-semibold text-[#2140a8]" data-testid="button-mobile-language">{lang === 'en' ? 'العربية' : 'English'}</button>
       </div></div>}
     </header>
     <main dir={lang === 'ar' ? 'rtl' : 'ltr'}>{children}</main>
-    <footer className="border-t border-[#dfd2bd] bg-[#174b44] px-5 py-10 text-[#d7e8df] lg:px-10">
+    <footer className="border-t border-[#2140a8] bg-[#2140a8] px-5 py-10 text-white lg:px-10">
       <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-7 sm:flex-row sm:items-end">
-        <div><Logo compact /><p className="mt-4 max-w-sm text-sm leading-relaxed text-[#b7d1c5]">{t({ en: 'A digital playground from Abu Dhabi for curious minds, thoughtful choices, and the people shaping tomorrow.', ar: 'ملعب رقمي من أبوظبي للعقول الفضولية والاختيارات الواعية والأشخاص الذين يصنعون الغد.' }, lang)}</p></div>
-        <div className="text-sm text-[#9fbdaf]"><p>© 2024 Bunayn AD</p><p className="mt-1">Learning through play.</p></div>
+        <div><Logo compact /><p className="mt-4 max-w-sm text-sm leading-relaxed text-[#d7f0f5]">{t({ en: 'A digital playground from Abu Dhabi for curious minds, thoughtful choices, and the people shaping tomorrow.', ar: 'ملعب رقمي من أبوظبي للعقول الفضولية والاختيارات الواعية والأشخاص الذين يصنعون الغد.' }, lang)}</p></div>
+        <div className="text-sm text-[#cfe9f7]"><p>© 2024 Bunayn AD</p><p className="mt-1">Learning through play.</p></div>
       </div>
     </footer>
   </div>;
@@ -140,6 +155,28 @@ function Landscape({ large = false }: { large?: boolean }) {
     <div className="absolute bottom-[13%] start-[55%] h-1.5 w-14 rotate-[10deg] rounded-full bg-[#f2c95c]" />
     <span className="absolute bottom-5 start-6 rounded-full bg-[#fff4df]/75 px-3 py-1 text-[10px] font-bold uppercase tracking-[.2em] text-[#174b44]">Abu Dhabi / tomorrow</span>
   </div>;
+}
+
+function LoginSkyline() {
+  return <svg className="login-skyline" viewBox="0 0 1440 380" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <pattern id="login-studs" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="13" cy="13" r="7.5" fill="rgba(255,255,255,.34)" stroke="rgba(0,0,0,.07)" strokeWidth="1.5" /></pattern>
+      <pattern id="login-plate" width="58" height="58" patternUnits="userSpaceOnUse"><circle cx="29" cy="16" r="9" fill="#d2dfe6" stroke="rgba(255,255,255,.8)" strokeWidth="2" /></pattern>
+    </defs>
+    <g opacity=".98">
+      <rect x="70" y="200" width="70" height="130" rx="4" fill="#16a7bc" /><rect x="78" y="150" width="54" height="54" rx="4" fill="#f4b60b" />
+      <rect x="146" y="120" width="70" height="210" rx="4" fill="#d8232a" /><rect x="232" y="178" width="58" height="152" rx="4" fill="#2140a8" />
+      <rect x="312" y="190" width="15" height="140" rx="6" fill="#fff" /><rect x="464" y="190" width="15" height="140" rx="6" fill="#fff" />
+      <rect x="330" y="250" width="132" height="80" rx="5" fill="#fff" /><circle cx="346" cy="258" r="23" fill="#fff" /><circle cx="446" cy="258" r="23" fill="#fff" /><circle cx="396" cy="246" r="43" fill="#fff" />
+      <path d="M516 330 552 330 598 142 566 134Z" fill="#2140a8" /><rect x="632" y="110" width="80" height="220" rx="4" fill="#f4b60b" /><rect x="646" y="84" width="52" height="28" rx="4" fill="#16a7bc" />
+      <circle cx="790" cy="224" r="84" fill="#16a7bc" /><rect x="762" y="300" width="18" height="30" fill="#16a7bc" /><rect x="800" y="300" width="18" height="30" fill="#16a7bc" />
+      <rect x="900" y="176" width="52" height="154" rx="4" fill="#2140a8" /><circle cx="926" cy="156" r="27" fill="#d8232a" /><rect x="990" y="185" width="64" height="145" rx="4" fill="#d8232a" /><rect x="998" y="145" width="48" height="44" rx="4" fill="#16a7bc" />
+      <rect x="1070" y="210" width="58" height="120" rx="4" fill="#f4b60b" /><rect x="1142" y="140" width="72" height="190" rx="4" fill="#2140a8" /><rect x="1230" y="225" width="52" height="105" rx="4" fill="#16a7bc" /><rect x="1296" y="175" width="80" height="155" rx="4" fill="#d8232a" /><rect x="1306" y="138" width="60" height="40" rx="4" fill="#f4b60b" />
+    </g>
+    <rect x="0" y="60" width="1440" height="280" fill="url(#login-studs)" opacity=".72" />
+    <g stroke="rgba(255,255,255,.45)" strokeWidth="2"><circle cx="92" cy="150" r="9" fill="#f4b60b" /><circle cx="124" cy="150" r="9" fill="#f4b60b" /><circle cx="166" cy="120" r="9" fill="#d8232a" /><circle cx="198" cy="120" r="9" fill="#d8232a" /><circle cx="656" cy="84" r="9" fill="#16a7bc" /><circle cx="682" cy="84" r="9" fill="#16a7bc" /><circle cx="1006" cy="145" r="9" fill="#16a7bc" /><circle cx="1038" cy="145" r="9" fill="#16a7bc" /><circle cx="1316" cy="138" r="9" fill="#f4b60b" /><circle cx="1354" cy="138" r="9" fill="#f4b60b" /></g>
+    <rect y="330" width="1440" height="50" fill="#e5edf1" /><rect y="330" width="1440" height="50" fill="url(#login-plate)" />
+  </svg>;
 }
 
 function Welcome({ lang }: { lang: Lang }) {
@@ -167,30 +204,77 @@ function Welcome({ lang }: { lang: Lang }) {
   </div>;
 }
 
-function Login({ lang }: { lang: Lang }) {
+const playerAges = ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17'];
+const playerGrades = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+const playerSchools = ['Al Mushrif School', 'Al Bateen Academy', 'Al Yasmina Academy', 'Al Muna Academy', 'Emirates National School', 'Abu Dhabi Grammar School', 'Cranleigh Abu Dhabi', 'GEMS American Academy Abu Dhabi'];
+
+function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void }) {
   const [, setLocation] = useLocation();
   const [, setProfile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
   const [name, setName] = useState('');
-  const [age, setAge] = useState('8–12');
-  const [role, setRole] = useState('Player');
+  const [age, setAge] = useState('');
+  const [grade, setGrade] = useState('');
+  const [school, setSchool] = useState('');
   const [error, setError] = useState('');
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (name.trim().length < 2) { setError(t({ en: 'Please enter at least two letters.', ar: 'يرجى إدخال حرفين على الأقل.' }, lang)); return; }
+    if (!name.trim()) { setError(t({ en: 'Type your name to start.', ar: 'اكتب اسمك للبدء.' }, lang)); return; }
+    if (!age) { setError(t({ en: 'Pick your age.', ar: 'اختر عمرك.' }, lang)); return; }
+    if (!grade) { setError(t({ en: 'Pick your grade.', ar: 'اختر صفك.' }, lang)); return; }
+    if (!school.trim()) { setError(t({ en: 'Type or choose your school.', ar: 'اكتب أو اختر مدرستك.' }, lang)); return; }
     const cleanName = name.trim();
-    setProfile({ name: cleanName, age, role, avatar: cleanName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() });
+    try { sessionStorage.removeItem('bunayn-guest-mode'); sessionStorage.removeItem('bunayn-player-profile'); } catch { /* session storage may be unavailable */ }
+    setProfile({ name: cleanName, age, grade, school: school.trim(), role: 'Player', avatar: cleanName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() });
     setLocation('/');
   };
-  return <div className="mx-auto grid min-h-[calc(100dvh-78px)] max-w-[1220px] items-center gap-8 px-5 py-10 lg:grid-cols-[.95fr_1.05fr] lg:px-10">
-    <div className="hidden lg:block"><Landscape large /><div className="mt-6 flex items-center gap-3 text-sm font-semibold text-[#5d7169]"><span className="grid h-9 w-9 place-items-center rounded-full bg-[#f2c95c] text-[#174b44]">01</span>{t({ en: 'A profile helps Bunayn remember your trail on this device.', ar: 'يساعد الملف بنين على تذكر مسارك على هذا الجهاز.' }, lang)}</div></div>
-    <form onSubmit={submit} className="mx-auto w-full max-w-[540px] rounded-[28px] border border-[#dfd2bd] bg-[#fcf8f0] p-6 shadow-soft sm:p-9" data-testid="form-player-login">
-      <Link href="/welcome" className="inline-flex items-center gap-2 text-sm font-bold text-[#687c73] hover:text-[#174b44]" data-testid="link-login-back"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to welcome', ar: 'العودة للترحيب' }, lang)}</Link>
-      <p className="mt-9 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Player onboarding', ar: 'بدء رحلة اللاعب' }, lang)}</p><h1 className="mt-2 font-display text-4xl font-semibold tracking-tight text-[#174b44]">{t({ en: 'Tell us who is playing.', ar: 'من اللاعب؟' }, lang)}</h1><p className="mt-3 text-sm leading-relaxed text-[#6f8179]">{t({ en: 'This is a friendly demo profile saved only in your browser. No password needed.', ar: 'هذا ملف تجريبي لطيف يُحفظ في متصفحك فقط. لا تحتاج إلى كلمة مرور.' }, lang)}</p>
-      <div className="mt-8 space-y-5"><label className="block"><span className="mb-2 block text-sm font-bold text-[#174b44]">{t({ en: 'Player name', ar: 'اسم اللاعب' }, lang)}</span><input autoFocus value={name} onChange={(event) => { setName(event.target.value); setError(''); }} placeholder={t({ en: 'For example, Noor Alia', ar: 'مثال: نور عليا' }, lang)} className="w-full rounded-2xl border border-[#d8cbb6] bg-[#fffaf2] px-4 py-3.5 text-[#174b44] outline-none transition placeholder:text-[#a9957c] focus:border-[#33705f]" data-testid="input-player-name" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="block"><span className="mb-2 block text-sm font-bold text-[#174b44]">{t({ en: 'Age group', ar: 'الفئة العمرية' }, lang)}</span><select value={age} onChange={(event) => setAge(event.target.value)} className="w-full rounded-2xl border border-[#d8cbb6] bg-[#fffaf2] px-4 py-3.5 text-[#174b44] outline-none focus:border-[#33705f]" data-testid="select-player-age"><option>6–8</option><option>8–12</option><option>13–16</option><option>Adult learner</option></select></label><label className="block"><span className="mb-2 block text-sm font-bold text-[#174b44]">{t({ en: 'I am a…', ar: 'أنا…' }, lang)}</span><select value={role} onChange={(event) => setRole(event.target.value)} className="w-full rounded-2xl border border-[#d8cbb6] bg-[#fffaf2] px-4 py-3.5 text-[#174b44] outline-none focus:border-[#33705f]" data-testid="select-player-role"><option>Player</option><option>Parent</option><option>Educator</option></select></label></div></div>
-      {error && <p className="mt-4 rounded-xl bg-[#fff0eb] px-3 py-2 text-sm font-semibold text-[#a94d40]" role="alert" data-testid="status-login-error">{error}</p>}
-      <button type="submit" className="mt-8 inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#174b44] px-6 py-3.5 font-bold text-[#fff4df] transition hover:-translate-y-0.5 hover:bg-[#24665b]" data-testid="button-submit-login">{t({ en: 'Enter the game hub', ar: 'ادخل إلى مركز الألعاب' }, lang)} <ArrowRight className="h-4 w-4 rtl:rotate-180" /></button>
-      <p className="mt-4 text-center text-xs font-semibold text-[#8a8875]">{t({ en: 'Your name and progress stay on this device.', ar: 'يبقى اسمك وتقدمك على هذا الجهاز.' }, lang)}</p>
-    </form>
+  const playAsGuest = () => {
+    if (!age) { setError(t({ en: 'Pick your age first.', ar: 'اختر عمرك أولاً.' }, lang)); return; }
+    try {
+      sessionStorage.setItem('bunayn-guest-mode', 'true');
+      sessionStorage.setItem('bunayn-player-profile', JSON.stringify({ name: 'Guest Player', age, role: 'Guest', avatar: 'GP' } satisfies PlayerProfile));
+    } catch { /* session storage may be unavailable */ }
+    setLocation('/');
+  };
+  return <div className="login-page relative isolate min-h-[calc(100dvh-78px)] overflow-hidden">
+    <div className="login-glow" aria-hidden="true" />
+    <div className="login-stage relative z-10">
+      <div className="login-language" role="group" aria-label="Language">
+        <button type="button" onClick={() => setLang('en')} aria-pressed={lang === 'en'}>{'English'}</button>
+        <button type="button" onClick={() => setLang('ar')} aria-pressed={lang === 'ar'}>{'العربية'}</button>
+      </div>
+      <Link href="/welcome" className="login-logo-link" data-testid="link-login-logo"><img src={logoPath} alt="بنيان أبوظبي — عالم من المعرفة" className="login-logo" /></Link>
+      <form onSubmit={submit} className="login-card" data-testid="form-player-login">
+        <div className="login-brick-strip" aria-hidden="true"><i /><i /><i /><i /></div>
+        <div className="login-card-body">
+          <Link href="/welcome" className="login-back" data-testid="link-login-back"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to welcome', ar: 'العودة للترحيب' }, lang)}</Link>
+          <h1>{t({ en: 'Let’s build!', ar: 'هيا نبني!' }, lang)}</h1>
+          <p className="login-subtitle">{t({ en: 'Tell us your name, age, grade and school — then jump in. No password needed.', ar: 'اكتب اسمك وعمرك وصفك ومدرستك، ثم ابدأ. لا حاجة لكلمة مرور.' }, lang)}</p>
+          <div className="login-field">
+            <label htmlFor="player-name">{t({ en: 'Your name', ar: 'الاسم' }, lang)}</label>
+            <input id="player-name" type="text" maxLength={24} autoComplete="given-name" autoFocus value={name} onChange={(event) => { setName(event.target.value); setError(''); }} placeholder={t({ en: 'Salem', ar: 'سالم' }, lang)} data-testid="input-player-name" />
+          </div>
+          <fieldset className="login-field">
+            <legend className="login-label">{t({ en: 'Your age', ar: 'العمر' }, lang)}</legend>
+            <div className="login-pills" data-testid="group-player-age">{playerAges.map((value) => <label key={value} className={`login-pill ${age === value ? 'is-selected' : ''}`}><input type="radio" name="player-age" value={value} checked={age === value} onChange={() => { setAge(value); setError(''); }} data-testid={`button-age-${value}`} /><span>{value}</span></label>)}</div>
+          </fieldset>
+          <fieldset className="login-field">
+            <legend className="login-label">{t({ en: 'Your grade', ar: 'الصف الدراسي' }, lang)}</legend>
+            <div className="login-pills" data-testid="group-player-grade">{playerGrades.map((value) => <label key={value} className={`login-pill login-pill-grade ${grade === value ? 'is-selected' : ''}`}><input type="radio" name="player-grade" value={value} checked={grade === value} onChange={() => { setGrade(value); setError(''); }} data-testid={`button-grade-${value}`} /><span>{value}</span></label>)}</div>
+          </fieldset>
+          <div className="login-field">
+            <label htmlFor="player-school">{t({ en: 'Your school', ar: 'المدرسة' }, lang)}</label>
+            <input id="player-school" type="text" list="player-schools" maxLength={60} autoComplete="organization" value={school} onChange={(event) => { setSchool(event.target.value); setError(''); }} placeholder={t({ en: 'Start typing your school name', ar: 'اكتب اسم مدرستك' }, lang)} data-testid="input-player-school" />
+            <datalist id="player-schools">{playerSchools.map((schoolName) => <option key={schoolName} value={schoolName} />)}</datalist>
+          </div>
+          {error && <p className="login-error" role="alert" data-testid="status-login-error">{error}</p>}
+          <button type="submit" className="login-primary-button" data-testid="button-submit-login">{t({ en: 'Enter', ar: 'ادخل' }, lang)}</button>
+          <button type="button" className="login-guest-button" onClick={playAsGuest} data-testid="button-play-guest">{t({ en: 'Play as guest', ar: 'الدخول كضيف' }, lang)}</button>
+          <p className="login-guest-note">{t({ en: 'Just pick your age — no name or school is saved, and progress stays only for this visit.', ar: 'اختر عمرك فقط — لن يُحفظ الاسم أو المدرسة، وسيبقى التقدم لهذه الزيارة فقط.' }, lang)}</p>
+          <div className="login-actions"><button type="button" className="login-admin-button" onClick={() => setLocation('/admin')} data-testid="button-login-admin"><BarChart3 className="h-4 w-4" /> {t({ en: 'Admin dashboard', ar: 'لوحة تحكم المشرف' }, lang)}</button></div>
+        </div>
+      </form>
+    </div>
+    <LoginSkyline />
   </div>;
 }
 
@@ -609,11 +693,15 @@ function GameRoute({ lang }: { lang: Lang }) {
 }
 
 function RouterContent({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void }) {
-  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} />} /><Route path="/login" component={() => <Login lang={lang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoFuture lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/admin" component={() => <Admin lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
+  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoFuture lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/admin" component={() => <Admin lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
 }
 
 function App() {
   const [lang, setLang] = useLocal<Lang>('bunayn-language', 'en');
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  }, [lang]);
   return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><ErrorBoundary><RouterContent lang={lang} setLang={setLang} /></ErrorBoundary></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
 }
 
