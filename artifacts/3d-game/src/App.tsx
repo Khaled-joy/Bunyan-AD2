@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import logoPath from '@assets/image_1787208364235.png';
+import logoPath from '@assets/image_1787208364235-transparent.png';
 import {
   Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BarChart3, BookOpen, Check,
   ChevronRight, CircleHelp, Clock3, Coins, Compass, Crown, Footprints, Gamepad2,
@@ -15,7 +15,19 @@ import NotFound from '@/pages/not-found';
 
 type Lang = 'en' | 'ar';
 type Copy = { en: string; ar: string };
-const t = (copy: Copy, lang: Lang) => copy[lang];
+const gameLibraryCopy: Record<string, Copy> = {
+  'Welcome to Bunayn AD': { en: 'Bunayn AD Home', ar: 'الصفحة الرئيسية لبنين' },
+  'Back to welcome': { en: 'Back to home', ar: 'العودة إلى الصفحة الرئيسية' },
+  'Back to game hub': { en: 'Back to Game Home', ar: 'العودة إلى الصفحة الرئيسية للألعاب' },
+  'The game library': { en: 'The Game Library', ar: 'مكتبة الألعاب' },
+  'Explore the games': { en: 'Explore Game Library', ar: 'استكشف مكتبة الألعاب' },
+  'Browse all games': { en: 'Browse Game Library', ar: 'تصفح مكتبة الألعاب' },
+  'See map': { en: 'Open Game Library', ar: 'افتح مكتبة الألعاب' },
+  'View library': { en: 'View Game Library', ar: 'عرض مكتبة الألعاب' },
+  'View all game worlds': { en: 'View Game Library', ar: 'عرض مكتبة الألعاب' },
+  'Back to game library': { en: 'Back to Game Library', ar: 'العودة إلى مكتبة الألعاب' },
+};
+const t = (copy: Copy, lang: Lang) => (gameLibraryCopy[copy.en] ?? copy)[lang];
 const queryClient = new QueryClient();
 
 type PlayerProfile = { name: string; age: string; role: string; avatar: string; grade?: string; school?: string };
@@ -85,8 +97,8 @@ function useLocal<T>(key: string, initial: T) {
 }
 
 function Logo({ compact = false }: { compact?: boolean }) {
-  return <Link href="/welcome" className="flex items-center gap-3" data-testid="link-logo">
-    <img src={logoPath} alt="Bunayn AD — a world of knowledge" className={`${compact ? 'h-10 w-[116px]' : 'h-12 w-[138px]'} rounded-lg object-cover object-center`} />
+  return <Link href="/" className="flex items-center gap-3" data-testid="link-logo">
+    <img src={logoPath} alt="Bunayn AD — a world of knowledge" className={`${compact ? 'h-10 w-[116px]' : 'h-12 w-[138px]'} object-contain`} />
     {!compact && <span className="hidden border-s border-[#d9cbb4] ps-3 sm:block"><span className="block font-display text-[13px] font-bold tracking-[.08em] text-[#174b44]">PLAY FOR TOMORROW</span><span className="block text-[10px] font-semibold uppercase tracking-[.16em] text-[#8b7760]">Abu Dhabi learning games</span></span>}
   </Link>;
 }
@@ -102,9 +114,8 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
   const isActive = (path: string) => location === path;
   const initials = activeProfile?.avatar || activeProfile?.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'GU';
   const nav = [
-    { href: '/welcome', label: { en: 'Welcome', ar: 'مرحباً' }, id: 'welcome' },
-    { href: '/', label: { en: 'Game hub', ar: 'مركز الألعاب' }, id: 'home' },
-    { href: '/library', label: { en: 'Library', ar: 'المكتبة' }, id: 'library' },
+    { href: '/', label: { en: 'Home', ar: 'الرئيسية' }, id: 'home' },
+    { href: '/library', label: { en: 'Game Library', ar: 'مكتبة الألعاب' }, id: 'library' },
     { href: '/admin', label: { en: 'Dashboard', ar: 'لوحة المتابعة' }, id: 'admin' },
   ];
   return <div className="app-noise min-h-[100dvh] bg-[#e8f4fa]">
@@ -118,7 +129,7 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
           <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="hidden items-center gap-2 rounded-full border border-[#d6e2e9] bg-white/80 px-3.5 py-2 text-xs font-bold text-[#0b6a79] transition hover:border-[#16a7bc] sm:flex" data-testid="button-language">
             <Globe2 className="h-4 w-4" /> {lang === 'en' ? 'العربية' : 'English'}
           </button>
-          <Link href={activeProfile ? '/' : '/login'} className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#f4b60b] bg-[#e7f8fb] font-display text-sm font-bold text-[#2140a8]" data-testid="link-player-profile" aria-label={activeProfile ? `Open ${activeProfile.name}'s game hub` : 'Open player login'}>{initials}</Link>
+          <Link href={activeProfile ? '/' : '/login'} className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#f4b60b] bg-[#e7f8fb] font-display text-sm font-bold text-[#2140a8]" data-testid="link-player-profile" aria-label={activeProfile ? `Open ${activeProfile.name}'s game home` : 'Open player login'}>{initials}</Link>
           <button onClick={() => setMenuOpen((open) => !open)} className="rounded-full p-2 text-[#2140a8] md:hidden" aria-label="Open menu" data-testid="button-menu"><Menu className="h-5 w-5" /></button>
         </div>
       </div>
@@ -138,22 +149,10 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
 }
 
 function Landscape({ large = false }: { large?: boolean }) {
-  return <div className={`abu-landscape relative overflow-hidden rounded-[28px] ${large ? 'min-h-[330px] sm:min-h-[430px]' : 'min-h-[190px]'}`} aria-label="Illustration of Abu Dhabi coast and mangroves">
-    <div className="absolute -end-16 -top-14 h-60 w-60 rounded-full bg-[#f2c95c]" />
-    <div className="absolute end-20 top-20 h-20 w-20 rounded-full bg-[#fff1bd]/70 blur-xl" />
-    <div className="absolute bottom-0 start-[-8%] h-[55%] w-[116%] rotate-[-6deg] rounded-[50%] bg-[#c6dfd3]" />
-    <div className="absolute bottom-[-11%] start-[-8%] h-[48%] w-[116%] rotate-[4deg] rounded-[50%] bg-[#4e9984]" />
-    <div className="absolute bottom-[15%] start-[13%] h-24 w-5 rounded-full bg-[#174b44]" />
-    <div className="absolute bottom-[31%] start-[8%] h-20 w-20 rounded-full bg-[#2e806d]" />
-    <div className="absolute bottom-[12%] start-[25%] h-16 w-4 rounded-full bg-[#174b44]" />
-    <div className="absolute bottom-[26%] start-[21%] h-14 w-14 rounded-full bg-[#3e947b]" />
-    <div className="absolute bottom-[19%] end-[21%] h-20 w-4 rounded-full bg-[#174b44]" />
-    <div className="absolute bottom-[32%] end-[16%] h-16 w-16 rounded-full bg-[#32826f]" />
-    <div className="absolute bottom-[13%] end-[34%] h-14 w-3 rounded-full bg-[#174b44]" />
-    <div className="absolute bottom-[21%] end-[30%] h-12 w-12 rounded-full bg-[#2e806d]" />
-    <div className="absolute bottom-[17%] start-[49%] h-2 w-24 rotate-[-10deg] rounded-full bg-[#f2c95c]" />
-    <div className="absolute bottom-[13%] start-[55%] h-1.5 w-14 rotate-[10deg] rounded-full bg-[#f2c95c]" />
-    <span className="absolute bottom-5 start-6 rounded-full bg-[#fff4df]/75 px-3 py-1 text-[10px] font-bold uppercase tracking-[.2em] text-[#174b44]">Abu Dhabi / tomorrow</span>
+  return <div className={`abu-landscape relative grid place-items-center overflow-hidden rounded-[28px] bg-[#dff0f5] ${large ? 'min-h-[330px] sm:min-h-[430px]' : 'min-h-[190px]'}`} aria-label="Bunayn AD logo">
+    <div className="absolute -end-16 -top-16 h-64 w-64 rounded-full bg-[#f2c95c]/80 blur-[1px]" />
+    <div className="absolute -bottom-24 -start-16 h-64 w-[130%] rounded-[50%] bg-[#c6dfd3]/70" />
+    <img src={logoPath} alt="Bunayn AD — a world of knowledge" className="relative z-10 w-[min(78%,460px)] object-contain drop-shadow-[0_12px_20px_rgba(23,75,68,.14)]" />
   </div>;
 }
 
@@ -189,7 +188,7 @@ function Welcome({ lang }: { lang: Lang }) {
         <p className="mt-7 max-w-xl text-lg leading-relaxed text-[#5d7169]">{t({ en: 'Bunayn is an educational game platform from Abu Dhabi. Through small choices and curious challenges, players explore their values, decisions, and growing levels.', ar: 'بنين منصة ألعاب تعليمية من أبوظبي. من خلال اختيارات صغيرة وتحديات فضولية، يستكشف اللاعبون قيمهم وقراراتهم ومستوياتهم المتنامية.' }, lang)}</p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link href={profile ? '/' : '/login'} className="group inline-flex items-center gap-3 rounded-full bg-[#e8755f] px-6 py-3.5 font-bold text-[#fff7e8] shadow-[0_7px_0_#b85c4e] transition hover:-translate-y-1 hover:shadow-[0_9px_0_#b85c4e] active:translate-y-1" data-testid="link-welcome-start">{profile ? t({ en: `Continue as ${profile.name.split(' ')[0]}`, ar: `تابع باسم ${profile.name.split(' ')[0]}` }, lang) : t({ en: 'Create a player profile', ar: 'أنشئ ملف لاعب' }, lang)} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 rtl:rotate-180" /></Link>
-          <Link href="/library" className="inline-flex items-center gap-2 rounded-full border border-[#c8d2c7] bg-[#fcf8f0] px-5 py-3.5 font-semibold text-[#174b44] transition hover:border-[#174b44]" data-testid="link-welcome-library">{t({ en: 'Explore the games', ar: 'استكشف الألعاب' }, lang)} <ChevronRight className="h-4 w-4 rtl:rotate-180" /></Link>
+          <Link href="/library" className="inline-flex items-center gap-2 rounded-full border border-[#c8d2c7] bg-[#fcf8f0] px-5 py-3.5 font-semibold text-[#174b44] transition hover:border-[#174b44]" data-testid="link-welcome-library">{t({ en: 'Explore Game Library', ar: 'استكشف مكتبة الألعاب' }, lang)} <ChevronRight className="h-4 w-4 rtl:rotate-180" /></Link>
         </div>
       </div>
       <div className="reveal reveal-delay-1 relative"><Landscape large /><div className="absolute -bottom-5 start-5 end-5 flex items-center justify-between rounded-2xl border border-[#c7ded1] bg-[#fffaf2] p-4 shadow-float sm:start-10 sm:end-10"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#e6f1eb] text-[#33705f]"><Compass className="h-5 w-5" /></div><div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#e8755f]">{t({ en: 'A place to begin', ar: 'مكان للبداية' }, lang)}</p><p className="font-display font-bold text-[#174b44]">{t({ en: 'Your choices matter', ar: 'اختياراتك مهمة' }, lang)}</p></div></div><div className="grid h-11 w-11 place-items-center rounded-full border-4 border-[#f2c95c] bg-[#e6f1eb] text-xs font-bold text-[#174b44]">01</div></div></div>
@@ -242,11 +241,11 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
         <button type="button" onClick={() => setLang('en')} aria-pressed={lang === 'en'}>{'English'}</button>
         <button type="button" onClick={() => setLang('ar')} aria-pressed={lang === 'ar'}>{'العربية'}</button>
       </div>
-      <Link href="/welcome" className="login-logo-link" data-testid="link-login-logo"><img src={logoPath} alt="بنيان أبوظبي — عالم من المعرفة" className="login-logo" /></Link>
+      <Link href="/" className="login-logo-link" data-testid="link-login-logo"><img src={logoPath} alt="بنيان أبوظبي — عالم من المعرفة" className="login-logo" /></Link>
       <form onSubmit={submit} className="login-card" data-testid="form-player-login">
         <div className="login-brick-strip" aria-hidden="true"><i /><i /><i /><i /></div>
         <div className="login-card-body">
-          <Link href="/welcome" className="login-back" data-testid="link-login-back"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to welcome', ar: 'العودة للترحيب' }, lang)}</Link>
+          <Link href="/" className="login-back" data-testid="link-login-back"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to welcome', ar: 'العودة للترحيب' }, lang)}</Link>
           <h1>{t({ en: 'Let’s build!', ar: 'هيا نبني!' }, lang)}</h1>
           <p className="login-subtitle">{t({ en: 'Tell us your name, age, grade and school — then jump in. No password needed.', ar: 'اكتب اسمك وعمرك وصفك ومدرستك، ثم ابدأ. لا حاجة لكلمة مرور.' }, lang)}</p>
           <div className="login-field">
