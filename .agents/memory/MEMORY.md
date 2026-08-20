@@ -1,0 +1,1 @@
+- [Emergent migration inputs](emergent-migration-inputs.md) — Emergent snapshots may contain metadata and summaries without the actual playable source export.
