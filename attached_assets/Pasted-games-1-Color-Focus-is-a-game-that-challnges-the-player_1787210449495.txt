@@ -1,0 +1,59 @@
+games:
+
+
+1: Color Focus, is a game that challnges the player to focus on 1 color and grab it its like subway surface but the should collect a color and the have to jump and slide, the reason for this game is to stay focused on one thing and try to get it which makes player more focused, make it as subway surface, make the game in levels and as much he play it becomes faster and more harder for player the duration 60 seconds. 
+
+2: Our Heritage is game about UAE and Islamic heritage, ranking wudu , questions on UAE , question on islam and based on ther age and make 3 levels each level 4 questions 
+
+3: Word Journey, for aracbic and English the game is about literacy for players complete the sentence, which latter missing, picture and what word is write, make it fun and enjoyable for kids and to get events we log for analysis
+
+4: numracy check: you have to finish the marathon as fast as possible and there are Mathmatics question as fast as you anser right the player progress make timer after each question it becoses harder and make the queation level based on student cycle and grade age, make it friendly, 
+
+5: Basket Challenge is challage to make food for the whole day and choose what the player will eat today like make you breakfast bread+ chease and it goes for all, then ask question soda drink every day once week no and for all other meaals healthy or not, and ask about calories what do you think has more caloreis and macros
+
+6: Innovation Lab , where the player will teach the robot and train him here there is some icons will apper and player should answer write to train a robot, and add more innovation games here, 
+
+Bot Workshop · ورشة الروبوت
+
+Primary: Practical (digital & teamwork) · Secondary: Cognitive (creative)
+
+Block-based programming on a grid. Drag blocks, hit Run, watch the bot move.
+
+L1 — First Steps. 5 puzzles, blocks limited to forward / turn / pick up. Grid is 4×4. Solution length isn't scored — just reaching the goal.
+L2 — Fewer Blocks. Loops and if conditions unlock. Each puzzle has a block budget; using fewer blocks than the budget earns Gold. Teaches abstraction as a reward, not a rule.
+L3 — Two Bots. Co-op. The board needs two bots doing different jobs at the same time; the program is split into two halves. Play live with a partner on a shared link, or async — you inherit a half-program someone else wrote and must make yours fit it. Custom function blocks unlock here.
+
+Win state: goal reached, blocks used vs. budget, and (L3) whether both bots finished within the same number of ticks.
+
+Truth Lab · مختبر الحقيقة
+
+Primary: Core Life Skills (thinking & citizenship) · Secondary: Cognitive (analytical)
+
+The learner is a fact-checker. Claims arrive on cards; they get sorted.
+
+L1 — Sort It. Statements with picture support get dropped into ✅ True / ❌ False / 🤔 Not Sure. The "Not Sure" bin is scored positively when the claim really is ambiguous — the lesson is that "I don't know yet" is a valid answer.
+L2 — Find the Source. Each claim now ships with 3 evidence cards (a friend's message, a news photo, an official page). Match claim → strongest evidence. Introduces: who said it, and how would they know?
+L3 — Newsroom. A breaking story, 4 sources that partly contradict each other, a 90-second clock. Player publishes a verdict plus picks the two sources that justify it. Scored 40% on verdict, 60% on justification — deliberately, so guessing right badly beats out reasoning well.
+
+Common Ground · أرض مشتركة
+
+Primary: Social Cohesion (diversity & civic) · Secondary: Core Life Skills (citizenship)
+
+Resource-sharing under conflicting, legitimate needs.
+
+L1 — Fair Shares. Split 12 items among 4 characters who need different amounts (one is younger, one already has some, one is sharing with a sibling). Equal splitting is not the top score — the game surfaces the difference between equal and fair.
+L2 — The Council. A neighborhood has 100 credits and 6 proposals: a ramp, a pitch, a library extension, shade trees, a bus stop, a clinic. Four stakeholder characters argue with real trade-offs. Player allocates, then sees the one-year outcome and who was left out.
+L3 — Write the Rule. Player drafts a rule for a shared space using a constrained sentence-builder (subject + condition + exception). Three opposing characters raise objections; each objection must be answered by amending the rule or accepting a cost. Ends with a public vote whose threshold the player can see rising and falling live.
+
+Spark Studio · استوديو الشرارة
+
+Primary: Transformative (innovation & leading) · Secondary: Practical
+
+Open-ended making. The only game with no correct answers at all.
+
+L1 — Mash-Up. Two random objects appear (umbrella + bicycle). Assemble an invention from a parts tray, name it, give it one purpose. Everything submitted is accepted.
+L2 — Under Constraint. A character has a problem and a limited parts budget. Build a solution, then pitch it in one sentence with a required structure: "For [who], this [what] so that [why]." Constraint tightens across 5 challenges.
+L3 — Design Sprint. Three timed rounds — Discover (interview 3 characters, pick the real problem), Prototype (build + name), Pitch (60-second recorded or written pitch). The player directs a small team of character-helpers with different strengths, assigning each a round-task — that assignment is the leadership mechanic. Ends in a gallery where peers vote across three axes: useful / surprising / kind.
+
+Win state: gallery placement + a "signature" tag derived from their invention history (you build for accessibility).
+ 
