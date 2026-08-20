@@ -7,7 +7,7 @@ import logoPath from '@assets/image_1787208364235-transparent.png';
 import {
   Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BarChart3, BookOpen, Check,
   ChevronRight, CircleHelp, Clock3, Coins, Compass, Crown, Footprints, Gamepad2,
-  Globe2, Leaf, LockKeyhole, Menu, Pause, Play, RotateCcw, Sparkles, Star, Trophy,
+  Globe2, Leaf, LockKeyhole, Menu, Pause, Play, RotateCcw, ShoppingBag, Sparkles, Star, Trophy,
   Users, X, Zap,
 } from 'lucide-react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
@@ -32,6 +32,8 @@ const queryClient = new QueryClient();
 
 type PlayerProfile = { name: string; age: string; role: string; avatar: string; grade?: string; school?: string };
 type PlayerRow = { name: string; initials: string; level: string; coins: number; progress: number; lastActive: string; tone: string };
+type StoreItem = { id: string; name: Copy; description: Copy; cost: number; icon: string; tone: string };
+type StoreState = { purchases: string[]; spentPoints: number };
 
 const gameBlueprints = [
   { id: 'eco-future', title: { en: 'Eco Future', ar: 'مستقبل أخضر' }, eyebrow: { en: 'Play now', ar: 'العب الآن' }, description: { en: 'Make small choices. Build a brighter Abu Dhabi.', ar: 'اختر بخطوات صغيرة وابنِ أبوظبي أكثر إشراقاً.' }, color: 'coral', icon: Leaf, playable: true },
@@ -55,6 +57,27 @@ const demoPlayers: PlayerRow[] = [
   { name: 'Hessa Al Kaabi', initials: 'HK', level: 'Level 02', coins: 155, progress: 47, lastActive: 'Yesterday', tone: 'bg-[#e99b7c]' },
   { name: 'Saif Al Nuaimi', initials: 'SN', level: 'Level 01', coins: 80, progress: 22, lastActive: 'Yesterday', tone: 'bg-[#aecbd8]' },
 ];
+
+const storeItems: StoreItem[] = [
+  { id: 'mangrove-badge', name: { en: 'Mangrove badge', ar: 'شارة القرم' }, description: { en: 'A leafy badge for careful choices.', ar: 'شارة خضراء للاختيارات الواعية.' }, cost: 40, icon: '🌿', tone: 'bg-[#b9d6c7]' },
+  { id: 'desert-palette', name: { en: 'Desert palette', ar: 'لوحة الصحراء' }, description: { en: 'Warm colours for your player card.', ar: 'ألوان دافئة لبطاقة اللاعب.' }, cost: 80, icon: '🏜️', tone: 'bg-[#efe1bf]' },
+  { id: 'future-builder', name: { en: 'Future builder trophy', ar: 'كأس صانع المستقبل' }, description: { en: 'A trophy for completing learning worlds.', ar: 'كأس لإكمال عوالم التعلّم.' }, cost: 140, icon: '🏆', tone: 'bg-[#f2c95c]' },
+  { id: 'skyline-trail', name: { en: 'Skyline trail', ar: 'مسار الأفق' }, description: { en: 'A bright city trail for your collection.', ar: 'مسار مدينة مضيء لمجموعتك.' }, cost: 210, icon: '🌆', tone: 'bg-[#a9c7d8]' },
+];
+
+function hasAdminSession() {
+  try { return sessionStorage.getItem('bunayn-admin-session') === 'true'; } catch { return false; }
+}
+
+function clearNamedPlayerProgress() {
+  const keys = [
+    'bunayn-eco-round', 'bunayn-eco-score', 'bunayn-coins', 'bunayn-eco-finished',
+    'bunayn-basket-runner-progress', 'bunayn-store-state',
+    ...gameBlueprints.filter((game) => game.id !== 'eco-future' && game.id !== 'basket-challenge').map((game) => `bunayn-signature-progress-${game.id}`),
+    ...gameBlueprints.map((game) => `bunayn-game-progress-${game.id}`),
+  ];
+  try { keys.forEach((key) => localStorage.removeItem(key)); } catch { /* browser storage may be unavailable */ }
+}
 
 function useLocal<T>(key: string, initial: T) {
   const storageMode = () => {
@@ -96,6 +119,61 @@ function useLocal<T>(key: string, initial: T) {
   return [value, setValue] as const;
 }
 
+function usePlayerSummary() {
+  const [ecoRound] = useLocal<number>('bunayn-eco-round', 0);
+  const [ecoScore] = useLocal<number>('bunayn-eco-score', 0);
+  const [ecoCoins] = useLocal<number>('bunayn-coins', 120);
+  const [ecoFinished] = useLocal<boolean>('bunayn-eco-finished', false);
+  const [basket] = useLocal<RunnerProgress>('bunayn-basket-runner-progress', { level: 0, step: 0, lane: 1, collected: 0, score: 0, coins: 0, hearts: 3, timeLeft: 60, status: 'ready', jumping: false, sliding: false, message: { en: '', ar: '' } });
+  const [heritage] = useLocal<SignatureProgress>('bunayn-signature-progress-heritage', { level: 0, score: 0, coins: 0, finished: false });
+  const [colorFocus] = useLocal<SignatureProgress>('bunayn-signature-progress-color-focus', { level: 0, score: 0, coins: 0, finished: false });
+  const [librarySort] = useLocal<SignatureProgress>('bunayn-signature-progress-library-sort', { level: 0, score: 0, coins: 0, finished: false });
+  const [wordJourney] = useLocal<SignatureProgress>('bunayn-signature-progress-word-journey', { level: 0, score: 0, coins: 0, finished: false });
+  const [healthyRestaurant] = useLocal<SignatureProgress>('bunayn-signature-progress-healthy-restaurant', { level: 0, score: 0, coins: 0, finished: false });
+  const [innovationLab] = useLocal<SignatureProgress>('bunayn-signature-progress-innovation-lab', { level: 0, score: 0, coins: 0, finished: false });
+  const [numeracyCheck] = useLocal<SignatureProgress>('bunayn-signature-progress-numeracy-check', { level: 0, score: 0, coins: 0, finished: false });
+  const [botWorkshop] = useLocal<SignatureProgress>('bunayn-signature-progress-bot-workshop', { level: 0, score: 0, coins: 0, finished: false });
+  const [truthLab] = useLocal<SignatureProgress>('bunayn-signature-progress-truth-lab', { level: 0, score: 0, coins: 0, finished: false });
+  const [commonGround] = useLocal<SignatureProgress>('bunayn-signature-progress-common-ground', { level: 0, score: 0, coins: 0, finished: false });
+  const [sparkStudio] = useLocal<SignatureProgress>('bunayn-signature-progress-spark-studio', { level: 0, score: 0, coins: 0, finished: false });
+  const [storeState, setStoreState] = useLocal<StoreState>('bunayn-store-state', { purchases: [], spentPoints: 0 });
+
+  const worlds = [
+    { id: 'eco-future', level: ecoRound, target: rounds.length, finished: ecoFinished, score: ecoScore, coins: ecoCoins },
+    { id: 'heritage', ...heritage, target: 3 },
+    { id: 'color-focus', ...colorFocus, target: 3 },
+    { id: 'library-sort', ...librarySort, target: 3 },
+    { id: 'word-journey', ...wordJourney, target: 3 },
+    { id: 'basket-challenge', level: basket.level, target: 3, finished: basket.status === 'finished', score: basket.score, coins: basket.coins },
+    { id: 'healthy-restaurant', ...healthyRestaurant, target: 3 },
+    { id: 'innovation-lab', ...innovationLab, target: 3 },
+    { id: 'numeracy-check', ...numeracyCheck, target: 3 },
+    { id: 'bot-workshop', ...botWorkshop, target: 3 },
+    { id: 'truth-lab', ...truthLab, target: 3 },
+    { id: 'common-ground', ...commonGround, target: 3 },
+    { id: 'spark-studio', ...sparkStudio, target: 3 },
+  ];
+  const completed = worlds.filter((world) => world.finished).length;
+  const nextWorld = worlds.find((world) => !world.finished) ?? worlds[0];
+  const nextGame = gameBlueprints.find((game) => game.id === nextWorld.id) ?? gameBlueprints[0];
+  const points = worlds.reduce((total, world) => total + world.score, 0);
+  const earnedCoins = worlds.reduce((total, world) => total + world.coins, 0);
+
+  return {
+    worlds,
+    completed,
+    totalWorlds: worlds.length,
+    completionPercent: Math.round((completed / worlds.length) * 100),
+    nextWorld,
+    nextGame,
+    points,
+    earnedCoins,
+    availablePoints: Math.max(0, earnedCoins - storeState.spentPoints),
+    purchases: storeState.purchases,
+    setStoreState,
+  };
+}
+
 function Logo({ compact = false }: { compact?: boolean }) {
   return <Link href="/" className="flex items-center gap-3" data-testid="link-logo">
     <img src={logoPath} alt="Bunayn AD — a world of knowledge" className={`${compact ? 'h-10 w-[116px]' : 'h-12 w-[138px]'} object-contain`} />
@@ -108,16 +186,22 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
   const [menuOpen, setMenuOpen] = useState(false);
   const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
   const savedProfile = (() => {
-    try { return JSON.parse(localStorage.getItem('bunayn-player-profile') || 'null') as PlayerProfile | null; } catch { return null; }
+    try {
+      const storage = sessionStorage.getItem('bunayn-guest-mode') === 'true' ? sessionStorage : localStorage;
+      return JSON.parse(storage.getItem('bunayn-player-profile') || 'null') as PlayerProfile | null;
+    } catch { return null; }
   })();
-  const activeProfile = profile || savedProfile;
+  const activeProfile = savedProfile || profile;
+  const isAdmin = hasAdminSession();
   const isActive = (path: string) => location === path;
   const initials = activeProfile?.avatar || activeProfile?.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'GU';
   const nav = [
     { href: '/', label: { en: 'Home', ar: 'الرئيسية' }, id: 'home' },
     { href: '/library', label: { en: 'Game Library', ar: 'مكتبة الألعاب' }, id: 'library' },
-    { href: '/admin', label: { en: 'Dashboard', ar: 'لوحة المتابعة' }, id: 'admin' },
+    { href: '/store', label: { en: 'Store', ar: 'المتجر' }, id: 'store' },
+    { href: '/player', label: { en: 'My Progress', ar: 'تقدمي' }, id: 'player' },
   ];
+  if (isAdmin) nav.push({ href: '/admin', label: { en: 'Dashboard', ar: 'لوحة المتابعة' }, id: 'admin' });
   return <div className="app-noise min-h-[100dvh] bg-[#e8f4fa]">
     <header className="sticky top-0 z-40 border-b border-[#d6e2e9]/90 bg-[#e8f4fa]/95 backdrop-blur-md">
       <div className="mx-auto flex h-[78px] max-w-[1440px] items-center justify-between px-5 lg:px-10">
@@ -222,7 +306,13 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
     if (!grade) { setError(t({ en: 'Pick your grade.', ar: 'اختر صفك.' }, lang)); return; }
     if (!school.trim()) { setError(t({ en: 'Type or choose your school.', ar: 'اكتب أو اختر مدرستك.' }, lang)); return; }
     const cleanName = name.trim();
-    try { sessionStorage.removeItem('bunayn-guest-mode'); sessionStorage.removeItem('bunayn-player-profile'); } catch { /* session storage may be unavailable */ }
+    try {
+      const previousProfile = JSON.parse(localStorage.getItem('bunayn-player-profile') || 'null') as PlayerProfile | null;
+      if (!previousProfile || previousProfile.name !== cleanName) clearNamedPlayerProgress();
+      sessionStorage.removeItem('bunayn-guest-mode');
+      sessionStorage.removeItem('bunayn-player-profile');
+      sessionStorage.removeItem('bunayn-admin-session');
+    } catch { /* browser storage may be unavailable */ }
     setProfile({ name: cleanName, age, grade, school: school.trim(), role: 'Player', avatar: cleanName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() });
     setLocation('/');
   };
@@ -231,6 +321,7 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
     try {
       sessionStorage.setItem('bunayn-guest-mode', 'true');
       sessionStorage.setItem('bunayn-player-profile', JSON.stringify({ name: 'Guest Player', age, role: 'Guest', avatar: 'GP' } satisfies PlayerProfile));
+      sessionStorage.removeItem('bunayn-admin-session');
     } catch { /* session storage may be unavailable */ }
     setLocation('/');
   };
@@ -269,7 +360,7 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
           <button type="submit" className="login-primary-button" data-testid="button-submit-login">{t({ en: 'Enter', ar: 'ادخل' }, lang)}</button>
           <button type="button" className="login-guest-button" onClick={playAsGuest} data-testid="button-play-guest">{t({ en: 'Play as guest', ar: 'الدخول كضيف' }, lang)}</button>
           <p className="login-guest-note">{t({ en: 'Just pick your age — no name or school is saved, and progress stays only for this visit.', ar: 'اختر عمرك فقط — لن يُحفظ الاسم أو المدرسة، وسيبقى التقدم لهذه الزيارة فقط.' }, lang)}</p>
-          <div className="login-actions"><button type="button" className="login-admin-button" onClick={() => setLocation('/admin')} data-testid="button-login-admin"><BarChart3 className="h-4 w-4" /> {t({ en: 'Admin dashboard', ar: 'لوحة تحكم المشرف' }, lang)}</button></div>
+          <div className="login-actions"><button type="button" className="login-admin-button" onClick={() => { try { sessionStorage.setItem('bunayn-admin-session', 'true'); } catch { /* demo admin access is session-only */ } setLocation('/admin'); }} data-testid="button-login-admin"><BarChart3 className="h-4 w-4" /> {t({ en: 'Admin dashboard', ar: 'لوحة تحكم المشرف' }, lang)}</button></div>
         </div>
       </form>
     </div>
@@ -310,6 +401,34 @@ function Library({ lang }: { lang: Lang }) {
     return matches && (filter === 'all' || (filter === 'playable' ? game.playable : !game.playable));
   }), [query, filter]);
   return <div className="mx-auto max-w-[1440px] px-5 py-8 lg:px-10 lg:py-12"><section className="grid gap-8 rounded-[30px] bg-[#174b44] p-7 text-[#fff4df] md:grid-cols-[1fr_auto] md:items-end md:p-10"><div><div className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#2d675d] px-3 py-1.5 text-xs font-bold uppercase tracking-[.15em] text-[#d7e8df]"><BookOpen className="h-3.5 w-3.5" /> {t({ en: 'The game library', ar: 'مكتبة الألعاب' }, lang)}</div><h1 className="max-w-2xl font-display text-5xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">{t({ en: 'Pick a world to wander into.', ar: 'اختر عالماً لتتجول فيه.' }, lang)}</h1><p className="mt-5 max-w-xl text-base leading-relaxed text-[#b7d1c5]">{t({ en: 'Game worlds inspired by the coast, desert, stories, and bright ideas of Abu Dhabi.', ar: 'عوالم ألعاب مستوحاة من الساحل والصحراء وقصص وأفكار أبوظبي المضيئة.' }, lang)}</p></div><div className="relative hidden h-36 w-44 md:block"><div className="absolute start-8 top-3 h-24 w-24 rounded-full border border-[#f2c95c]/50" /><div className="absolute start-16 top-11 h-3 w-3 rounded-full bg-[#f2c95c] pulse-soft" /><Compass className="absolute bottom-1 start-2 h-28 w-28 text-[#71a695] opacity-70" /></div></section><section className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex flex-wrap gap-2">{(['all', 'playable'] as const).map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-full px-4 py-2 text-sm font-bold transition ${filter === item ? 'bg-[#e8755f] text-[#fff7e8]' : 'border border-[#dfd2bd] bg-[#fcf8f0] text-[#557068] hover:border-[#174b44]'}`} data-testid={`button-filter-${item}`}>{t(item === 'all' ? { en: 'All worlds', ar: 'كل العوالم' } : { en: 'Play now', ar: 'العب الآن' }, lang)}</button>)}</div><label className="relative block sm:w-64"><CircleHelp className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#688079]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t({ en: 'Search worlds', ar: 'ابحث عن عالم' }, lang)} className="w-full rounded-full border border-[#dfd2bd] bg-[#fcf8f0] py-2.5 pe-4 ps-9 text-sm outline-none placeholder:text-[#9aaba0] focus:border-[#33705f]" data-testid="input-search-games" /></label></section><section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{filtered.map((game, index) => <GameCard key={game.id} game={game} lang={lang} index={index} />)}</section>{filtered.length === 0 && <div className="mt-7 rounded-[24px] border border-dashed border-[#c8d2c7] bg-[#fcf8f0] py-16 text-center"><Compass className="mx-auto h-9 w-9 text-[#9aaba0]" /><h2 className="mt-4 font-display text-xl font-bold text-[#174b44]">{t({ en: 'No worlds found', ar: 'لم نجد عوالم' }, lang)}</h2><p className="mt-1 text-sm text-[#688079]">{t({ en: 'Try a different trail marker.', ar: 'جرّب كلمة بحث أخرى.' }, lang)}</p></div>}<p className="mt-7 text-sm font-semibold text-[#5d7169]">{t({ en: 'Every world now has three levels. Each level becomes more challenging and rewards thoughtful play.', ar: 'كل عالم يحتوي الآن على ثلاثة مستويات. تزداد الصعوبة في كل مستوى وتكافئك اللعبة على اللعب الواعي.' }, lang)}</p></div>;
+}
+
+function PlayerProgress({ lang }: { lang: Lang }) {
+  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
+  const summary = usePlayerSummary();
+  if (!profile) return <div className="mx-auto max-w-[760px] px-5 py-16 text-center lg:px-10"><div className="rounded-[28px] border border-[#dfd2bd] bg-[#fcf8f0] p-8"><Compass className="mx-auto h-10 w-10 text-[#e8755f]" /><h1 className="mt-5 font-display text-3xl font-bold text-[#174b44]">{t({ en: 'Build your player card first', ar: 'أنشئ بطاقة لاعبك أولاً' }, lang)}</h1><p className="mx-auto mt-3 max-w-md text-[#688079]">{t({ en: 'Choose a name and age so Bunayn can save your learning trail on this device.', ar: 'اختر اسماً وعمراً ليحفظ بنين مسار تعلّمك على هذا الجهاز.' }, lang)}</p><Link href="/login" className="mt-6 inline-flex rounded-full bg-[#e8755f] px-5 py-3 font-bold text-[#fff7e8]">{t({ en: 'Create player', ar: 'أنشئ لاعباً' }, lang)}</Link></div></div>;
+  const nextHref = summary.nextGame.id === 'eco-future' ? '/eco-future' : `/game/${summary.nextGame.id}`;
+  const currentLevel = Math.min(summary.nextWorld.level + 1, summary.nextWorld.target);
+  const remainingLevels = Math.max(0, summary.nextWorld.target - summary.nextWorld.level);
+  return <div className="mx-auto max-w-[1200px] px-5 py-8 lg:px-10 lg:py-12">
+    <section className="overflow-hidden rounded-[30px] bg-[#174b44] p-7 text-[#fff4df] shadow-float sm:p-10"><div className="flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-5"><div className="grid h-20 w-20 place-items-center rounded-[24px] border-4 border-[#f2c95c] bg-[#2d675d] font-display text-2xl font-bold">{profile.avatar}</div><div><p className="text-xs font-bold uppercase tracking-[.17em] text-[#f2c95c]">{t({ en: 'Player card', ar: 'بطاقة اللاعب' }, lang)}</p><h1 className="mt-2 font-display text-4xl font-bold">{profile.name}</h1><p className="mt-1 text-sm text-[#b7d1c5]">{t({ en: `Age ${profile.age}${profile.grade ? ` · Grade ${profile.grade}` : ''}`, ar: `العمر ${profile.age}${profile.grade ? ` · الصف ${profile.grade}` : ''}` }, lang)}{profile.school ? ` · ${profile.school}` : ''}</p></div></div><Link href="/store" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#f2c95c] px-5 py-3 font-bold text-[#174b44]" data-testid="link-player-store"><ShoppingBag className="h-4 w-4" /> {t({ en: 'Visit store', ar: 'زيارة المتجر' }, lang)}</Link></div></section>
+    <section className="mt-7 grid gap-4 sm:grid-cols-3"><div className="rounded-[22px] border border-[#dfd2bd] bg-[#fcf8f0] p-5"><Coins className="h-5 w-5 text-[#e8755f]" /><p className="mt-5 text-xs font-bold uppercase tracking-[.14em] text-[#688079]">{t({ en: 'Points to spend', ar: 'نقاط للشراء' }, lang)}</p><p className="mt-1 font-display text-4xl font-bold text-[#174b44]" data-testid="text-player-points">{summary.availablePoints}</p></div><div className="rounded-[22px] border border-[#dfd2bd] bg-[#fcf8f0] p-5"><Star className="h-5 w-5 text-[#e8755f]" /><p className="mt-5 text-xs font-bold uppercase tracking-[.14em] text-[#688079]">{t({ en: 'Learning points', ar: 'نقاط التعلّم' }, lang)}</p><p className="mt-1 font-display text-4xl font-bold text-[#174b44]" data-testid="text-player-score">{summary.points}</p></div><div className="rounded-[22px] border border-[#dfd2bd] bg-[#fcf8f0] p-5"><Trophy className="h-5 w-5 text-[#e8755f]" /><p className="mt-5 text-xs font-bold uppercase tracking-[.14em] text-[#688079]">{t({ en: 'Worlds complete', ar: 'عوالم مكتملة' }, lang)}</p><p className="mt-1 font-display text-4xl font-bold text-[#174b44]">{summary.completed} <span className="text-lg text-[#688079]">/ {summary.totalWorlds}</span></p></div></section>
+    <section className="mt-7 grid gap-6 lg:grid-cols-[.88fr_1.12fr]"><div className="rounded-[26px] bg-[#e7f8fb] p-6 sm:p-8"><p className="text-xs font-bold uppercase tracking-[.16em] text-[#0b6a79]">{t({ en: 'What to finish next', ar: 'ما الذي يجب إنهاؤه تالياً' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold text-[#174b44]">{t(summary.nextGame.title, lang)}</h2><p className="mt-3 text-[#557068]">{summary.nextWorld.finished ? t({ en: 'Every learning world is complete. Play any world again to build more points.', ar: 'اكتملت كل عوالم التعلّم. العب أي عالم مجدداً لتحصل على نقاط أكثر.' }, lang) : t({ en: `Complete level ${currentLevel} of ${summary.nextWorld.target}. ${remainingLevels} level${remainingLevels === 1 ? '' : 's'} left to finish this world.`, ar: `أكمل المستوى ${currentLevel} من ${summary.nextWorld.target}. بقي ${remainingLevels} مستوى لإنهاء هذا العالم.` }, lang)}</p><Link href={nextHref} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#2140a8] px-5 py-3 font-bold text-white" data-testid="link-player-next-world"><Play className="h-4 w-4" /> {t({ en: 'Continue world', ar: 'تابع العالم' }, lang)}</Link></div><div className="rounded-[26px] border border-[#dfd2bd] bg-[#fcf8f0] p-6 sm:p-8"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Your progress', ar: 'تقدمك' }, lang)}</p><h2 className="mt-2 font-display text-2xl font-bold text-[#174b44]">{summary.completionPercent}% {t({ en: 'worlds complete', ar: 'من العوالم مكتمل' }, lang)}</h2></div><ProgressRing value={summary.completionPercent} /></div><div className="mt-7 space-y-3">{summary.worlds.map((world) => { const game = gameBlueprints.find((item) => item.id === world.id)!; const worldPercent = world.finished ? 100 : Math.round((Math.min(world.level, world.target) / world.target) * 100); return <div key={world.id}><div className="flex justify-between gap-4 text-sm"><span className="font-bold text-[#174b44]">{t(game.title, lang)}</span><span className="shrink-0 font-semibold text-[#688079]">{world.finished ? t({ en: 'Complete', ar: 'مكتمل' }, lang) : `${worldPercent}%`}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e3e6d9]"><div className="h-full rounded-full bg-[#16a7bc]" style={{ width: `${worldPercent}%` }} /></div></div>; })}</div></div></section>
+  </div>;
+}
+
+function Store({ lang }: { lang: Lang }) {
+  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
+  const summary = usePlayerSummary();
+  if (!profile) return <div className="mx-auto max-w-[760px] px-5 py-16 text-center lg:px-10"><div className="rounded-[28px] border border-[#dfd2bd] bg-[#fcf8f0] p-8"><ShoppingBag className="mx-auto h-10 w-10 text-[#e8755f]" /><h1 className="mt-5 font-display text-3xl font-bold text-[#174b44]">{t({ en: 'Create a player before shopping', ar: 'أنشئ لاعباً قبل التسوق' }, lang)}</h1><p className="mx-auto mt-3 max-w-md text-[#688079]">{t({ en: 'Your points and rewards belong to your player card, so start there first.', ar: 'نقاطك ومكافآتك تخص بطاقة لاعبك، لذا ابدأ منها أولاً.' }, lang)}</p><Link href="/login" className="mt-6 inline-flex rounded-full bg-[#e8755f] px-5 py-3 font-bold text-[#fff7e8]">{t({ en: 'Create player', ar: 'أنشئ لاعباً' }, lang)}</Link></div></div>;
+  const buy = (item: StoreItem) => {
+    summary.setStoreState((state) => {
+      const availablePoints = summary.earnedCoins - state.spentPoints;
+      if (state.purchases.includes(item.id) || availablePoints < item.cost) return state;
+      return { purchases: [...state.purchases, item.id], spentPoints: state.spentPoints + item.cost };
+    });
+  };
+  return <div className="mx-auto max-w-[1200px] px-5 py-8 lg:px-10 lg:py-12"><section className="rounded-[30px] bg-[#2140a8] p-7 text-white shadow-float sm:p-10"><div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-[.16em] text-[#d7f0f5]"><ShoppingBag className="h-3.5 w-3.5" /> {t({ en: 'Player store', ar: 'متجر اللاعب' }, lang)}</div><h1 className="mt-5 font-display text-5xl font-bold tracking-[-.05em]">{t({ en: 'Spend points on your collection.', ar: 'أنفق نقاطك على مجموعتك.' }, lang)}</h1><p className="mt-4 max-w-xl text-[#d7f0f5]">{t({ en: 'Finish learning worlds, collect points, then choose a reward that feels like you.', ar: 'أكمل عوالم التعلّم واجمع النقاط، ثم اختر مكافأة تشبهك.' }, lang)}</p></div><div className="rounded-[22px] bg-[#f2c95c] px-5 py-4 text-[#174b44]"><p className="text-xs font-bold uppercase tracking-[.14em]">{t({ en: 'Your points', ar: 'نقاطك' }, lang)}</p><p className="mt-1 flex items-center gap-2 font-display text-4xl font-bold" data-testid="text-store-points"><Coins className="h-7 w-7" /> {summary.availablePoints}</p></div></div></section><section className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{storeItems.map((item) => { const owned = summary.purchases.includes(item.id); const canBuy = summary.availablePoints >= item.cost; return <article key={item.id} className="rounded-[24px] border border-[#dfd2bd] bg-[#fcf8f0] p-5 shadow-soft"><div className={`grid h-20 place-items-center rounded-[20px] text-4xl ${item.tone}`}>{item.icon}</div><h2 className="mt-5 font-display text-xl font-bold text-[#174b44]">{t(item.name, lang)}</h2><p className="mt-2 min-h-10 text-sm leading-relaxed text-[#688079]">{t(item.description, lang)}</p><div className="mt-5 flex items-center justify-between"><span className="inline-flex items-center gap-1 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> {item.cost}</span><button type="button" onClick={() => buy(item)} disabled={owned || !canBuy} className={`rounded-full px-4 py-2 text-sm font-bold transition ${owned ? 'bg-[#e6f1eb] text-[#33705f]' : canBuy ? 'bg-[#e8755f] text-[#fff7e8] hover:-translate-y-0.5' : 'bg-[#e3e6d9] text-[#688079]'}`} data-testid={`button-buy-${item.id}`}>{owned ? t({ en: 'Owned', ar: 'تم الشراء' }, lang) : canBuy ? t({ en: 'Buy', ar: 'اشترِ' }, lang) : t({ en: 'Keep playing', ar: 'واصل اللعب' }, lang)}</button></div></article>; })}</section><p className="mt-8 text-center text-sm font-semibold text-[#688079]">{t({ en: `${summary.completed} of ${summary.totalWorlds} worlds complete. Finish more worlds to unlock bigger rewards.`, ar: `اكتمل ${summary.completed} من ${summary.totalWorlds} عالماً. أكمل عوالم أكثر لفتح مكافآت أكبر.` }, lang)}</p></div>;
 }
 
 type Choice = { label: Copy; good: boolean; note: Copy };
@@ -705,6 +824,11 @@ function Admin({ lang }: { lang: Lang }) {
   return <div className="mx-auto max-w-[1440px] px-5 py-8 lg:px-10 lg:py-12"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#e6f1eb] px-3 py-1.5 text-xs font-bold uppercase tracking-[.15em] text-[#33705f]"><BarChart3 className="h-3.5 w-3.5" /> {t({ en: 'Demo dashboard', ar: 'لوحة تجريبية' }, lang)}</div><h1 className="font-display text-5xl font-semibold tracking-[-.06em] text-[#174b44]">{t({ en: 'The learning trail, in view.', ar: 'مسار التعلم، أمامك.' }, lang)}</h1><p className="mt-3 max-w-xl text-[#6b7e76]">{t({ en: 'A local snapshot of games, players, levels, and activity. No backend data is connected yet.', ar: 'لقطة محلية للألعاب واللاعبين والمستويات والنشاط. لا توجد بيانات خادم متصلة بعد.' }, lang)}</p></div><button onClick={() => setShowNote((value) => !value)} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#c8d2c7] bg-[#fcf8f0] px-5 py-3 text-sm font-bold text-[#174b44] hover:border-[#174b44]" data-testid="button-dashboard-note"><CircleHelp className="h-4 w-4" /> {t({ en: 'About this demo', ar: 'عن هذه التجربة' }, lang)}</button></div>{showNote && <div className="mt-5 rounded-2xl border border-[#e6cc8a] bg-[#fff3cc] px-5 py-4 text-sm font-semibold text-[#66532f]" role="status" data-testid="status-dashboard-note">{t({ en: 'Demo data combines a few Abu Dhabi player profiles with the player saved on this device.', ar: 'تجمع البيانات التجريبية بين ملفات لاعبين من أبوظبي واللاعب المحفوظ على هذا الجهاز.' }, lang)}</div>}<section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[{ icon: Users, label: { en: 'Named players', ar: 'اللاعبون' }, value: players.length.toString(), detail: 'Across this snapshot' }, { icon: Gamepad2, label: { en: 'Game worlds', ar: 'عوالم الألعاب' }, value: gameBlueprints.length.toString(), detail: 'All 3 levels playable' }, { icon: BarChart3, label: { en: 'Average progress', ar: 'متوسط التقدم' }, value: `${totalProgress}%`, detail: 'Across all trails' }, { icon: Coins, label: { en: 'Coins in play', ar: 'العملات' }, value: players.reduce((sum, player) => sum + player.coins, 0).toString(), detail: 'Collected locally' }].map(({ icon: Icon, label, value, detail }) => <div key={value + detail} className="rounded-[22px] border border-[#dfd2bd] bg-[#fcf8f0] p-5 shadow-soft"><div className="flex items-center justify-between"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#efe1bf] text-[#174b44]"><Icon className="h-5 w-5" /></div><span className="font-display text-3xl font-bold text-[#174b44]" data-testid={`metric-${String(label.en).toLowerCase().replace(' ', '-')}`}>{value}</span></div><p className="mt-6 text-sm font-bold text-[#174b44]">{t(label, lang)}</p><p className="mt-1 text-xs text-[#7b8a82]">{detail}</p></div>)}</section><section className="mt-8 grid gap-6 lg:grid-cols-[1.35fr_.65fr]"><div className="overflow-hidden rounded-[24px] border border-[#dfd2bd] bg-[#fcf8f0]"><div className="flex items-center justify-between border-b border-[#dfd2bd] px-5 py-5 sm:px-7"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Player activity', ar: 'نشاط اللاعبين' }, lang)}</p><h2 className="mt-1 font-display text-2xl font-bold text-[#174b44]">{t({ en: 'Learners on the trail', ar: 'المتعلمون في المسار' }, lang)}</h2></div><span className="rounded-full bg-[#e6f1eb] px-3 py-1 text-xs font-bold text-[#33705f]">Local demo</span></div><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-start"><thead className="bg-[#f3eadb] text-xs uppercase tracking-[.12em] text-[#7a897f]"><tr><th className="px-5 py-3 text-start font-bold sm:px-7">Player</th><th className="px-4 py-3 text-start font-bold">Level</th><th className="px-4 py-3 text-start font-bold">Progress</th><th className="px-4 py-3 text-start font-bold">Coins</th><th className="px-4 py-3 text-start font-bold">Last active</th></tr></thead><tbody>{players.map((player) => <tr key={player.name} className="border-t border-[#eee3d2]"><td className="px-5 py-4 sm:px-7"><div className="flex items-center gap-3"><span className={`grid h-9 w-9 place-items-center rounded-full ${player.tone} font-display text-xs font-bold text-[#174b44]`}>{player.initials}</span><span className="font-bold text-[#174b44]" data-testid={`player-name-${player.initials}`}>{player.name}</span></div></td><td className="px-4 py-4 text-sm font-semibold text-[#557068]">{player.level}</td><td className="px-4 py-4"><div className="flex items-center gap-2"><div className="h-2 w-20 overflow-hidden rounded-full bg-[#e2e7dd]"><div className="h-full rounded-full bg-[#33705f]" style={{ width: `${player.progress}%` }} /></div><span className="text-xs font-bold text-[#557068]">{player.progress}%</span></div></td><td className="px-4 py-4 text-sm font-bold text-[#174b44]">{player.coins}</td><td className="px-4 py-4 text-xs font-semibold text-[#7a897f]">{player.lastActive}</td></tr>)}</tbody></table></div></div><div className="rounded-[24px] bg-[#174b44] p-6 text-[#fff4df]"><p className="text-xs font-bold uppercase tracking-[.16em] text-[#f2c95c]">{t({ en: 'Game summary', ar: 'ملخص الألعاب' }, lang)}</p><h2 className="mt-2 font-display text-2xl font-bold">{t({ en: 'Worlds taking shape', ar: 'عوالم تتشكل' }, lang)}</h2><div className="mt-7 space-y-5">{[{ name: 'Eco Future', status: 'Playable', value: `${totalProgress}%`, color: '#f2c95c' }, { name: 'Our Heritage', status: 'Playable · 3 levels', value: '68%', color: '#71a695' }, { name: 'Color Focus', status: 'Playable · 3 levels', value: '41%', color: '#e8755f' }].map((game) => <div key={game.name}><div className="flex items-center justify-between text-sm"><span className="font-bold">{game.name}</span><span className="text-[#b7d1c5]">{game.status}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-[#397467]"><div className="h-full rounded-full" style={{ width: game.value, backgroundColor: game.color }} /></div><p className="mt-1 text-end text-xs font-bold text-[#b7d1c5]">{game.value} ready</p></div>)}</div><Link href="/library" className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[#f2c95c] hover:text-[#fff4df]" data-testid="link-dashboard-library">{t({ en: 'View all game worlds', ar: 'عرض جميع العوالم' }, lang)} <ArrowRight className="h-4 w-4 rtl:rotate-180" /></Link></div></section></div>;
 }
 
+function AdminRoute({ lang }: { lang: Lang }) {
+  if (hasAdminSession()) return <Admin lang={lang} />;
+  return <div className="mx-auto max-w-[760px] px-5 py-16 text-center lg:px-10"><div className="rounded-[28px] border border-[#dfd2bd] bg-[#fcf8f0] p-8"><LockKeyhole className="mx-auto h-10 w-10 text-[#e8755f]" /><h1 className="mt-5 font-display text-3xl font-bold text-[#174b44]">{t({ en: 'Admin access only', ar: 'الدخول للمشرف فقط' }, lang)}</h1><p className="mx-auto mt-3 max-w-md text-[#688079]">{t({ en: 'The dashboard is reserved for teachers and administrators. Players can follow their progress and spend points in their own area.', ar: 'لوحة المتابعة مخصصة للمعلمين والمشرفين. يستطيع اللاعبون متابعة تقدمهم وإنفاق نقاطهم في منطقتهم الخاصة.' }, lang)}</p><Link href="/player" className="mt-6 inline-flex rounded-full bg-[#2140a8] px-5 py-3 font-bold text-white" data-testid="link-admin-blocked-player">{t({ en: 'Open my progress', ar: 'افتح تقدمي' }, lang)}</Link></div></div>;
+}
+
 function RootPage({ lang }: { lang: Lang }) {
   const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
   return profile ? <Home lang={lang} /> : <Welcome lang={lang} />;
@@ -717,7 +841,7 @@ function GameRoute({ lang }: { lang: Lang }) {
 }
 
 function RouterContent({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void }) {
-  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoRoute lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/admin" component={() => <Admin lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
+  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoRoute lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/store" component={() => <Store lang={lang} />} /><Route path="/player" component={() => <PlayerProgress lang={lang} />} /><Route path="/admin" component={() => <AdminRoute lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
 }
 
 function App() {
