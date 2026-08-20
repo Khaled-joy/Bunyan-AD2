@@ -1,0 +1,399 @@
+{
+  "meta": {
+    "pack": "content-pack-v1",
+    "version": "1.0",
+    "languages": ["en", "ar"],
+    "cycles": {
+      "1": { "grades": [1, 2, 3, 4], "ages": "6-9" },
+      "2": { "grades": [5, 6, 7, 8], "ages": "10-13" },
+      "3": { "grades": [9, 10, 11, 12], "ages": "14-17" }
+    },
+    "components": ["coreLifeSkills", "cognitive", "practical", "personalGrowth", "socialCohesion", "transformative"],
+    "note": "Seed bank. Every game needs ~40 items per level before public launch; this pack gives the working structure plus a playable first set. Add items by appending to the arrays — no code changes required."
+  },
+
+  "our_heritage": {
+    "component": "coreLifeSkills",
+    "secondary": "socialCohesion",
+    "assessed": true,
+    "levels": [
+      {
+        "level": 1, "cycle": 1, "items": [
+          {
+            "id": "HER-L1-01", "type": "order",
+            "prompt": { "en": "Put the steps of wudu in the right order.", "ar": "رتّب خطوات الوضوء بالترتيب الصحيح." },
+            "steps": [
+              { "id": "s1", "en": "Make the intention (niyyah)", "ar": "النية" },
+              { "id": "s2", "en": "Wash your hands", "ar": "غسل اليدين" },
+              { "id": "s3", "en": "Wash your face", "ar": "غسل الوجه" },
+              { "id": "s4", "en": "Wash your arms up to the elbows", "ar": "غسل اليدين إلى المرفقين" },
+              { "id": "s5", "en": "Wash your feet up to the ankles", "ar": "غسل القدمين إلى الكعبين" }
+            ],
+            "answer": ["s1", "s2", "s3", "s4", "s5"],
+            "explain": { "en": "We begin with the intention, then wash from the top down — hands, face, arms, feet.", "ar": "نبدأ بالنية ثم نغسل من الأعلى إلى الأسفل: اليدان، الوجه، الذراعان، القدمان." },
+            "sparks": 10
+          },
+          {
+            "id": "HER-L1-02", "type": "mcq",
+            "prompt": { "en": "How many emirates make up the United Arab Emirates?", "ar": "كم إمارة تتكوّن منها دولة الإمارات العربية المتحدة؟" },
+            "options": [
+              { "id": "a", "en": "Five", "ar": "خمس" },
+              { "id": "b", "en": "Six", "ar": "ست" },
+              { "id": "c", "en": "Seven", "ar": "سبع" },
+              { "id": "d", "en": "Nine", "ar": "تسع" }
+            ],
+            "answer": "c",
+            "explain": { "en": "Abu Dhabi, Dubai, Sharjah, Ajman, Umm Al Quwain, Fujairah and Ras Al Khaimah.", "ar": "أبوظبي ودبي والشارقة وعجمان وأم القيوين والفجيرة ورأس الخيمة." },
+            "sparks": 10
+          },
+          {
+            "id": "HER-L1-03", "type": "mcq",
+            "prompt": { "en": "How many prayers do Muslims pray each day?", "ar": "كم صلاة يصلّي المسلم في اليوم؟" },
+            "options": [
+              { "id": "a", "en": "Three", "ar": "ثلاث" },
+              { "id": "b", "en": "Five", "ar": "خمس" },
+              { "id": "c", "en": "Seven", "ar": "سبع" },
+              { "id": "d", "en": "Ten", "ar": "عشر" }
+            ],
+            "answer": "b",
+            "explain": { "en": "Fajr, Dhuhr, Asr, Maghrib and Isha.", "ar": "الفجر والظهر والعصر والمغرب والعشاء." },
+            "sparks": 10
+          },
+          {
+            "id": "HER-L1-04", "type": "memory_match",
+            "prompt": { "en": "Match each symbol to what it means.", "ar": "طابق كل رمز بما يدل عليه." },
+            "pairs": [
+              { "a": { "en": "Falcon", "ar": "الصقر" }, "b": { "en": "National bird", "ar": "الطائر الوطني" } },
+              { "a": { "en": "Ghaf tree", "ar": "شجرة الغاف" }, "b": { "en": "National tree", "ar": "الشجرة الوطنية" } },
+              { "a": { "en": "Arabian oryx", "ar": "المها العربي" }, "b": { "en": "National animal", "ar": "الحيوان الوطني" } },
+              { "a": { "en": "2 December", "ar": "٢ ديسمبر" }, "b": { "en": "National Day", "ar": "اليوم الوطني" } }
+            ],
+            "sparks": 10
+          }
+        ]
+      },
+      {
+        "level": 2, "cycle": 2, "items": [
+          {
+            "id": "HER-L2-01", "type": "order",
+            "prompt": { "en": "Order the steps of wudu.", "ar": "رتّب خطوات الوضوء." },
+            "steps": [
+              { "id": "s1", "en": "Intention (niyyah)", "ar": "النية" },
+              { "id": "s2", "en": "Say Bismillah", "ar": "التسمية (بسم الله)" },
+              { "id": "s3", "en": "Wash the hands three times", "ar": "غسل الكفين ثلاثًا" },
+              { "id": "s4", "en": "Rinse the mouth", "ar": "المضمضة" },
+              { "id": "s5", "en": "Rinse the nose", "ar": "الاستنشاق" },
+              { "id": "s6", "en": "Wash the face three times", "ar": "غسل الوجه ثلاثًا" },
+              { "id": "s7", "en": "Wash the arms to the elbows", "ar": "غسل اليدين إلى المرفقين" },
+              { "id": "s8", "en": "Wipe the head (masah)", "ar": "مسح الرأس" }
+            ],
+            "answer": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"],
+            "explain": { "en": "Mouth and nose come before the face; wiping the head follows the arms.", "ar": "المضمضة والاستنشاق قبل غسل الوجه، ومسح الرأس بعد غسل الذراعين." },
+            "sparks": 15
+          },
+          {
+            "id": "HER-L2-02", "type": "mcq",
+            "prompt": { "en": "Who was the founding father and first president of the UAE?", "ar": "من هو الأب المؤسس وأول رئيس لدولة الإمارات؟" },
+            "options": [
+              { "id": "a", "en": "Sheikh Zayed bin Sultan Al Nahyan", "ar": "الشيخ زايد بن سلطان آل نهيان" },
+              { "id": "b", "en": "Sheikh Rashid bin Saeed Al Maktoum", "ar": "الشيخ راشد بن سعيد آل مكتوم" },
+              { "id": "c", "en": "Sheikh Saqr bin Mohammed Al Qasimi", "ar": "الشيخ صقر بن محمد القاسمي" },
+              { "id": "d", "en": "Sheikh Ahmed bin Rashid Al Mualla", "ar": "الشيخ أحمد بن راشد المعلا" }
+            ],
+            "answer": "a",
+            "explain": { "en": "Sheikh Zayed led the union declared at Union House in 1971 and served as the country's first president.", "ar": "قاد الشيخ زايد قيام الاتحاد الذي أُعلن في دار الاتحاد عام ١٩٧١ وكان أول رئيس للدولة." },
+            "sparks": 15
+          },
+          {
+            "id": "HER-L2-03", "type": "mcq",
+            "prompt": { "en": "How many surahs are in the Quran?", "ar": "كم عدد سور القرآن الكريم؟" },
+            "options": [
+              { "id": "a", "en": "99", "ar": "٩٩" },
+              { "id": "b", "en": "110", "ar": "١١٠" },
+              { "id": "c", "en": "114", "ar": "١١٤" },
+              { "id": "d", "en": "120", "ar": "١٢٠" }
+            ],
+            "answer": "c",
+            "explain": { "en": "The Quran has 114 surahs, beginning with Al-Fatihah.", "ar": "القرآن الكريم يحتوي على ١١٤ سورة، أولها سورة الفاتحة." },
+            "sparks": 15
+          },
+          {
+            "id": "HER-L2-04", "type": "memory_match",
+            "prompt": { "en": "Match each heritage practice to its description.", "ar": "طابق كل ممارسة تراثية بوصفها." },
+            "pairs": [
+              { "a": { "en": "Al Sadu", "ar": "السدو" }, "b": { "en": "Traditional Bedouin weaving", "ar": "نسيج بدوي تقليدي" } },
+              { "a": { "en": "Falconry", "ar": "الصقارة" }, "b": { "en": "Hunting alongside a trained bird", "ar": "الصيد بواسطة طائر مدرَّب" } },
+              { "a": { "en": "Pearl diving", "ar": "الغوص على اللؤلؤ" }, "b": { "en": "The old economy before oil", "ar": "الاقتصاد القديم قبل النفط" } },
+              { "a": { "en": "Al Ayyala", "ar": "العيّالة" }, "b": { "en": "A performance with rows, sticks and drums", "ar": "أداء بالصفوف والعصي والطبول" } }
+            ],
+            "sparks": 15
+          }
+        ]
+      },
+      {
+        "level": 3, "cycle": 3, "items": [
+          {
+            "id": "HER-L3-01", "type": "order",
+            "prompt": { "en": "Order the full sequence of wudu, right side before left.", "ar": "رتّب خطوات الوضوء كاملة، مع تقديم اليمين على اليسار." },
+            "steps": [
+              { "id": "s1", "en": "Intention", "ar": "النية" },
+              { "id": "s2", "en": "Bismillah", "ar": "التسمية" },
+              { "id": "s3", "en": "Wash hands ×3", "ar": "غسل الكفين ثلاثًا" },
+              { "id": "s4", "en": "Rinse mouth ×3", "ar": "المضمضة ثلاثًا" },
+              { "id": "s5", "en": "Rinse nose ×3", "ar": "الاستنشاق والاستنثار ثلاثًا" },
+              { "id": "s6", "en": "Wash face ×3", "ar": "غسل الوجه ثلاثًا" },
+              { "id": "s7", "en": "Wash right arm then left, to the elbows", "ar": "غسل اليد اليمنى ثم اليسرى إلى المرفقين" },
+              { "id": "s8", "en": "Wipe the head", "ar": "مسح الرأس" },
+              { "id": "s9", "en": "Wipe the ears", "ar": "مسح الأذنين" },
+              { "id": "s10", "en": "Wash right foot then left, to the ankles", "ar": "غسل القدم اليمنى ثم اليسرى إلى الكعبين" }
+            ],
+            "answer": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"],
+            "explain": { "en": "The ears are wiped with the head, and the right limb precedes the left throughout.", "ar": "تُمسح الأذنان مع الرأس، ويُقدَّم العضو الأيمن على الأيسر في كل غسل." },
+            "sparks": 20
+          },
+          {
+            "id": "HER-L3-02", "type": "mcq",
+            "prompt": { "en": "Which UAE site is inscribed on the UNESCO World Heritage List?", "ar": "أي موقع إماراتي مُدرج على قائمة اليونسكو للتراث العالمي؟" },
+            "options": [
+              { "id": "a", "en": "The Cultural Sites of Al Ain", "ar": "المواقع الثقافية في العين" },
+              { "id": "b", "en": "Jebel Jais", "ar": "جبل جيس" },
+              { "id": "c", "en": "Liwa Oasis", "ar": "واحة ليوا" },
+              { "id": "d", "en": "Sir Bani Yas Island", "ar": "جزيرة صير بني ياس" }
+            ],
+            "answer": "a",
+            "explain": { "en": "Hafit, Hili, Bidaa Bint Saud and the Oases of Al Ain were inscribed in 2011 — the country's first World Heritage listing.", "ar": "أُدرجت مواقع حفيت وهيلي وبدع بنت سعود وواحات العين عام ٢٠١١، وهي أول إدراج للدولة في التراث العالمي." },
+            "sparks": 20
+          },
+          {
+            "id": "HER-L3-03", "type": "mcq",
+            "prompt": { "en": "Which pillar of Islam is obligatory once in a lifetime for those who are able?", "ar": "أي ركن من أركان الإسلام يجب مرة واحدة في العمر على المستطيع؟" },
+            "options": [
+              { "id": "a", "en": "Salah", "ar": "الصلاة" },
+              { "id": "b", "en": "Zakah", "ar": "الزكاة" },
+              { "id": "c", "en": "Sawm", "ar": "الصوم" },
+              { "id": "d", "en": "Hajj", "ar": "الحج" }
+            ],
+            "answer": "d",
+            "explain": { "en": "Hajj is required once in a lifetime for a Muslim with the physical and financial means.", "ar": "الحج واجب مرة واحدة في العمر على المسلم المستطيع بدنيًا وماليًا." },
+            "sparks": 20
+          },
+          {
+            "id": "HER-L3-04", "type": "mcq",
+            "prompt": { "en": "Where was the union of the UAE declared on 2 December 1971?", "ar": "أين أُعلن قيام اتحاد دولة الإمارات في ٢ ديسمبر ١٩٧١؟" },
+            "options": [
+              { "id": "a", "en": "Qasr Al Hosn, Abu Dhabi", "ar": "قصر الحصن، أبوظبي" },
+              { "id": "b", "en": "Union House, Dubai", "ar": "دار الاتحاد، دبي" },
+              { "id": "c", "en": "Al Bidya, Fujairah", "ar": "البدية، الفجيرة" },
+              { "id": "d", "en": "Al Hisn Fort, Sharjah", "ar": "حصن الشارقة" }
+            ],
+            "answer": "b",
+            "explain": { "en": "The rulers signed the union declaration at Union House in Jumeirah, Dubai.", "ar": "وقّع الحكام إعلان الاتحاد في دار الاتحاد بمنطقة جميرا في دبي." },
+            "sparks": 20
+          }
+        ]
+      }
+    ]
+  },
+
+  "word_journey": {
+    "component": "coreLifeSkills",
+    "secondary": "cognitive",
+    "tracks": ["ar", "en"],
+    "levels": [
+      {
+        "level": 1, "cycle": 1, "items": [
+          { "id": "WJ-AR-L1-01", "lang": "ar", "type": "missing_letter", "word": "قلم", "display": "قـ_ـم", "prompt": { "ar": "أي حرف يكمل الكلمة؟", "en": "Which letter completes the word?" }, "options": ["ل", "ن", "ب", "ت"], "answer": "ل", "image": "pen", "sparks": 8 },
+          { "id": "WJ-AR-L1-02", "lang": "ar", "type": "picture_word", "prompt": { "ar": "ما اسم ما تراه في الصورة؟", "en": "What is in the picture?" }, "image": "sun", "options": ["شمس", "قمر", "نجم", "سحاب"], "answer": "شمس", "sparks": 8 },
+          { "id": "WJ-AR-L1-03", "lang": "ar", "type": "picture_word", "prompt": { "ar": "ما اسم ما تراه في الصورة؟", "en": "What is in the picture?" }, "image": "camel", "options": ["جمل", "حصان", "قط", "طير"], "answer": "جمل", "sparks": 8 },
+          { "id": "WJ-EN-L1-01", "lang": "en", "type": "missing_letter", "word": "cat", "display": "c _ t", "prompt": { "en": "Which letter completes the word?", "ar": "أي حرف يكمل الكلمة؟" }, "options": ["a", "o", "u", "e"], "answer": "a", "image": "cat", "sparks": 8 },
+          { "id": "WJ-EN-L1-02", "lang": "en", "type": "picture_word", "prompt": { "en": "What is in the picture?", "ar": "ما اسم ما تراه في الصورة؟" }, "image": "boat", "options": ["boat", "goat", "coat", "note"], "answer": "boat", "sparks": 8 },
+          { "id": "WJ-EN-L1-03", "lang": "en", "type": "missing_letter", "word": "star", "display": "s t _ r", "prompt": { "en": "Which letter completes the word?", "ar": "أي حرف يكمل الكلمة؟" }, "options": ["a", "i", "o", "e"], "answer": "a", "image": "star", "sparks": 8 }
+        ]
+      },
+      {
+        "level": 2, "cycle": 2, "items": [
+          { "id": "WJ-AR-L2-01", "lang": "ar", "type": "complete_sentence", "prompt": { "ar": "أكمل الجملة: ذهب أحمد إلى ____ ليشتري الخبز.", "en": "Complete: Ahmed went to the ____ to buy bread." }, "options": ["المخبز", "المدرسة", "الملعب", "المستشفى"], "answer": "المخبز", "sparks": 12 },
+          { "id": "WJ-AR-L2-02", "lang": "ar", "type": "complete_sentence", "prompt": { "ar": "أكمل الجملة: الصقر طائر ____ يطير بسرعة عالية.", "en": "Complete: The falcon is a ____ bird that flies very fast." }, "options": ["سريع", "بطيء", "ثقيل", "صغير"], "answer": "سريع", "sparks": 12 },
+          { "id": "WJ-AR-L2-03", "lang": "ar", "type": "spelling", "prompt": { "ar": "أي كلمة مكتوبة بشكل صحيح؟", "en": "Which word is spelled correctly?" }, "options": ["مدرسة", "مدرصة", "مضرسة", "مدرثة"], "answer": "مدرسة", "sparks": 12 },
+          { "id": "WJ-EN-L2-01", "lang": "en", "type": "complete_sentence", "prompt": { "en": "Complete: The library was quiet, ____ Sara could hear the clock.", "ar": "أكمل الجملة." }, "options": ["so", "but", "because", "although"], "answer": "so", "sparks": 12 },
+          { "id": "WJ-EN-L2-02", "lang": "en", "type": "spelling", "prompt": { "en": "Which word is spelled correctly?", "ar": "أي كلمة مكتوبة بشكل صحيح؟" }, "options": ["necessary", "neccessary", "necesary", "neccesary"], "answer": "necessary", "sparks": 12 },
+          { "id": "WJ-EN-L2-03", "lang": "en", "type": "odd_one_out", "prompt": { "en": "Which word does not belong?", "ar": "أي كلمة لا تنتمي للمجموعة؟" }, "options": ["dune", "oasis", "glacier", "wadi"], "answer": "glacier", "explain": { "en": "The others are all desert landforms.", "ar": "البقية جميعها تضاريس صحراوية." }, "sparks": 12 }
+        ]
+      },
+      {
+        "level": 3, "cycle": 3, "items": [
+          { "id": "WJ-AR-L3-01", "lang": "ar", "type": "synonym", "prompt": { "ar": "ما مرادف كلمة \"سخاء\"؟", "en": "What is a synonym for 'generosity'?" }, "options": ["كرم", "بخل", "غضب", "صمت"], "answer": "كرم", "sparks": 18 },
+          { "id": "WJ-AR-L3-02", "lang": "ar", "type": "comprehension", "passage": { "ar": "كان الغوص على اللؤلؤ مهنة شاقة، يغيب فيها البحّارة عن أهلهم أشهرًا في البحر، ومع ذلك كانوا يعودون بأغانٍ لا بشكوى.", "en": "Pearl diving was hard work; sailors were away from their families for months, yet they returned with songs rather than complaints." }, "prompt": { "ar": "ماذا يوحي قول الكاتب \"يعودون بأغانٍ لا بشكوى\"؟", "en": "What does 'returned with songs rather than complaints' suggest?" }, "options": ["الصبر والرضا", "الخوف من البحر", "كثرة المال", "قصر مدة الرحلة"], "answer": "الصبر والرضا", "sparks": 18 },
+          { "id": "WJ-EN-L3-01", "lang": "en", "type": "comprehension", "passage": { "en": "The ghaf tree survives where almost nothing else does, sending roots down thirty metres to reach water no other plant can find.", "ar": "تعيش شجرة الغاف حيث لا يعيش غيرها، وتمد جذورها ثلاثين مترًا لتصل إلى ماء لا تبلغه نبتة أخرى." }, "prompt": { "en": "The passage mainly emphasises the ghaf tree's —", "ar": "يركّز النص أساسًا على —" }, "options": ["resilience", "height", "colour", "fruit"], "answer": "resilience", "sparks": 18 },
+          { "id": "WJ-EN-L3-02", "lang": "en", "type": "synonym", "prompt": { "en": "Which word is closest in meaning to 'meticulous'?", "ar": "أي كلمة أقرب في المعنى إلى 'meticulous'؟" }, "options": ["careful", "hasty", "generous", "loud"], "answer": "careful", "sparks": 18 }
+        ]
+      }
+    ]
+  },
+
+  "numeracy_marathon": {
+    "component": "cognitive",
+    "secondary": "practical",
+    "note": "Questions are selected by GRADE, not level. Timer per question: Cycle 1 = 20s falling to 12s; Cycle 2 = 18s to 10s; Cycle 3 = 20s to 12s.",
+    "banks": [
+      {
+        "cycle": 1, "grades": [1, 2, 3, 4], "items": [
+          { "id": "NUM-C1-01", "prompt": { "en": "7 + 5 = ?", "ar": "٧ + ٥ = ؟" }, "options": ["11", "12", "13", "14"], "answer": "12", "sparks": 5 },
+          { "id": "NUM-C1-02", "prompt": { "en": "14 − 6 = ?", "ar": "١٤ − ٦ = ؟" }, "options": ["6", "7", "8", "9"], "answer": "8", "sparks": 5 },
+          { "id": "NUM-C1-03", "prompt": { "en": "6 × 3 = ?", "ar": "٦ × ٣ = ؟" }, "options": ["15", "18", "21", "24"], "answer": "18", "sparks": 5 },
+          { "id": "NUM-C1-04", "prompt": { "en": "What is half of 20?", "ar": "ما نصف العدد ٢٠؟" }, "options": ["5", "8", "10", "12"], "answer": "10", "sparks": 5 },
+          { "id": "NUM-C1-05", "prompt": { "en": "Which number is even?", "ar": "أي عدد زوجي؟" }, "options": ["7", "9", "12", "15"], "answer": "12", "sparks": 5 },
+          { "id": "NUM-C1-06", "prompt": { "en": "A shape has 3 sides. What is it?", "ar": "شكل له ٣ أضلاع. ما هو؟" }, "options": ["Square / مربع", "Triangle / مثلث", "Circle / دائرة", "Hexagon / سداسي"], "answer": "Triangle / مثلث", "sparks": 5 }
+        ]
+      },
+      {
+        "cycle": 2, "grades": [5, 6, 7, 8], "items": [
+          { "id": "NUM-C2-01", "prompt": { "en": "What is 25% of 80?", "ar": "كم يساوي ٢٥٪ من ٨٠؟" }, "options": ["15", "20", "25", "40"], "answer": "20", "sparks": 8 },
+          { "id": "NUM-C2-02", "prompt": { "en": "3/4 of 20 = ?", "ar": "٣/٤ من ٢٠ = ؟" }, "options": ["12", "14", "15", "16"], "answer": "15", "sparks": 8 },
+          { "id": "NUM-C2-03", "prompt": { "en": "Area of a rectangle 7 cm × 4 cm?", "ar": "مساحة مستطيل ٧ سم × ٤ سم؟" }, "options": ["11 cm²", "22 cm²", "28 cm²", "34 cm²"], "answer": "28 cm²", "sparks": 8 },
+          { "id": "NUM-C2-04", "prompt": { "en": "0.5 + 0.25 = ?", "ar": "٠٫٥ + ٠٫٢٥ = ؟" }, "options": ["0.55", "0.75", "0.85", "1.25"], "answer": "0.75", "sparks": 8 },
+          { "id": "NUM-C2-05", "prompt": { "en": "The ratio 12:18 simplified is —", "ar": "النسبة ١٢:١٨ بأبسط صورة هي —" }, "options": ["2:3", "3:4", "4:6", "6:9"], "answer": "2:3", "sparks": 8 },
+          { "id": "NUM-C2-06", "prompt": { "en": "Average of 4, 8, 10, 14?", "ar": "متوسط الأعداد ٤، ٨، ١٠، ١٤؟" }, "options": ["8", "9", "10", "11"], "answer": "9", "sparks": 8 }
+        ]
+      },
+      {
+        "cycle": 3, "grades": [9, 10, 11, 12], "items": [
+          { "id": "NUM-C3-01", "prompt": { "en": "Solve: 3x + 5 = 20", "ar": "حل المعادلة: ٣س + ٥ = ٢٠" }, "options": ["x = 3", "x = 5", "x = 6", "x = 15"], "answer": "x = 5", "sparks": 12 },
+          { "id": "NUM-C3-02", "prompt": { "en": "15% of 240 = ?", "ar": "١٥٪ من ٢٤٠ = ؟" }, "options": ["24", "30", "36", "42"], "answer": "36", "sparks": 12 },
+          { "id": "NUM-C3-03", "prompt": { "en": "A fair die is rolled. P(number > 4) = ?", "ar": "يُرمى حجر نرد عادل. احتمال ظهور عدد أكبر من ٤ = ؟" }, "options": ["1/6", "1/3", "1/2", "2/3"], "answer": "1/3", "sparks": 12 },
+          { "id": "NUM-C3-04", "prompt": { "en": "Factorise: x² − 9", "ar": "حلّل: س² − ٩" }, "options": ["(x−3)(x+3)", "(x−9)(x+1)", "(x−3)²", "x(x−9)"], "answer": "(x−3)(x+3)", "sparks": 12 },
+          { "id": "NUM-C3-05", "prompt": { "en": "A price rises from 200 to 250 AED. Percentage increase?", "ar": "ارتفع سعر من ٢٠٠ إلى ٢٥٠ درهمًا. ما نسبة الزيادة؟" }, "options": ["20%", "25%", "30%", "50%"], "answer": "25%", "sparks": 12 },
+          { "id": "NUM-C3-06", "prompt": { "en": "Slope of the line through (1,2) and (4,11)?", "ar": "ميل المستقيم المار بالنقطتين (١،٢) و(٤،١١)؟" }, "options": ["2", "3", "4", "9"], "answer": "3", "sparks": 12 }
+        ]
+      }
+    ]
+  },
+
+  "balance_basket": {
+    "component": "personalGrowth",
+    "secondary": "coreLifeSkills",
+    "safety": {
+      "no_personal_calorie_target": true,
+      "no_intake_logging": true,
+      "no_body_or_weight_content": true,
+      "no_good_bad_food_labels": true,
+      "framing": "everyday vs sometimes foods; balance and energy, never restriction",
+      "negative_feedback_forbidden": "Unbalanced plates receive additive suggestions only."
+    },
+    "food_items": [
+      { "id": "F01", "en": "Whole-wheat bread", "ar": "خبز القمح الكامل", "group": "grains", "tier": "everyday" },
+      { "id": "F02", "en": "Cheese", "ar": "جبن", "group": "dairy", "tier": "everyday" },
+      { "id": "F03", "en": "Dates", "ar": "تمر", "group": "fruit", "tier": "everyday" },
+      { "id": "F04", "en": "Laban", "ar": "لبن", "group": "dairy", "tier": "everyday" },
+      { "id": "F05", "en": "Eggs", "ar": "بيض", "group": "protein", "tier": "everyday" },
+      { "id": "F06", "en": "Grilled chicken", "ar": "دجاج مشوي", "group": "protein", "tier": "everyday" },
+      { "id": "F07", "en": "Rice", "ar": "أرز", "group": "grains", "tier": "everyday" },
+      { "id": "F08", "en": "Cucumber & tomato salad", "ar": "سلطة خيار وطماطم", "group": "vegetables", "tier": "everyday" },
+      { "id": "F09", "en": "Lentil soup", "ar": "شوربة عدس", "group": "protein", "tier": "everyday" },
+      { "id": "F10", "en": "Water", "ar": "ماء", "group": "water", "tier": "everyday" },
+      { "id": "F11", "en": "Fizzy drink", "ar": "مشروب غازي", "group": "sugary", "tier": "sometimes" },
+      { "id": "F12", "en": "Chocolate bar", "ar": "لوح شوكولاتة", "group": "sugary", "tier": "sometimes" },
+      { "id": "F13", "en": "Potato crisps", "ar": "رقائق البطاطس", "group": "savoury_snack", "tier": "sometimes" },
+      { "id": "F14", "en": "Fresh orange", "ar": "برتقال طازج", "group": "fruit", "tier": "everyday" },
+      { "id": "F15", "en": "Nuts", "ar": "مكسرات", "group": "protein", "tier": "everyday" }
+    ],
+    "levels": [
+      {
+        "level": 1, "cycle": 1, "task": { "en": "Build a balanced breakfast and lunch.", "ar": "كوّن فطورًا وغداءً متوازنين." },
+        "items": [
+          { "id": "BB-L1-01", "type": "mcq", "prompt": { "en": "Which drink is best with every meal?", "ar": "أي مشروب هو الأفضل مع كل وجبة؟" }, "options": [{ "id": "a", "en": "Water", "ar": "الماء" }, { "id": "b", "en": "Fizzy drink", "ar": "مشروب غازي" }, { "id": "c", "en": "Sweetened juice", "ar": "عصير محلّى" }, { "id": "d", "en": "Energy drink", "ar": "مشروب طاقة" }], "answer": "a", "sparks": 8 },
+          { "id": "BB-L1-02", "type": "mcq", "prompt": { "en": "Which of these gives your body protein to grow?", "ar": "أي من هذه يعطي جسمك البروتين للنمو؟" }, "options": [{ "id": "a", "en": "Eggs", "ar": "البيض" }, { "id": "b", "en": "Crisps", "ar": "رقائق البطاطس" }, { "id": "c", "en": "Fizzy drink", "ar": "مشروب غازي" }, { "id": "d", "en": "Sugar", "ar": "السكر" }], "answer": "a", "sparks": 8 },
+          { "id": "BB-L1-03", "type": "mcq", "prompt": { "en": "How often is a fizzy drink a 'sometimes' choice?", "ar": "كم مرة يُعدّ المشروب الغازي خيار \"أحيانًا\"؟" }, "options": [{ "id": "a", "en": "Every day", "ar": "كل يوم" }, { "id": "b", "en": "With every meal", "ar": "مع كل وجبة" }, { "id": "c", "en": "Once in a while, not daily", "ar": "بين حين وآخر، لا يوميًا" }, { "id": "d", "en": "Three times a day", "ar": "ثلاث مرات يوميًا" }], "answer": "c", "sparks": 8 },
+          { "id": "BB-L1-04", "type": "mcq", "prompt": { "en": "Which plate is more balanced?", "ar": "أي طبق أكثر توازنًا؟" }, "options": [{ "id": "a", "en": "Rice + chicken + salad", "ar": "أرز + دجاج + سلطة" }, { "id": "b", "en": "Rice + rice + bread", "ar": "أرز + أرز + خبز" }], "answer": "a", "sparks": 8 }
+        ]
+      },
+      {
+        "level": 2, "cycle": 2, "task": { "en": "Build a full day: breakfast, lunch, dinner, one snack.", "ar": "كوّن يومًا كاملًا: فطور، غداء، عشاء، وجبة خفيفة." },
+        "items": [
+          { "id": "BB-L2-01", "type": "mcq", "prompt": { "en": "Which carries more energy per 100 g?", "ar": "أيهما يحتوي طاقة أكثر لكل ١٠٠ جرام؟" }, "options": [{ "id": "a", "en": "Dates", "ar": "التمر" }, { "id": "b", "en": "Cucumber", "ar": "الخيار" }], "answer": "a", "explain": { "en": "Dates are energy-dense — useful before sport, which is exactly why they're a traditional food for breaking a fast.", "ar": "التمر غني بالطاقة، ولذلك يُستخدم تقليديًا عند الإفطار وقبل النشاط البدني." }, "sparks": 12 },
+          { "id": "BB-L2-02", "type": "mcq", "prompt": { "en": "Which macronutrient does rice mainly provide?", "ar": "أي عنصر غذائي رئيسي يوفره الأرز أساسًا؟" }, "options": [{ "id": "a", "en": "Protein", "ar": "بروتين" }, { "id": "b", "en": "Carbohydrate", "ar": "كربوهيدرات" }, { "id": "c", "en": "Fat", "ar": "دهون" }, { "id": "d", "en": "Fibre only", "ar": "ألياف فقط" }], "answer": "b", "sparks": 12 },
+          { "id": "BB-L2-03", "type": "mcq", "prompt": { "en": "Which snack keeps you full longer?", "ar": "أي وجبة خفيفة تُشعرك بالشبع لوقت أطول؟" }, "options": [{ "id": "a", "en": "A handful of nuts", "ar": "حفنة مكسرات" }, { "id": "b", "en": "A sweet biscuit", "ar": "بسكويت محلّى" }], "answer": "a", "explain": { "en": "Protein and fibre slow digestion, so fullness lasts longer.", "ar": "البروتين والألياف يبطئان الهضم فيدوم الشبع أطول." }, "sparks": 12 },
+          { "id": "BB-L2-04", "type": "mcq", "prompt": { "en": "Roughly how much of a plate should be vegetables and fruit?", "ar": "ما النسبة التقريبية من الطبق التي ينبغي أن تكون خضارًا وفاكهة؟" }, "options": [{ "id": "a", "en": "About a tenth", "ar": "نحو العُشر" }, { "id": "b", "en": "About a quarter", "ar": "نحو الربع" }, { "id": "c", "en": "About a half", "ar": "نحو النصف" }, { "id": "d", "en": "None", "ar": "لا شيء" }], "answer": "c", "sparks": 12 }
+        ]
+      },
+      {
+        "level": 3, "cycle": 3, "task": { "en": "Plan a day for an athlete, a student on exam day, and a family iftar.", "ar": "خطّط ليوم رياضي، ويوم امتحان لطالب، وإفطار عائلي." },
+        "items": [
+          { "id": "BB-L3-01", "type": "mcq", "prompt": { "en": "Which gives about 9 calories per gram — more than double the others?", "ar": "أيها يعطي نحو ٩ سعرات لكل جرام، أي أكثر من ضعف غيره؟" }, "options": [{ "id": "a", "en": "Protein", "ar": "البروتين" }, { "id": "b", "en": "Carbohydrate", "ar": "الكربوهيدرات" }, { "id": "c", "en": "Fat", "ar": "الدهون" }, { "id": "d", "en": "Fibre", "ar": "الألياف" }], "answer": "c", "explain": { "en": "Fat provides about 9 kcal/g; protein and carbohydrate about 4 kcal/g each.", "ar": "الدهون تعطي نحو ٩ سعرات/جرام، بينما البروتين والكربوهيدرات نحو ٤ لكل منهما." }, "sparks": 18 },
+          { "id": "BB-L3-02", "type": "mcq", "prompt": { "en": "Reading a label: 'per 100 g' vs 'per serving' — why does it matter?", "ar": "على الملصق الغذائي: \"لكل ١٠٠ جرام\" مقابل \"لكل حصة\" — لماذا يهم الفرق؟" }, "options": [{ "id": "a", "en": "A pack often contains several servings", "ar": "العبوة غالبًا تحتوي عدة حصص" }, { "id": "b", "en": "They always mean the same", "ar": "المعنى واحد دائمًا" }, { "id": "c", "en": "Per serving is always larger", "ar": "الحصة دائمًا أكبر" }, { "id": "d", "en": "Only shops use it", "ar": "تستخدمه المتاجر فقط" }], "answer": "a", "sparks": 18 },
+          { "id": "BB-L3-03", "type": "mcq", "prompt": { "en": "Best pre-match meal about 2 hours before playing?", "ar": "أفضل وجبة قبل المباراة بساعتين تقريبًا؟" }, "options": [{ "id": "a", "en": "Rice with chicken and vegetables", "ar": "أرز مع دجاج وخضار" }, { "id": "b", "en": "A large fried meal", "ar": "وجبة مقلية كبيرة" }, { "id": "c", "en": "Nothing at all", "ar": "لا شيء إطلاقًا" }, { "id": "d", "en": "Only a fizzy drink", "ar": "مشروب غازي فقط" }], "answer": "a", "sparks": 18 },
+          { "id": "BB-L3-04", "type": "mcq", "prompt": { "en": "Why is water emphasised in a hot climate?", "ar": "لماذا يُشدَّد على الماء في المناخ الحار؟" }, "options": [{ "id": "a", "en": "Fluid lost through sweat must be replaced", "ar": "لتعويض السوائل المفقودة بالتعرّق" }, { "id": "b", "en": "It adds protein", "ar": "لأنه يضيف بروتينًا" }, { "id": "c", "en": "It replaces meals", "ar": "لأنه يحل محل الوجبات" }, { "id": "d", "en": "It has calories", "ar": "لأنه يحتوي سعرات" }], "answer": "a", "sparks": 18 }
+        ]
+      }
+    ]
+  },
+
+  "truth_lab": {
+    "component": "coreLifeSkills",
+    "secondary": "cognitive",
+    "levels": [
+      {
+        "level": 1, "cycle": 1, "items": [
+          { "id": "TL-L1-01", "type": "sort3", "claim": { "en": "The UAE has seven emirates.", "ar": "دولة الإمارات تتكوّن من سبع إمارات." }, "answer": "true", "sparks": 8 },
+          { "id": "TL-L1-02", "type": "sort3", "claim": { "en": "Camels can drink a whole swimming pool in one go.", "ar": "يستطيع الجمل أن يشرب حوض سباحة كاملًا دفعة واحدة." }, "answer": "false", "sparks": 8 },
+          { "id": "TL-L1-03", "type": "sort3", "claim": { "en": "Tomorrow will be the hottest day of the year.", "ar": "غدًا سيكون أحرّ يوم في السنة." }, "answer": "not_sure", "explain": { "en": "Nobody can know this yet — 'not sure' is the honest answer.", "ar": "لا أحد يعرف ذلك بعد، و\"لست متأكدًا\" هي الإجابة الصادقة." }, "sparks": 12 },
+          { "id": "TL-L1-04", "type": "sort3", "claim": { "en": "This new game is the best game ever made.", "ar": "هذه اللعبة الجديدة هي أفضل لعبة على الإطلاق." }, "answer": "not_sure", "explain": { "en": "This is an opinion, not something that can be checked.", "ar": "هذا رأي وليس أمرًا يمكن التحقق منه." }, "sparks": 12 }
+        ]
+      },
+      {
+        "level": 2, "cycle": 2, "items": [
+          { "id": "TL-L2-01", "type": "evidence_match", "claim": { "en": "A new metro line opened in the city this week.", "ar": "افتُتح خط مترو جديد في المدينة هذا الأسبوع." }, "evidence": [{ "id": "e1", "en": "A friend's group message", "ar": "رسالة من صديق في مجموعة" }, { "id": "e2", "en": "A photo with no date or location", "ar": "صورة بلا تاريخ أو موقع" }, { "id": "e3", "en": "The transport authority's official page", "ar": "الصفحة الرسمية لهيئة المواصلات" }], "answer": "e3", "sparks": 15 },
+          { "id": "TL-L2-02", "type": "evidence_match", "claim": { "en": "A certain drink cures colds.", "ar": "مشروب معيّن يشفي من الزكام." }, "evidence": [{ "id": "e1", "en": "An advert by the company selling it", "ar": "إعلان من الشركة التي تبيعه" }, { "id": "e2", "en": "A health ministry advisory", "ar": "نشرة من وزارة الصحة" }, { "id": "e3", "en": "A video with 2 million views", "ar": "مقطع حصد مليوني مشاهدة" }], "answer": "e2", "explain": { "en": "View counts measure popularity, not accuracy — and a seller is never a neutral source.", "ar": "عدد المشاهدات يقيس الانتشار لا الدقة، والبائع ليس مصدرًا محايدًا أبدًا." }, "sparks": 15 }
+        ]
+      },
+      {
+        "level": 3, "cycle": 3, "items": [
+          { "id": "TL-L3-01", "type": "newsroom", "story": { "en": "A photo spreads showing a rare bird in a city park. Four sources disagree about where and when it was taken.", "ar": "تنتشر صورة لطائر نادر في حديقة بالمدينة، وتختلف أربعة مصادر حول مكان وزمان التقاطها." }, "sources": [{ "id": "s1", "en": "The account that posted it first, no location given", "ar": "الحساب الذي نشرها أولًا دون ذكر الموقع" }, { "id": "s2", "en": "A birdwatching society statement confirming a sighting", "ar": "بيان من جمعية مراقبة الطيور يؤكد الرصد" }, { "id": "s3", "en": "A reverse image search showing the same photo from 2019", "ar": "بحث عكسي بالصورة يظهرها منشورة عام ٢٠١٩" }, { "id": "s4", "en": "Hundreds of replies saying 'I saw it too'", "ar": "مئات الردود تقول \"رأيته أنا أيضًا\"" }], "verdict_options": [{ "id": "v1", "en": "True as posted", "ar": "صحيحة كما نُشرت" }, { "id": "v2", "en": "The bird may be real, but this photo is old", "ar": "قد يكون الطائر حقيقيًا لكن الصورة قديمة" }, { "id": "v3", "en": "Entirely invented", "ar": "ملفّقة بالكامل" }], "answer_verdict": "v2", "answer_sources": ["s2", "s3"], "scoring": { "verdict_weight": 0.4, "justification_weight": 0.6 }, "sparks": 25 }
+        ]
+      }
+    ]
+  },
+
+  "innovation_lab": {
+    "component": "transformative",
+    "secondary": "practical",
+    "levels": [
+      {
+        "level": 1, "cycle": 1, "task": { "en": "Teach the robot by sorting 10 icons.", "ar": "علّم الروبوت بترتيب ١٠ أيقونات." },
+        "training_sets": [
+          { "id": "IL-L1-01", "category_a": { "en": "Fruit", "ar": "فاكهة" }, "category_b": { "en": "Not fruit", "ar": "ليست فاكهة" }, "icons": [{ "icon": "date", "answer": "a" }, { "icon": "orange", "answer": "a" }, { "icon": "carrot", "answer": "b" }, { "icon": "bread", "answer": "b" }, { "icon": "banana", "answer": "a" }, { "icon": "fish", "answer": "b" }], "sparks": 10 },
+          { "id": "IL-L1-02", "category_a": { "en": "Floats", "ar": "يطفو" }, "category_b": { "en": "Sinks", "ar": "يغرق" }, "icons": [{ "icon": "wood", "answer": "a" }, { "icon": "stone", "answer": "b" }, { "icon": "leaf", "answer": "a" }, { "icon": "coin", "answer": "b" }, { "icon": "plastic_bottle", "answer": "a" }, { "icon": "key", "answer": "b" }], "sparks": 10 }
+        ]
+      },
+      {
+        "level": 2, "cycle": 2, "items": [
+          { "id": "IL-L2-01", "type": "find_the_flaw", "scenario": { "en": "The robot learned 'bird' from 20 photos — every one a falcon. It now says a penguin is not a bird.", "ar": "تعلّم الروبوت كلمة \"طائر\" من ٢٠ صورة، كلها صقور. والآن يقول إن البطريق ليس طائرًا." }, "prompt": { "en": "What went wrong?", "ar": "ما الخطأ الذي حدث؟" }, "options": [{ "id": "a", "en": "The examples were all too similar to each other", "ar": "كانت الأمثلة كلها متشابهة جدًا" }, { "id": "b", "en": "The robot needs a faster processor", "ar": "يحتاج الروبوت معالجًا أسرع" }, { "id": "c", "en": "Penguins are genuinely not birds", "ar": "البطريق فعلًا ليس طائرًا" }, { "id": "d", "en": "Twenty photos is far too many", "ar": "عشرون صورة عدد كبير جدًا" }], "answer": "a", "fix_task": { "en": "Add 3 examples that would fix it.", "ar": "أضف ٣ أمثلة تصحّح المشكلة." }, "fix_options": ["penguin", "ostrich", "another falcon", "hummingbird", "eagle", "bat"], "fix_answer": ["penguin", "ostrich", "hummingbird"], "sparks": 18 },
+          { "id": "IL-L2-02", "type": "find_the_flaw", "scenario": { "en": "A robot sorting school photos learned that anyone holding a football is a boy.", "ar": "روبوت يصنّف صور المدرسة تعلّم أن كل من يحمل كرة قدم هو ولد." }, "prompt": { "en": "Why is that a problem?", "ar": "لماذا تُعدّ هذه مشكلة؟" }, "options": [{ "id": "a", "en": "It learned a pattern from the data that isn't a real rule", "ar": "تعلّم نمطًا من البيانات وليس قاعدة حقيقية" }, { "id": "b", "en": "Footballs are hard to see", "ar": "من الصعب رؤية الكرة" }, { "id": "c", "en": "It needs more photos of footballs", "ar": "يحتاج صورًا أكثر للكرات" }, { "id": "d", "en": "Robots cannot see colour", "ar": "الروبوتات لا ترى الألوان" }], "answer": "a", "sparks": 18 }
+        ]
+      },
+      {
+        "level": 3, "cycle": 3, "items": [
+          { "id": "IL-L3-01", "type": "rule_builder", "mission": { "en": "Write 3 IF/THEN rules so the robot waters plants in a school garden.", "ar": "اكتب ٣ قواعد شرطية ليسقي الروبوت نباتات حديقة المدرسة." }, "rule_parts": { "conditions": [{ "en": "soil is dry", "ar": "التربة جافة" }, { "en": "it is raining", "ar": "المطر يهطل" }, { "en": "it is midday in summer", "ar": "الوقت ظهرًا في الصيف" }, { "en": "the tank is empty", "ar": "الخزان فارغ" }], "actions": [{ "en": "water the plant", "ar": "اسقِ النبتة" }, { "en": "wait", "ar": "انتظر" }, { "en": "alert a human", "ar": "نبّه إنسانًا" }] }, "edge_cases": [{ "en": "The soil is dry but it has just started raining.", "ar": "التربة جافة لكن المطر بدأ للتو." }, { "en": "The soil is dry and the tank is empty.", "ar": "التربة جافة والخزان فارغ." }, { "en": "The soil is dry at 1 pm in July.", "ar": "التربة جافة الساعة الواحدة ظهرًا في يوليو." }, { "en": "A sensor is broken and reports nothing.", "ar": "أحد الحساسات معطّل ولا يرسل قراءة." }, { "en": "The soil is wet but a plant looks droopy.", "ar": "التربة رطبة لكن النبتة تبدو ذابلة." }], "note": "No single rule set passes all 5 — the learning is that rules need exceptions and a human fallback. Score on how many edge cases are handled, and require a reflection on the one they couldn't solve.", "sparks": 30 }
+        ]
+      }
+    ]
+  },
+
+  "color_focus": {
+    "component": "cognitive",
+    "secondary": "personalGrowth",
+    "round_seconds": 60,
+    "levels": [
+      { "level": 1, "cycle": 1, "start_speed": 1.0, "speed_step_pct": 12, "speed_step_seconds": 15, "decoy_ratio": 0.3, "target_switches": 0, "obstacles": ["jump"], "palette": ["#FF7A59", "#2FA36B", "#0E6E6E", "#D4A537"], "sparks_per_1000_score": 10 },
+      { "level": 2, "cycle": 2, "start_speed": 1.3, "speed_step_pct": 12, "speed_step_seconds": 12, "decoy_ratio": 0.5, "target_switches": 1, "switch_at_seconds": [30], "obstacles": ["jump", "slide"], "palette": ["#FF7A59", "#2FA36B", "#0E6E6E", "#D4A537", "#1B2A4A"], "sparks_per_1000_score": 12 },
+      { "level": 3, "cycle": 3, "start_speed": 1.6, "speed_step_pct": 15, "speed_step_seconds": 10, "decoy_ratio": 0.65, "target_switches": 2, "switch_at_seconds": "random", "obstacles": ["jump", "slide", "moving_barrier"], "palette": ["#FF7A59", "#FF9E7A", "#2FA36B", "#57C08A", "#0E6E6E", "#D4A537"], "note": "Palette deliberately includes near-shades to raise discrimination difficulty. Every collectible must also carry a distinct SHAPE so colourblind players are never disadvantaged.", "sparks_per_1000_score": 15 }
+    ]
+  },
+
+  "reflection_prompts": [
+    { "id": "R1", "en": "One thing I would do differently next time is…", "ar": "شيء واحد سأفعله بشكل مختلف في المرة القادمة هو…" },
+    { "id": "R2", "en": "The hardest part was…", "ar": "أصعب جزء كان…" },
+    { "id": "R3", "en": "Something I learned that surprised me…", "ar": "شيء تعلّمته وفاجأني…" },
+    { "id": "R4", "en": "I want to get better at…", "ar": "أريد أن أتحسّن في…" }
+  ]
+}
