@@ -340,8 +340,8 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
       <section className="mx-auto grid min-h-[calc(100dvh-81px)] max-w-[1440px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:py-20">
         <div className="reveal text-center lg:text-start">
           <p className="mb-5 inline-flex rounded-full border border-[#b9d6c7] bg-[#e6f1eb] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#33705f]">{homeCopy({ en: 'ABU DHABI · A NEW WAY TO LEARN', ar: 'أبوظبي · طريقة جديدة للتعلّم' })}</p>
-          <h1 className="max-w-3xl font-display text-[clamp(2.8rem,6.5vw,6.4rem)] font-bold leading-[.94] tracking-[-.055em] text-[#174b44] text-balance">{homeCopy({ en: 'A world of knowledge starts with data.', ar: 'عالم من المعرفة يبدأ بالبيانات.' })}</h1>
-          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-[#557068] text-balance lg:mx-0 sm:text-xl">{homeCopy({ en: 'Bunayn AD gathers meaningful data through a new method: fun games that reveal how people think, choose, learn, and grow.', ar: 'يجمع بنيان أبوظبي بيانات مفيدة من خلال طريقة جديدة: ألعاب ممتعة تكشف كيف يفكر الناس ويختارون ويتعلمون وينمون.' })}</p>
+          <h1 className="max-w-3xl font-display text-[clamp(2.8rem,6.5vw,6.4rem)] font-bold leading-[.94] tracking-[-.055em] text-[#174b44] text-balance">{homeCopy({ en: 'A world of knowledge starts with data… and data can start with a game!', ar: 'عالم من المعرفة يبدأ بالبيانات... والبيانات قد تبدأ بلعبة!' })}</h1>
+          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-[#557068] text-balance lg:mx-0 sm:text-xl">{homeCopy({ en: 'Play opens the door to discovery: each choice helps us collect meaningful data and begin a journey of knowledge.', ar: 'يفتح اللعب باب الاكتشاف: فكل اختيار يساعدنا على جمع بيانات مفيدة وبدء رحلة من المعرفة.' })}</p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
             <button onClick={scrollToTrace} className="group inline-flex items-center gap-2 rounded-full bg-[#2140a8] px-6 py-3.5 font-bold text-white shadow-[0_6px_0_#152c79] transition hover:-translate-y-1 active:translate-y-1" aria-label={homeCopy({ en: 'Learn how Bunayn gathers data', ar: 'تعرّف كيف يجمع بنيان البيانات' })} data-testid="button-how-it-works">
               {homeCopy({ en: 'How it works', ar: 'كيف نعمل' })} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 rtl:rotate-180" />
@@ -357,11 +357,11 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
             <div className="absolute -bottom-24 -start-20 h-56 w-[130%] rounded-[50%] bg-[#b9d6c7]" />
             <div className="absolute bottom-0 end-0 h-28 w-40 rounded-tl-[100%] bg-[#e8755f]/75" />
             <img src={logoPath} alt="" className="relative z-10 mx-auto w-[min(90%,390px)] object-contain drop-shadow-[0_14px_16px_rgba(23,75,68,.2)]" />
-            <div className="relative z-10 mx-auto mt-7 grid max-w-sm grid-cols-3 gap-2 text-center text-xs font-bold text-[#174b44]">
-              {[{ label: { en: 'Play', ar: 'العب' }, color: 'bg-[#f4b60b]' }, { label: { en: 'Observe', ar: 'لاحظ' }, color: 'bg-[#16a7bc]' }, { label: { en: 'Learn', ar: 'تعلّم' }, color: 'bg-[#d8232a]' }].map((item) => <div key={item.label.en} className={`rounded-2xl ${item.color} px-2 py-2.5 text-white shadow-sm`}>{homeCopy(item.label)}</div>)}
+            <div className="relative z-10 mx-auto mt-7 grid max-w-sm grid-cols-2 gap-2 text-center text-xs font-bold text-[#174b44] sm:max-w-none sm:grid-cols-4">
+              {[{ label: { en: 'Play', ar: 'العب' }, color: 'bg-[#f4b60b]' }, { label: { en: 'Discover', ar: 'اكتشف' }, color: 'bg-[#16a7bc]' }, { label: { en: 'Collect data', ar: 'اجمع البيانات' }, color: 'bg-[#d8232a]' }, { label: { en: 'Begin a journey of knowledge', ar: 'وابدأ رحلة من المعرفة' }, color: 'bg-[#2140a8]' }].map((item) => <div key={item.label.en} className={`rounded-2xl ${item.color} px-2 py-2.5 text-white shadow-sm`}>{homeCopy(item.label)}</div>)}
             </div>
           </div>
-          <div className="absolute -bottom-5 -start-3 rounded-2xl border-2 border-white bg-[#fff3cc] px-4 py-3 shadow-soft sm:-start-7"><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-[#b35d4c]">{homeCopy({ en: 'The new method', ar: 'الطريقة الجديدة' })}</p><p className="mt-1 font-display font-bold text-[#174b44]">{homeCopy({ en: 'Fun games → useful data', ar: 'ألعاب ممتعة ← بيانات مفيدة' })}</p></div>
+          <div className="absolute -bottom-5 -start-3 rounded-2xl border-2 border-white bg-[#fff3cc] px-4 py-3 shadow-soft sm:-start-7"><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-[#b35d4c]">{homeCopy({ en: 'The new method', ar: 'الطريقة الجديدة' })}</p><p className="mt-1 font-display font-bold text-[#174b44]">{homeCopy({ en: 'From play to knowledge', ar: 'من اللعب إلى المعرفة' })}</p></div>
         </div>
       </section>
 
@@ -396,7 +396,7 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
       </section>
 
       <section className="bg-[#174b44] px-5 py-20 text-center text-white sm:px-10 sm:py-28">
-        <h2 className="mx-auto max-w-4xl font-display text-4xl font-bold leading-tight text-balance sm:text-6xl">{homeCopy({ en: 'A world of knowledge starts with data — and data can start with fun.', ar: 'عالم من المعرفة يبدأ بالبيانات، والبيانات يمكن أن تبدأ بالمتعة.' })}</h2>
+        <h2 className="mx-auto max-w-4xl font-display text-4xl font-bold leading-tight text-balance sm:text-6xl">{homeCopy({ en: 'A world of knowledge starts with data… and data can start with a game!', ar: 'عالم من المعرفة يبدأ بالبيانات... والبيانات قد تبدأ بلعبة!' })}</h2>
         <p className="mt-6 font-display text-xl font-bold text-[#f4b60b]">{homeCopy({ en: 'Bunayn AD — Games in. Insight out.', ar: 'بنيان أبوظبي — ألعاب ممتعة، وفهم أعمق.' })}</p>
       </section>
     </main>
