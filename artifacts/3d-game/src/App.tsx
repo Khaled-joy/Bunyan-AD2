@@ -365,7 +365,7 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
     <footer className="border-t-4 border-[#f4b60b] bg-[#2140a8] px-5 py-8 text-white sm:px-10">
       <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-start">
         <img src={logoPath} alt={homeCopy({ en: 'Bunayn AD — a world of knowledge', ar: 'بنيان أبوظبي — عالم من المعرفة' })} className="h-10 w-[120px] object-contain brightness-0 invert" />
-        <p className="text-sm font-semibold text-[#d7f0f5]">{homeCopy({ en: 'Bunayn AD · Abu Dhabi, UAE · hello@bunyan.ad', ar: 'بنيان أبوظبي · أبوظبي، الإمارات · hello@bunyan.ad' })}</p>
+        <p className="text-sm font-semibold text-[#d7f0f5]">{homeCopy({ en: 'Bunayn AD · Abu Dhabi, UAE', ar: 'بنيان أبوظبي · أبوظبي، الإمارات' })}</p>
       </div>
     </footer>
   </div>;
