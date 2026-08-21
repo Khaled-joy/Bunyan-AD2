@@ -341,7 +341,7 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
         <div className="reveal text-center lg:text-start">
           <p className="mb-5 inline-flex rounded-full border border-[#b9d6c7] bg-[#e6f1eb] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#33705f]">{homeCopy({ en: 'ABU DHABI · A NEW WAY TO LEARN', ar: 'أبوظبي · طريقة جديدة للتعلّم' })}</p>
           <h1 className="home-hero-title max-w-3xl font-display text-[clamp(2.8rem,6.5vw,6.4rem)] font-bold leading-[.94] tracking-[-.055em] text-[#174b44] text-balance">{homeCopy({ en: 'A world of knowledge starts with data… and data can start with a game!', ar: 'عالم من المعرفة يبدأ بالبيانات... والبيانات قد تبدأ بلعبة!' })}</h1>
-          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-[#557068] text-balance lg:mx-0 sm:text-xl">{homeCopy({ en: 'Play opens the door to discovery: each choice helps us collect meaningful data and begin a journey of knowledge.', ar: 'يفتح اللعب باب الاكتشاف: فكل اختيار يساعدنا على جمع بيانات مفيدة وبدء رحلة من المعرفة.' })}</p>
+          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-[#557068] text-balance lg:mx-0 sm:text-xl">{homeCopy({ en: 'Play opens the door to discovery: each choice helps us collect meaningful data and begin a journey of knowledge.', ar: 'تعلّم و ابدأ رحلة من المعرفة: كل اختيار يفتح باباً جديداً للاكتشاف.' })}</p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
             <button onClick={scrollToTrace} className="group inline-flex items-center gap-2 rounded-full bg-[#2140a8] px-6 py-3.5 font-bold text-white shadow-[0_6px_0_#152c79] transition hover:-translate-y-1 active:translate-y-1" aria-label={homeCopy({ en: 'Learn how Bunayn gathers data', ar: 'تعرّف كيف يجمع بنيان البيانات' })} data-testid="button-how-it-works">
               {homeCopy({ en: 'How it works', ar: 'كيف نعمل' })} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 rtl:rotate-180" />
@@ -987,7 +987,7 @@ function RouterContent({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) =>
 }
 
 function App() {
-  const [lang, setLang] = useLocal<Lang>('bunayn-language', 'en');
+  const [lang, setLang] = useLocal<Lang>('bunayn-language', 'ar');
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
