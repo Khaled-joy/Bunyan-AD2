@@ -231,3 +231,4 @@
 .home-orb { filter: blur(1px); opacity: .55; pointer-events: none; }
 .home-orb-yellow { background: radial-gradient(circle, rgba(244,182,11,.42) 0%, rgba(244,182,11,.08) 68%, transparent 72%); }
 .home-orb-coral { background: radial-gradient(circle, rgba(232,117,95,.3) 0%, rgba(232,117,95,.04) 68%, transparent 72%); }
+[dir="rtl"] .home-hero-title { letter-spacing: 0; line-height: 1.1; word-spacing: .08em; }
