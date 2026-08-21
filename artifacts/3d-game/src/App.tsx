@@ -5,6 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import logoPath from '@assets/image_1787208364235-transparent.png';
 import learningWorldPath from '@assets/generated_images/bunayn-learning-world.png';
+import hamdanPath from '@assets/Hamdan_logo_1787295278410.png';
+import hananPath from '@assets/hanan_logo_1787295278411.png';
 import { getColorFocusLevel, getContentCycle, getHeritageItem, getHeritageItemCount, getInnovationItem, getInnovationItemCount, getMenuItem, getMenuItemCount, getMenuTask, getNumeracyItem, getNumeracyItemCount, getPackCopy, getTruthItem, getTruthItemCount, getWordItem, getWordItemCount } from './contentPack';
 import {
   Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BarChart3, BookOpen, Check,
@@ -32,10 +34,15 @@ const gameLibraryCopy: Record<string, Copy> = {
 const t = (copy: Copy, lang: Lang) => (gameLibraryCopy[copy.en] ?? copy)[lang];
 const queryClient = new QueryClient();
 
-type PlayerProfile = { name: string; age: string; role: string; avatar: string; grade?: string; school?: string };
+type CharacterId = 'hanan' | 'hamdan';
+type PlayerProfile = { name: string; age: string; role: string; avatar: string; character?: CharacterId; grade?: string; school?: string };
 type PlayerRow = { name: string; initials: string; level: string; coins: number; progress: number; lastActive: string; tone: string };
 type StoreItem = { id: string; name: Copy; description: Copy; cost: number; icon: string; tone: string };
 type StoreState = { purchases: string[]; spentPoints: number };
+const playerCharacters: { id: CharacterId; name: Copy; role: Copy; image: string; tone: string }[] = [
+  { id: 'hanan', name: { en: 'Hanan', ar: 'حنان' }, role: { en: 'Female character', ar: 'الشخصية الأنثوية' }, image: hananPath, tone: 'coral' },
+  { id: 'hamdan', name: { en: 'Hamdan', ar: 'حمدان' }, role: { en: 'Male character', ar: 'الشخصية الذكورية' }, image: hamdanPath, tone: 'sky' },
+];
 
 const gameBlueprints = [
   { id: 'eco-future', title: { en: 'Clean Environment and Better Future', ar: 'بيئة نظيفة ومستقبل أفضل' }, eyebrow: { en: 'Ended', ar: 'انتهى' }, description: { en: 'Make small choices. Build a brighter Abu Dhabi.', ar: 'اختر بخطوات صغيرة وابنِ أبوظبي أكثر إشراقاً.' }, color: 'coral', icon: Leaf, playable: true },
@@ -187,6 +194,35 @@ function Logo({ compact = false }: { compact?: boolean }) {
   </Link>;
 }
 
+function useElapsedGameTimer(gameId: string, finished: boolean) {
+  const [seconds, setSeconds] = useState(0);
+  const wasFinished = useRef(finished);
+  useEffect(() => {
+    if (wasFinished.current && !finished) setSeconds(0);
+    wasFinished.current = finished;
+  }, [finished]);
+  useEffect(() => {
+    setSeconds(0);
+  }, [gameId]);
+  useEffect(() => {
+    if (finished) return;
+    const interval = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+    return () => window.clearInterval(interval);
+  }, [finished, gameId]);
+  return seconds;
+}
+
+function GameTimer({ gameId, lang, finished }: { gameId: string; lang: Lang; finished: boolean }) {
+  const seconds = useElapsedGameTimer(gameId, finished);
+  const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const remainingSeconds = (seconds % 60).toString().padStart(2, '0');
+  return <div className="flex items-center gap-1.5 rounded-full border border-[#c7ded1] bg-white px-3 py-2 text-sm font-bold text-[#174b44]" aria-label={t({ en: `Play time ${minutes}:${remainingSeconds}`, ar: `وقت اللعب ${minutes}:${remainingSeconds}` }, lang)}>
+    <Clock3 className="h-4 w-4 text-[#16a7bc]" />
+    <span className="text-[10px] uppercase tracking-[.1em] text-[#688079]">{t({ en: 'Time', ar: 'الوقت' }, lang)}</span>
+    <span data-testid={`text-${gameId}-timer`} dir="ltr">{minutes}:{remainingSeconds}</span>
+  </div>;
+}
+
 function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; setLang: (lang: Lang) => void }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -201,6 +237,7 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
   const isAdmin = hasAdminSession();
   const isActive = (path: string) => location === path;
   const initials = activeProfile?.avatar || activeProfile?.name?.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'GU';
+  const activeCharacter = playerCharacters.find((character) => character.id === activeProfile?.character);
   const nav = [
     { href: '/', label: { en: 'Home', ar: 'الرئيسية' }, id: 'home' },
     { href: '/library', label: { en: 'Game Library', ar: 'مكتبة الألعاب' }, id: 'library' },
@@ -219,7 +256,9 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
           <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="hidden items-center gap-2 rounded-full border border-[#d6e2e9] bg-white/80 px-3.5 py-2 text-xs font-bold text-[#0b6a79] transition hover:border-[#16a7bc] sm:flex" data-testid="button-language">
             <Globe2 className="h-4 w-4" /> {lang === 'en' ? 'العربية' : 'English'}
           </button>
-          <Link href={activeProfile ? '/' : '/login'} className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#f4b60b] bg-[#e7f8fb] font-display text-sm font-bold text-[#2140a8]" data-testid="link-player-profile" aria-label={activeProfile ? `Open ${activeProfile.name}'s game home` : 'Open player login'}>{initials}</Link>
+          <Link href={activeProfile ? '/' : '/login'} className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#f4b60b] bg-[#e7f8fb] font-display text-sm font-bold text-[#2140a8] shadow-sm" data-testid="link-player-profile" aria-label={activeProfile ? t({ en: `Open ${activeProfile.name}'s player profile`, ar: `افتح ملف اللاعب ${activeProfile.name}` }, lang) : t({ en: 'Open player login', ar: 'افتح دخول اللاعب' }, lang)}>
+            {activeCharacter ? <img src={activeCharacter.image} alt="" className="h-full w-full scale-[1.34] object-cover object-top" /> : initials}
+          </Link>
           <button onClick={() => setMenuOpen((open) => !open)} className="rounded-full p-2 text-[#2140a8] md:hidden" aria-label="Open menu" data-testid="button-menu"><Menu className="h-5 w-5" /></button>
         </div>
       </div>
@@ -382,10 +421,12 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
   const [age, setAge] = useState('');
   const [grade, setGrade] = useState('');
   const [school, setSchool] = useState('');
+  const [character, setCharacter] = useState<CharacterId | null>(null);
   const [error, setError] = useState('');
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!name.trim()) { setError(t({ en: 'Type your name to start.', ar: 'اكتب اسمك للبدء.' }, lang)); return; }
+    if (!character) { setError(t({ en: 'Choose Hanan or Hamdan to start.', ar: 'اختر حنان أو حمدان للبدء.' }, lang)); return; }
     if (!age) { setError(t({ en: 'Pick your age.', ar: 'اختر عمرك.' }, lang)); return; }
     if (!grade) { setError(t({ en: 'Pick your grade.', ar: 'اختر صفك.' }, lang)); return; }
     if (!school.trim()) { setError(t({ en: 'Type or choose your school.', ar: 'اكتب أو اختر مدرستك.' }, lang)); return; }
@@ -397,14 +438,15 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
       sessionStorage.removeItem('bunayn-player-profile');
       sessionStorage.removeItem('bunayn-admin-session');
     } catch { /* browser storage may be unavailable */ }
-    setProfile({ name: cleanName, age, grade, school: school.trim(), role: 'Player', avatar: cleanName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() });
+    setProfile({ name: cleanName, age, grade, school: school.trim(), role: 'Player', avatar: cleanName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase(), character });
     setLocation('/library');
   };
   const playAsGuest = () => {
+    if (!character) { setError(t({ en: 'Choose Hanan or Hamdan to start.', ar: 'اختر حنان أو حمدان للبدء.' }, lang)); return; }
     if (!age) { setError(t({ en: 'Pick your age first.', ar: 'اختر عمرك أولاً.' }, lang)); return; }
     try {
       sessionStorage.setItem('bunayn-guest-mode', 'true');
-      sessionStorage.setItem('bunayn-player-profile', JSON.stringify({ name: 'Guest Player', age, role: 'Guest', avatar: 'GP' } satisfies PlayerProfile));
+      sessionStorage.setItem('bunayn-player-profile', JSON.stringify({ name: 'Guest Player', age, role: 'Guest', avatar: 'GP', character } satisfies PlayerProfile));
       sessionStorage.removeItem('bunayn-admin-session');
     } catch { /* session storage may be unavailable */ }
     setLocation('/library');
@@ -427,6 +469,17 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
             <label htmlFor="player-name">{t({ en: 'Your name', ar: 'الاسم' }, lang)}</label>
             <input id="player-name" type="text" maxLength={24} autoComplete="given-name" autoFocus value={name} onChange={(event) => { setName(event.target.value); setError(''); }} placeholder={t({ en: 'Salem', ar: 'سالم' }, lang)} data-testid="input-player-name" />
           </div>
+          <fieldset className="login-field login-character-field">
+            <legend className="login-label">{t({ en: 'Choose your character', ar: 'اختر شخصيتك' }, lang)}</legend>
+            <p className="login-character-help">{t({ en: 'Pick the friend who will join you in every game.', ar: 'اختر الصديق الذي سينضم إليك في كل لعبة.' }, lang)}</p>
+            <div className="login-character-grid">
+              {playerCharacters.map((option) => <button key={option.id} type="button" onClick={() => { setCharacter(option.id); setError(''); }} className={`login-character-card ${character === option.id ? 'is-selected' : ''}`} aria-pressed={character === option.id} data-testid={`button-character-${option.id}`}>
+                <span className={`login-character-photo ${option.tone}`}><img src={option.image} alt="" /></span>
+                <span className="login-character-name">{t(option.name, lang)}</span>
+                <span className="login-character-role">{t(option.role, lang)}</span>
+              </button>)}
+            </div>
+          </fieldset>
           <fieldset className="login-field">
             <legend className="login-label">{t({ en: 'Your age', ar: 'العمر' }, lang)}</legend>
             <div className="login-pills" data-testid="group-player-age">{playerAges.map((value) => <label key={value} className={`login-pill ${age === value ? 'is-selected' : ''}`}><input type="radio" name="player-age" value={value} checked={age === value} onChange={() => { setAge(value); setError(''); }} data-testid={`button-age-${value}`} /><span>{value}</span></label>)}</div>
@@ -598,9 +651,9 @@ function GameRoom({ lang, gameId }: { lang: Lang; gameId: string }) {
 
   const Icon = game.icon;
   return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12">
-    <div className="mb-7 flex items-center justify-between">
+    <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
       <Link href="/library" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-library"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game library', ar: 'العودة إلى مكتبة الألعاب' }, lang)}</Link>
-      <div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-generic-game-coins">{progress.coins}</span></div>
+      <div className="flex flex-wrap items-center justify-end gap-2"><GameTimer gameId={game.id} lang={lang} finished={progress.finished} /><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-generic-game-coins">{progress.coins}</span></div></div>
     </div>
     <section className="overflow-hidden rounded-[30px] bg-[#174b44] text-[#fff4df] shadow-float">
       <div className="grid lg:grid-cols-[.72fr_1.28fr]">
@@ -861,7 +914,7 @@ function EcoRoute({ lang }: { lang: Lang }) {
   };
   const restart = () => { setRound(0); setScore(0); setCoins(120); setFinished(false); setPacked(null); };
   return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12">
-    <div className="mb-7 flex items-center justify-between"><Link href="/library" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-home"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game library', ar: 'العودة إلى مكتبة الألعاب' }, lang)}</Link><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-game-coins">{coins}</span></div></div>
+    <div className="mb-7 flex flex-wrap items-center justify-between gap-3"><Link href="/library" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-home"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game library', ar: 'العودة إلى مكتبة الألعاب' }, lang)}</Link><div className="flex flex-wrap items-center justify-end gap-2"><GameTimer gameId="eco-future" lang={lang} finished={finished} /><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-game-coins">{coins}</span></div></div></div>
     <section className="overflow-hidden rounded-[30px] bg-[#174b44] text-[#fff4df] shadow-float"><div className="grid lg:grid-cols-[.78fr_1.22fr]"><div className="relative min-h-[270px] overflow-hidden bg-[#2d675d] p-7 sm:p-10"><div className="absolute -end-16 -top-14 h-52 w-52 rounded-full bg-[#f2c95c]" /><div className="absolute bottom-[-60px] start-[-25px] h-48 w-72 rotate-[-17deg] rounded-[50%] bg-[#71a695]" /><div className="absolute bottom-[-65px] end-[-25px] h-48 w-64 rotate-[12deg] rounded-[50%] bg-[#3b8876]" /><div className="relative"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-[#d7e8df]"><Leaf className="h-4 w-4 text-[#f2c95c]" /> Clean Environment and Better Future</div><h1 className="mt-8 max-w-xs font-display text-5xl font-semibold leading-[.9] tracking-[-.06em]">{t({ en: 'Pack a brighter route.', ar: 'جهّز مساراً أكثر إشراقاً.' }, lang)}</h1><p className="mt-4 max-w-xs text-sm leading-relaxed text-[#c0dbcf]">{t({ en: 'Choose one action to carry forward at every stop.', ar: 'اختر فعلاً واحداً تحمله معك في كل محطة.' }, lang)}</p></div></div><div className="bg-[#fffaf2] p-6 text-[#174b44] sm:p-10">
       {finished ? <div className="flex min-h-[390px] flex-col justify-center text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#f2c95c]"><Trophy className="h-9 w-9" /></div><p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Route complete', ar: 'اكتمل المسار' }, lang)}</p><h2 className="mt-2 font-display text-4xl font-bold tracking-tight">{t({ en: 'You packed room for tomorrow.', ar: 'جهزت مساحة للغد.' }, lang)}</h2><div className="mx-auto mt-7 flex items-center gap-6 rounded-2xl bg-[#e6f1eb] px-6 py-4"><div><span className="block font-display text-2xl font-bold">{score}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'score', ar: 'النقاط' }, lang)}</span></div><div className="h-9 w-px bg-[#c7ded1]" /><div><span className="block font-display text-2xl font-bold">{coins}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'coins', ar: 'العملات' }, lang)}</span></div></div><button onClick={restart} className="mx-auto mt-7 inline-flex items-center gap-2 rounded-full bg-[#e8755f] px-6 py-3 font-bold text-[#fff7e8]" data-testid="button-restart-game"><RotateCcw className="h-4 w-4" /> {t({ en: 'Pack a new route', ar: 'جهّز مساراً جديداً' }, lang)}</button></div> : <div><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Route stop', ar: 'محطة المسار' }, lang)} {round + 1} / {rounds.length}</p><div className="mt-3 flex gap-1.5">{rounds.map((_, index) => <span key={index} className={`h-1.5 w-10 rounded-full ${index <= round ? 'bg-[#e8755f]' : 'bg-[#dfd2bd]'}`} />)}</div></div><div className="flex items-center gap-2 rounded-full bg-[#e6f1eb] px-3 py-1.5 text-sm font-bold"><Star className="h-4 w-4 text-[#e8755f]" /> <span>{score}</span></div></div><p className="mt-9 text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Pick an action token for your route', ar: 'اختر رمز فعل لمسارك' }, lang)}</p><h2 className="mt-3 max-w-xl font-display text-3xl font-bold leading-tight sm:text-4xl">{t(current.prompt, lang)}</h2><p className="mt-3 max-w-xl text-[#688079]">{t(current.detail, lang)}</p><div className="mt-6 min-h-20 rounded-[22px] border-2 border-dashed border-[#c8d2c7] bg-[#efe4cf] p-3"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#688079]">{t({ en: 'Your route pack', ar: 'حقيبة مسارك' }, lang)}</p>{packed === null ? <p className="mt-2 text-sm font-semibold text-[#9aaba0]">{t({ en: 'Choose one action below.', ar: 'اختر فعلاً واحداً أدناه.' }, lang)}</p> : <p className="signature-pop mt-2 rounded-xl bg-[#fffaf2] px-3 py-2 text-sm font-bold">{t(current.options[packed].label, lang)}</p>}</div><div className="mt-5 grid gap-3">{current.options.map((option, index) => <button key={index} onClick={() => packed === null && setPacked(index)} className={`flex items-center gap-4 rounded-2xl border p-4 text-start transition ${packed === index ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-eco-token-${index + 1}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#efe4cf] font-display font-bold">{index + 1}</span><span className="flex-1 text-sm font-semibold">{t(option.label, lang)}</span></button>)}</div>{packed !== null && <LevelFeedback good={good} message={good ? current.options[packed].note : { en: 'This token will not help the route. Unpack it and choose a kinder next step.', ar: 'لن يساعد هذا الرمز المسار. أعده واختر خطوة تالية ألطف.' }} lang={lang} onNext={continueRoute} onRetry={() => setPacked(null)} final={round >= rounds.length - 1} />}</div>}
     </div></div></section><p className="mt-5 text-center text-xs font-semibold text-[#688079]">{t({ en: 'Touch an action token, or use Tab then Enter/Space to pack your route', ar: 'اضغط رمز فعل، أو استخدم Tab ثم Enter أو Space لتجهيز مسارك' }, lang)}</p>
@@ -1276,9 +1329,9 @@ function SignatureFrame({ game, lang, progress, onRestart, instruction, children
 }) {
   const Icon = game.icon;
   return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12">
-    <div className="mb-7 flex items-center justify-between gap-3">
+    <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
       <Link href="/library" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-library"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game library', ar: 'العودة إلى مكتبة الألعاب' }, lang)}</Link>
-      <div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid={`text-${game.id}-coins`}>{progress.coins}</span></div>
+      <div className="flex flex-wrap items-center justify-end gap-2"><GameTimer gameId={game.id} lang={lang} finished={progress.finished} /><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid={`text-${game.id}-coins`}>{progress.coins}</span></div></div>
     </div>
     <section className="overflow-hidden rounded-[30px] bg-[#174b44] text-[#fff4df] shadow-float">
       <div className="grid lg:grid-cols-[.72fr_1.28fr]">
