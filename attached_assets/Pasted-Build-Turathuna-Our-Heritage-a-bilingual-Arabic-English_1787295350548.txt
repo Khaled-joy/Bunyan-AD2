@@ -1,0 +1,159 @@
+Build تراثنا / Turathuna — "Our Heritage", a bilingual (Arabic/English) educational mini-game about UAE heritage, national identity, and Islamic knowledge, for ages 6–17.
+
+Stack: React + Vite + Tailwind CSS + Framer Motion. Single-page app, no backend, no database. Progress, stars, and badges live in React state for the session. Sound via Howler.js. Full RTL support — when Arabic is active, set dir="rtl" and mirror all layouts, progress bars, and drag tracks.
+
+1. Brand palette — locked to the logo
+
+Create src/theme.js with this token set. Every colour in the app must come from here. No hardcoded colours anywhere else in the codebase.
+
+js
+export const brand = {
+  primary:   '#______', // main logo colour — headers, primary buttons, timer ring
+  secondary: '#______', // second logo colour — panels, level cards, borders
+  accent:    '#______', // brightest logo colour — stars, rewards, celebration only
+  bgLight:   '#______', // pale tint of primary — page background
+  bgDeep:    '#______', // dark tint of primary — body text, overlays, footer
+  correct:   '#______', // success state, from the logo family
+  incorrect: '#______', // soft, desaturated warm tone — never harsh red
+};
+
+Wire these into tailwind.config.js as custom colours so they can be used as bg-primary, text-bgDeep, border-accent, etc.
+
+Application rules:
+
+Page background: bgLight, with an Al Sadu weave geometric pattern (repeating zigzag/diamond motif) overlaid at 6% opacity in primary.
+Question cards: near-white, 3px secondary border, soft shadow. Hover → border shifts to accent.
+Timer ring: primary → accent at 40% remaining → incorrect at 15%.
+Stars and badges: always accent. Nothing else uses accent, so reward moments stay visually special.
+Correct answer: card fills correct at 15% opacity, solid correct border, particle burst in accent, soft ding.
+Wrong answer: gentle shake, 2px incorrect border only. No fill, no flash, no buzzer. Keep it kind for young children.
+Level cards: Level 1 secondary, Level 2 primary, Level 3 bgDeep — same family, deepening with difficulty.
+Locked levels: bgDeep at 30% opacity with a lock icon in bgLight.
+Icons: two-tone only — bgDeep line work, accent fills. No per-icon custom colours.
+UAE flag colours (green, red, white, black) appear only when the flag itself is depicted. They are content, not theme.
+Every text/background pair must pass WCAG AA (4.5:1). If a logo colour is too light for body text, use bgDeep for text and keep the light colour for fills and borders.
+2. Look & feel
+Tone: warm modern-Emirati. A children's museum in Abu Dhabi, not a cartoon and not a corporate dashboard.
+Typography: Arabic — Tajawal or Cairo, bold. English — Poppins. Large, rounded, high contrast, generous line height.
+Icon set needed: falcon, camel, ghaf tree, Arabian oryx, dhow boat, pearl, dallah coffee pot, date palm, kandura, abaya, mosque, crescent moon, Kaaba, prayer mat, Qur'an, lantern, Burj Khalifa, Hope Probe, oil derrick, Al Sadu loom, henna hand, luqaimat, harees bowl, majlis cushion, falconry glove, UAE flag, seven emirate crests.
+Motion: cards flip and bounce in on load. Answers respond instantly. Transitions under 300ms.
+Timer: a circular ring drains clockwise around the question card. Soft tick under 5 seconds. On timeout the card dims, the correct answer is revealed for 2 seconds, then auto-advance.
+Progress: a dhow boat silhouette in primary sails across a secondary line at the top of the screen as the player advances, wake in accent.
+Rewards: 1–3 gold stars per mini-game based on accuracy plus time remaining. Completing a level unlocks a collectible heritage badge — Level 1 the pearl, Level 2 the falcon, Level 3 the ghaf tree — displayed on a trophy shelf on the home screen.
+3. Screens
+Home — تراثنا in large calligraphic-style Arabic type, EN/AR toggle in the corner, "ابدأ / Start" button, trophy shelf below.
+Level select — three cards; Levels 2 and 3 locked until the previous is complete. Each shows level name, age hint, stars earned.
+Mini-game select — four tiles per level, each with its format icon.
+Gameplay — question card centred, timer ring, score top corner, dhow progress bar top.
+Results — stars, a "تعلمت اليوم / I learned today" recap of every fact from the round, then Retry / Next.
+4. Mini-game formats
+MCQ — four tappable icon+text cards.
+True/False — large ✓ and ✗ buttons (Level 1 only).
+Matching — two columns; tap left then right to link. Correct pairs join with a gold Al Sadu thread in accent.
+Ordering — drag tiles into the correct sequence along a horizontal track.
+Sorting — drag items into two or three labelled baskets.
+5. Timing
+Level	MCQ / True-False	Matching / Ordering / Sorting
+1	25s	60s
+2	18s	45s
+3	12s	35s
+
+Include a parent/teacher toggle in the corner that disables all timers for classroom use.
+
+6. Question content
+
+Load all content from a single editable src/questions.js.
+
+🟢 LEVEL 1 — براعم التراث / Heritage Sprouts (ages 6–9)
+
+1.1 MCQ — أعرف بلادي / I Know My Country
+
+How many emirates make up the UAE? → 7 / 5 / 9 / 3
+National bird of the UAE? → Falcon (الصقر) / Peacock / Owl / Parrot
+Colours of the UAE flag? → Red, green, white, black / Blue, red, white, gold / Green, gold, black, blue
+National tree of the UAE? → Ghaf (الغاف) / Oak / Pine / Apple
+Which animal is "the ship of the desert"? → Camel / Horse / Goat / Oryx
+Capital city of the UAE? → Abu Dhabi / Dubai / Sharjah / Al Ain
+Which sweet fruit grows on palm trees? → Dates (التمر) / Mango / Apple / Grapes
+
+1.2 True or False — صح أم خطأ
+
+Muslims pray five times a day → True
+The UAE is in Africa → False (Asia)
+Ramadan is the month of fasting → True
+The falcon is a symbol of the UAE → True
+Camels can go days without water → True
+The UAE flag has a purple stripe → False
+Muslims face the Kaaba in Makkah to pray → True
+
+1.3 Matching — صل الصورة بالاسم
+Falcon الصقر · Camel الجمل · Dhow السفينة الشراعية · Dallah الدلة · Palm tree النخلة · Mosque المسجد
+
+1.4 Sorting — أين يعيش؟ / Where Does It Belong?
+Baskets: Desert الصحراء — camel, oryx, ghaf tree, falcon, sand dune. Sea البحر — pearl, dhow, fish, fishing net, seashell.
+
+🟡 LEVEL 2 — حراس التراث / Heritage Guardians (ages 10–13)
+
+2.1 MCQ — تاريخ ووطن / History & Homeland
+
+Year the UAE union was formed → 1971 / 1968 / 1975 / 1980
+Founding father of the UAE → Sheikh Zayed bin Sultan Al Nahyan / Sheikh Rashid / Sheikh Khalifa / Sheikh Saeed
+UAE National Day → 2 December / 1 January / 16 May / 9 November
+Main industry of the Gulf coast before oil → Pearl diving الغوص على اللؤلؤ / Farming / Mining / Shipbuilding
+What is Al Sadu? → Traditional Bedouin weaving / A dance / A desert plant / A boat
+Traditional Emirati men's garment → Kandura / Bisht / Ghutra / Abaya
+UNESCO-recognised tradition using birds of prey → Falconry / Camel racing / Sadu weaving / Al Ayala
+What is a majlis? → A gathering place for meeting and discussion / A market / A mosque / A boat
+
+2.2 MCQ — أركان وأخلاق / Pillars & Values
+
+How many pillars of Islam? → 5 / 3 / 6 / 7
+The first pillar → Shahada الشهادة / Salah / Zakat / Hajj
+The pillar of giving to those in need → Zakat / Sawm / Hajj / Salah
+Month of the pilgrimage to Makkah → Dhul Hijjah / Ramadan / Muharram / Shawwal
+Prayer performed at sunset → Maghrib / Fajr / Asr / Isha
+Festival at the end of Ramadan → Eid Al Fitr / Eid Al Adha / Isra' wal Mi'raj / Mawlid
+The Islamic calendar follows → The moon (lunar) / The sun / The stars / The seasons
+
+2.3 Ordering — رتب الصلوات
+Round A, dawn to night: Fajr → Dhuhr → Asr → Maghrib → Isha
+Round B, Hijri months: Muharram → Ramadan → Shawwal → Dhul Hijjah
+
+2.4 Matching — الإمارات السبع / The Seven Emirates
+Abu Dhabi → Sheikh Zayed Grand Mosque · Dubai → Burj Khalifa · Sharjah → museums and Arab culture · Ajman → smallest emirate by area · Umm Al Quwain → mangroves and lagoons · Ras Al Khaimah → Jebel Jais, highest peak in the UAE · Fujairah → the only emirate on the Gulf of Oman
+
+🔴 LEVEL 3 — سفراء التراث / Heritage Ambassadors (ages 14–17)
+
+3.1 MCQ — المعرفة العميقة / Deep Knowledge
+
+How many emirates joined the union on 2 December 1971? → 6 / 7 / 5 / 4
+Which emirate joined in February 1972? → Ras Al Khaimah / Fujairah / Ajman / Umm Al Quwain
+Name of the UAE's Mars probe → Hope Probe مسبار الأمل / Rashid / Zayed-1 / Falcon-1
+First Emirati astronaut in space (2019) → Hazza Al Mansouri / Sultan Al Neyadi / Ahmed Al Falasi
+What is Al Ayala? → A traditional performance with drums, sticks and chanting / A wedding meal / A diving song / A weaving pattern
+What was the ghaus season? → The pearl-diving season, roughly June–September / The date harvest / Winter camping
+UNESCO World Heritage Site in Abu Dhabi → Cultural Sites of Al Ain / Jebel Hafeet alone / Qasr Al Hosn / Sir Bani Yas
+Traditional irrigation channelling mountain water to farms → Falaj الأفلاج / Barjeel / Sarooj / Areesh
+What is a barjeel? → A wind tower for natural cooling / A fishing net / A coffee ritual / A camel saddle
+
+3.2 MCQ — علوم إسلامية / Islamic Knowledge
+
+Number of surahs in the Qur'an → 114 / 100 / 120 / 99
+Surah known as the Mother of the Book → Al-Fatiha / Al-Baqarah / Al-Ikhlas / Yasin
+Longest surah → Al-Baqarah / Al-Fatiha / An-Nas / Al-Kahf
+Month of the first revelation → Ramadan / Rajab / Shawwal / Muharram
+The migration from Makkah to Madinah → Hijrah / Isra' / Umrah / Mi'raj
+The Islamic calendar counts years from → The Hijrah / The Prophet's ﷺ birth / The first revelation
+Arabic term for the direction of prayer → Qiblah / Mihrab / Minbar / Sujood
+Pillar obligatory once in a lifetime for those able → Hajj / Zakat / Sawm / Salah
+
+3.3 Ordering — الخط الزمني / Timeline
+Pearl-diving era (pre-1930s) → Oil discovered in Abu Dhabi (1958) → Union formed (1971) → Ras Al Khaimah joins (1972) → Burj Khalifa opens (2010) → Hazza Al Mansouri in space (2019) → Hope Probe reaches Mars (2021)
+
+3.4 Sorting — تراث أم حداثة / Heritage or Modern
+Baskets: Traditional Craft — Al Sadu weaving, Talli embroidery, pottery, dhow building, falconry. Traditional Food — harees, luqaimat, machboos, balaleet, khameer, gahwa. Modern Achievement — Hope Probe, Burj Khalifa, Louvre Abu Dhabi, Expo 2020 Dubai, Museum of the Future.
+
+7. Learning-first rules
+After every question, show a "هل تعلم؟ / Did you know?" card for 3 seconds. Write one fact for each question. Example: "The ghaf tree survives with almost no rain — it became the UAE's national tree in 2008."
+Never display a wrong-answer count to the child. Show only stars earned and facts learned.
+End every level with the "تعلمت اليوم / I learned today" scroll of all facts encountered, so the round closes on knowledge rather than score.
