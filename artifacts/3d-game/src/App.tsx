@@ -262,28 +262,125 @@ function LoginSkyline() {
   </svg>;
 }
 
-function Welcome({ lang }: { lang: Lang }) {
-  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
-  return <div className="mx-auto max-w-[1440px] px-5 py-8 lg:px-10 lg:py-12">
-    <section className="grid gap-8 lg:grid-cols-[1.02fr_.98fr] lg:items-center">
-      <div className="reveal">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#c7ded1] bg-[#e6f1eb] px-3 py-1.5 text-xs font-bold uppercase tracking-[.15em] text-[#33705f]"><span className="h-2 w-2 rounded-full bg-[#e8755f] pulse-soft" /> {t({ en: 'Welcome to Bunayn AD', ar: 'مرحباً بكم في بنين' }, lang)}</div>
-        <h1 className="max-w-3xl font-display text-[clamp(3rem,7vw,7rem)] font-semibold leading-[.9] tracking-[-.07em] text-[#174b44]">{t({ en: 'Play what shapes you.', ar: 'العب ما يشكّلك.' }, lang)}</h1>
-        <p className="mt-7 max-w-xl text-lg leading-relaxed text-[#5d7169]">{t({ en: 'Bunayn is an educational game platform from Abu Dhabi. Through small choices and curious challenges, players explore their values, decisions, and growing levels.', ar: 'بنين منصة ألعاب تعليمية من أبوظبي. من خلال اختيارات صغيرة وتحديات فضولية، يستكشف اللاعبون قيمهم وقراراتهم ومستوياتهم المتنامية.' }, lang)}</p>
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Link href={profile ? '/' : '/login'} className="group inline-flex items-center gap-3 rounded-full bg-[#e8755f] px-6 py-3.5 font-bold text-[#fff7e8] shadow-[0_7px_0_#b85c4e] transition hover:-translate-y-1 hover:shadow-[0_9px_0_#b85c4e] active:translate-y-1" data-testid="link-welcome-start">{profile ? t({ en: `Continue as ${profile.name.split(' ')[0]}`, ar: `تابع باسم ${profile.name.split(' ')[0]}` }, lang) : t({ en: 'Create a player profile', ar: 'أنشئ ملف لاعب' }, lang)} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 rtl:rotate-180" /></Link>
-          <Link href="/library" className="inline-flex items-center gap-2 rounded-full border border-[#c8d2c7] bg-[#fcf8f0] px-5 py-3.5 font-semibold text-[#174b44] transition hover:border-[#174b44]" data-testid="link-welcome-library">{t({ en: 'Explore Game Library', ar: 'استكشف مكتبة الألعاب' }, lang)} <ChevronRight className="h-4 w-4 rtl:rotate-180" /></Link>
+function Welcome() {
+  const scrollToTrace = () => {
+    const trace = document.getElementById('trace');
+    if (trace) {
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      trace.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+      trace.focus({ preventScroll: true });
+    }
+  };
+
+  return <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#0B0F1A] font-sci-sans text-[#F5F5F0] selection:bg-[#C9A227] selection:text-[#0B0F1A]">
+    <div className="sci-grid fixed inset-0 pointer-events-none opacity-[0.04]"></div>
+    
+    <header className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between p-6 sm:p-10">
+      <div className="font-sci-display font-bold text-xl tracking-tight text-[#F5F5F0]">Bunyan AD</div>
+      <div className="flex gap-6 text-sm font-medium">
+        <Link href="/library" className="text-[#A1A9B8] hover:text-[#C9A227] transition-colors">Library</Link>
+        <Link href="/login" className="text-[#A1A9B8] hover:text-[#C9A227] transition-colors">Player Login</Link>
+      </div>
+    </header>
+
+    <main>
+      <section className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center px-6 pt-20 text-center">
+        <div className="reveal">
+          <p className="mb-6 text-xs font-bold uppercase tracking-[0.2em] text-[#C9A227] sm:text-sm">
+            ABU DHABI
+          </p>
+          <h1 className="mx-auto mb-6 max-w-5xl font-sci-display text-[clamp(2.5rem,6vw,5.5rem)] font-bold leading-[1.05] tracking-tight text-[#F5F5F0] text-balance">
+            We turn play into evidence.
+          </h1>
+          <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-[#A1A9B8] text-balance sm:text-xl">
+            Bunyan AD converts gameplay into structured behavioral data.
+          </p>
+          <button
+            onClick={scrollToTrace}
+            className="group inline-flex items-center justify-center gap-2 rounded-full border border-[#F5F5F0]/20 px-8 py-4 font-medium text-[#F5F5F0] transition-all hover:scale-105 hover:bg-[#F5F5F0] hover:text-[#0B0F1A] active:scale-95"
+            aria-label="Scroll to the trace section"
+            data-testid="button-how-it-works"
+          >
+            How it works <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </button>
         </div>
+      </section>
+
+      <section id="trace" tabIndex={-1} className="relative z-10 mx-auto max-w-4xl px-6 py-24 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-[#C9A227] sm:py-32">
+        <div className="reveal reveal-delay-1">
+          <h2 className="mb-8 font-sci-display text-3xl font-semibold leading-tight text-[#F5F5F0] text-balance sm:text-4xl lg:text-5xl">
+            Every game is a decision made under pressure.
+          </h2>
+          <p className="text-lg leading-relaxed text-[#A1A9B8] text-balance sm:text-xl">
+            What to risk, when to wait, how to recover from a mistake, whether to cooperate or compete. Those decisions leave a trace. We instrument that trace — timing, hesitation, error correction, persistence after failure, strategy shifts — and convert it into structured behavioral data.
+          </p>
+        </div>
+      </section>
+
+      <section className="relative z-10 border-y border-[#F5F5F0]/5 bg-[#111726]/50 px-6 py-24 sm:py-32" aria-labelledby="behavior-heading">
+        <h2 id="behavior-heading" className="sr-only">Why behavior, not self-report</h2>
+        <div className="mx-auto grid max-w-5xl gap-12 sm:gap-20 md:grid-cols-2">
+          <div className="reveal">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.15em] text-[#C9A227]">Self-Report</h3>
+            <p className="text-base leading-relaxed text-[#A1A9B8] sm:text-lg">
+              Most of what organizations know about people comes from asking them. Surveys depend on a person being willing to answer honestly, able to observe themselves accurately, and unaffected by how they want to be seen. Memory, mood, and social desirability shape every answer.
+            </p>
+          </div>
+          <div className="reveal reveal-delay-1">
+            <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.15em] text-[#C9A227]">Behavior</h3>
+            <p className="text-base leading-relaxed text-[#F5F5F0] sm:text-lg">
+              A player absorbed in a game does not decide to appear patient on move forty. They simply act — and the pattern of those actions is the signal. We measure what people do, repeatedly, under conditions we control.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-6xl px-6 py-24 sm:py-32" aria-labelledby="measures-heading">
+        <div className="reveal">
+          <h2 id="measures-heading" className="mb-16 text-center font-sci-display text-3xl font-semibold text-[#F5F5F0] sm:text-4xl">
+            What gameplay gives us
+          </h2>
+          <div className="mb-20 grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 md:grid-cols-3">
+            {[
+              { label: 'Risk appetite', desc: 'How much certainty is required to act.' },
+              { label: 'Learning rate', desc: 'Adaptation to changing rules.' },
+              { label: 'Attention stability', desc: 'Focus over prolonged durations.' },
+              { label: 'Response to setback', desc: 'Behavioral changes after failure.' },
+              { label: 'Planning horizon', desc: 'Short-term gains vs long-term viability.' },
+              { label: 'Social orientation', desc: 'Cooperation in multi-agent spaces.' },
+            ].map((item) => (
+              <article key={item.label} className="group rounded-2xl border border-[#F5F5F0]/10 bg-[#111726]/30 p-8 backdrop-blur-sm transition-all hover:border-[#C9A227]/30 hover:bg-[#111726]/80">
+                <div className="mb-6 h-1 w-6 rounded-full bg-[#C9A227]/40 transition-colors group-hover:bg-[#C9A227]" />
+                <h3 className="mb-2 font-sci-display text-xl font-medium text-[#F5F5F0]">{item.label}</h3>
+                <p className="text-sm leading-relaxed text-[#A1A9B8]">{item.desc}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mx-auto max-w-3xl text-center font-sci-display text-xl leading-relaxed text-[#A1A9B8] text-balance sm:text-2xl">
+            Captured continuously — not at a single point in time, and free of language and cultural bias.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer className="py-24 sm:py-32 px-6 flex flex-col items-center justify-center text-center z-10 relative bg-[#06080E] mt-auto">
+      <div className="reveal mb-24">
+        <h2 className="font-sci-display text-2xl sm:text-3xl md:text-5xl font-semibold mb-6 text-[#F5F5F0] max-w-4xl mx-auto text-balance leading-tight">
+          Not what someone says about themselves.<br/>What they demonstrate.
+        </h2>
+        <p className="text-[#C9A227] font-sci-display text-lg sm:text-xl font-medium">
+          Bunyan AD — Games in. Insight out.
+        </p>
       </div>
-      <div className="reveal reveal-delay-1 relative"><Landscape large /><div className="absolute -bottom-5 start-5 end-5 flex items-center justify-between rounded-2xl border border-[#c7ded1] bg-[#fffaf2] p-4 shadow-float sm:start-10 sm:end-10"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#e6f1eb] text-[#33705f]"><Compass className="h-5 w-5" /></div><div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#e8755f]">{t({ en: 'A place to begin', ar: 'مكان للبداية' }, lang)}</p><p className="font-display font-bold text-[#174b44]">{t({ en: 'Your choices matter', ar: 'اختياراتك مهمة' }, lang)}</p></div></div><div className="grid h-11 w-11 place-items-center rounded-full border-4 border-[#f2c95c] bg-[#e6f1eb] text-xs font-bold text-[#174b44]">01</div></div></div>
-    </section>
-    <section className="mt-24 grid gap-5 md:grid-cols-[.85fr_1.15fr]">
-      <div className="rounded-[26px] bg-[#174b44] p-7 text-[#fff4df] sm:p-9 reveal reveal-delay-2"><p className="text-xs font-bold uppercase tracking-[.18em] text-[#f2c95c]">{t({ en: 'Why Bunayn?', ar: 'لماذا بنين؟' }, lang)}</p><h2 className="mt-3 max-w-sm font-display text-3xl font-semibold leading-tight">{t({ en: 'A safe space to notice how you think.', ar: 'مساحة آمنة لملاحظة طريقة تفكيرك.' }, lang)}</h2><p className="mt-5 max-w-md text-sm leading-relaxed text-[#b7d1c5]">{t({ en: 'Each game gives families and educators a gentle way to talk about values, habits, and the future we share.', ar: 'تمنح كل لعبة العائلات والمعلمين طريقة لطيفة للحديث عن القيم والعادات والمستقبل المشترك.' }, lang)}</p><Link href="/login" className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-[#f2c95c] hover:text-[#fff4df]" data-testid="link-welcome-login">{t({ en: 'Meet the player journey', ar: 'تعرّف على رحلة اللاعب' }, lang)} <ArrowRight className="h-4 w-4 rtl:rotate-180" /></Link></div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[{ icon: Compass, title: { en: 'Values', ar: 'القيم' }, body: { en: 'See what feels important to you.', ar: 'اكتشف ما يهمك.' } }, { icon: Gamepad2, title: { en: 'Choices', ar: 'الاختيارات' }, body: { en: 'Try ideas without getting it wrong.', ar: 'جرّب الأفكار دون خوف من الخطأ.' } }, { icon: BarChart3, title: { en: 'Levels', ar: 'المستويات' }, body: { en: 'Watch your confidence grow.', ar: 'شاهد ثقتك تنمو.' } }].map(({ icon: Icon, title, body }, index) => <div key={title.en} className={`rounded-[22px] border border-[#dfd2bd] bg-[#fcf8f0] p-5 reveal reveal-delay-${index + 1}`}><div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#efe1bf] text-[#174b44]"><Icon className="h-5 w-5" /></div><h3 className="mt-6 font-display text-lg font-bold text-[#174b44]">{t(title, lang)}</h3><p className="mt-2 text-sm leading-relaxed text-[#6f8179]">{t(body, lang)}</p></div>)}
+      
+      <div className="text-[#A1A9B8]/50 text-sm flex flex-col sm:flex-row gap-4 sm:gap-6">
+        <span>Bunyan AD</span>
+        <span className="hidden sm:inline">·</span>
+        <span>Abu Dhabi, UAE</span>
+        <span className="hidden sm:inline">·</span>
+        <a href="mailto:hello@bunyan.ad" className="hover:text-[#F5F5F0] transition-colors">hello@bunyan.ad</a>
       </div>
-    </section>
-    <section className="mt-16 grid gap-6 rounded-[28px] border border-[#dfd2bd] bg-[#efe2cc] p-6 sm:p-9 lg:grid-cols-[.82fr_1.18fr] lg:items-center"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-[#b35d4c]">{t({ en: 'Made in the Emirates', ar: 'صُنع في الإمارات' }, lang)}</p><h2 className="mt-2 max-w-md font-display text-3xl font-semibold leading-tight text-[#174b44]">{t({ en: 'From mangrove roots to a skyline of possibility.', ar: 'من جذور القرم إلى أفق من الاحتمالات.' }, lang)}</h2></div><div className="grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-[#fcf8f0]/75 p-4"><Leaf className="h-5 w-5 text-[#33705f]" /><p className="mt-3 text-sm font-semibold text-[#174b44]">{t({ en: 'Local landscapes', ar: 'مناظر محلية' }, lang)}</p></div><div className="rounded-2xl bg-[#fcf8f0]/75 p-4"><Users className="h-5 w-5 text-[#e8755f]" /><p className="mt-3 text-sm font-semibold text-[#174b44]">{t({ en: 'For families', ar: 'للعائلات' }, lang)}</p></div><div className="rounded-2xl bg-[#fcf8f0]/75 p-4"><Sparkles className="h-5 w-5 text-[#b35d4c]" /><p className="mt-3 text-sm font-semibold text-[#174b44]">{t({ en: 'Built for curiosity', ar: 'للفضول' }, lang)}</p></div></div></section>
+    </footer>
   </div>;
 }
 
@@ -314,7 +411,7 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
       sessionStorage.removeItem('bunayn-admin-session');
     } catch { /* browser storage may be unavailable */ }
     setProfile({ name: cleanName, age, grade, school: school.trim(), role: 'Player', avatar: cleanName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() });
-    setLocation('/');
+    setLocation('/library');
   };
   const playAsGuest = () => {
     if (!age) { setError(t({ en: 'Pick your age first.', ar: 'اختر عمرك أولاً.' }, lang)); return; }
@@ -323,7 +420,7 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
       sessionStorage.setItem('bunayn-player-profile', JSON.stringify({ name: 'Guest Player', age, role: 'Guest', avatar: 'GP' } satisfies PlayerProfile));
       sessionStorage.removeItem('bunayn-admin-session');
     } catch { /* session storage may be unavailable */ }
-    setLocation('/');
+    setLocation('/library');
   };
   return <div className="login-page relative isolate min-h-[calc(100dvh-78px)] overflow-hidden">
     <div className="login-glow" aria-hidden="true" />
@@ -777,7 +874,7 @@ function EcoRoute({ lang }: { lang: Lang }) {
   };
   const restart = () => { setRound(0); setScore(0); setCoins(120); setFinished(false); setPacked(null); };
   return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12">
-    <div className="mb-7 flex items-center justify-between"><Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-home"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game hub', ar: 'العودة لمركز الألعاب' }, lang)}</Link><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-game-coins">{coins}</span></div></div>
+    <div className="mb-7 flex items-center justify-between"><Link href="/library" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-home"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game library', ar: 'العودة إلى مكتبة الألعاب' }, lang)}</Link><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-game-coins">{coins}</span></div></div>
     <section className="overflow-hidden rounded-[30px] bg-[#174b44] text-[#fff4df] shadow-float"><div className="grid lg:grid-cols-[.78fr_1.22fr]"><div className="relative min-h-[270px] overflow-hidden bg-[#2d675d] p-7 sm:p-10"><div className="absolute -end-16 -top-14 h-52 w-52 rounded-full bg-[#f2c95c]" /><div className="absolute bottom-[-60px] start-[-25px] h-48 w-72 rotate-[-17deg] rounded-[50%] bg-[#71a695]" /><div className="absolute bottom-[-65px] end-[-25px] h-48 w-64 rotate-[12deg] rounded-[50%] bg-[#3b8876]" /><div className="relative"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-[#d7e8df]"><Leaf className="h-4 w-4 text-[#f2c95c]" /> Clean Environment and Better Future</div><h1 className="mt-8 max-w-xs font-display text-5xl font-semibold leading-[.9] tracking-[-.06em]">{t({ en: 'Pack a brighter route.', ar: 'جهّز مساراً أكثر إشراقاً.' }, lang)}</h1><p className="mt-4 max-w-xs text-sm leading-relaxed text-[#c0dbcf]">{t({ en: 'Choose one action to carry forward at every stop.', ar: 'اختر فعلاً واحداً تحمله معك في كل محطة.' }, lang)}</p></div></div><div className="bg-[#fffaf2] p-6 text-[#174b44] sm:p-10">
       {finished ? <div className="flex min-h-[390px] flex-col justify-center text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#f2c95c]"><Trophy className="h-9 w-9" /></div><p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Route complete', ar: 'اكتمل المسار' }, lang)}</p><h2 className="mt-2 font-display text-4xl font-bold tracking-tight">{t({ en: 'You packed room for tomorrow.', ar: 'جهزت مساحة للغد.' }, lang)}</h2><div className="mx-auto mt-7 flex items-center gap-6 rounded-2xl bg-[#e6f1eb] px-6 py-4"><div><span className="block font-display text-2xl font-bold">{score}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'score', ar: 'النقاط' }, lang)}</span></div><div className="h-9 w-px bg-[#c7ded1]" /><div><span className="block font-display text-2xl font-bold">{coins}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'coins', ar: 'العملات' }, lang)}</span></div></div><button onClick={restart} className="mx-auto mt-7 inline-flex items-center gap-2 rounded-full bg-[#e8755f] px-6 py-3 font-bold text-[#fff7e8]" data-testid="button-restart-game"><RotateCcw className="h-4 w-4" /> {t({ en: 'Pack a new route', ar: 'جهّز مساراً جديداً' }, lang)}</button></div> : <div><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Route stop', ar: 'محطة المسار' }, lang)} {round + 1} / {rounds.length}</p><div className="mt-3 flex gap-1.5">{rounds.map((_, index) => <span key={index} className={`h-1.5 w-10 rounded-full ${index <= round ? 'bg-[#e8755f]' : 'bg-[#dfd2bd]'}`} />)}</div></div><div className="flex items-center gap-2 rounded-full bg-[#e6f1eb] px-3 py-1.5 text-sm font-bold"><Star className="h-4 w-4 text-[#e8755f]" /> <span>{score}</span></div></div><p className="mt-9 text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Pick an action token for your route', ar: 'اختر رمز فعل لمسارك' }, lang)}</p><h2 className="mt-3 max-w-xl font-display text-3xl font-bold leading-tight sm:text-4xl">{t(current.prompt, lang)}</h2><p className="mt-3 max-w-xl text-[#688079]">{t(current.detail, lang)}</p><div className="mt-6 min-h-20 rounded-[22px] border-2 border-dashed border-[#c8d2c7] bg-[#efe4cf] p-3"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#688079]">{t({ en: 'Your route pack', ar: 'حقيبة مسارك' }, lang)}</p>{packed === null ? <p className="mt-2 text-sm font-semibold text-[#9aaba0]">{t({ en: 'Choose one action below.', ar: 'اختر فعلاً واحداً أدناه.' }, lang)}</p> : <p className="signature-pop mt-2 rounded-xl bg-[#fffaf2] px-3 py-2 text-sm font-bold">{t(current.options[packed].label, lang)}</p>}</div><div className="mt-5 grid gap-3">{current.options.map((option, index) => <button key={index} onClick={() => packed === null && setPacked(index)} className={`flex items-center gap-4 rounded-2xl border p-4 text-start transition ${packed === index ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-eco-token-${index + 1}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#efe4cf] font-display font-bold">{index + 1}</span><span className="flex-1 text-sm font-semibold">{t(option.label, lang)}</span></button>)}</div>{packed !== null && <LevelFeedback good={good} message={good ? current.options[packed].note : { en: 'This token will not help the route. Unpack it and choose a kinder next step.', ar: 'لن يساعد هذا الرمز المسار. أعده واختر خطوة تالية ألطف.' }} lang={lang} onNext={continueRoute} onRetry={() => setPacked(null)} final={round >= rounds.length - 1} />}</div>}
     </div></div></section><p className="mt-5 text-center text-xs font-semibold text-[#688079]">{t({ en: 'Touch an action token, or use Tab then Enter/Space to pack your route', ar: 'اضغط رمز فعل، أو استخدم Tab ثم Enter أو Space لتجهيز مسارك' }, lang)}</p>
@@ -809,7 +906,7 @@ function EcoFuture({ lang }: { lang: Lang }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
-  return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12"><div className="mb-7 flex items-center justify-between"><Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-home"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game hub', ar: 'العودة لمركز الألعاب' }, lang)}</Link><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-game-coins">{coins}</span></div></div><section className="overflow-hidden rounded-[30px] bg-[#174b44] text-[#fff4df] shadow-float"><div className="grid lg:grid-cols-[.78fr_1.22fr]"><div className="relative min-h-[240px] overflow-hidden bg-[#2d675d] p-7 sm:p-10"><div className="absolute -end-16 -top-14 h-52 w-52 rounded-full bg-[#f2c95c]" /><div className="absolute bottom-[-60px] start-[-25px] h-48 w-72 rotate-[-17deg] rounded-[50%] bg-[#71a695]" /><div className="absolute bottom-[-65px] end-[-25px] h-48 w-64 rotate-[12deg] rounded-[50%] bg-[#3b8876]" /><div className="relative"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-[#d7e8df]"><Leaf className="h-4 w-4 text-[#f2c95c]" /> Eco Future</div><h1 className="mt-8 max-w-xs font-display text-5xl font-semibold leading-[.9] tracking-[-.06em]">{t({ en: 'Grow the good.', ar: 'ازرع الخير.' }, lang)}</h1><p className="mt-4 max-w-xs text-sm leading-relaxed text-[#c0dbcf]">{t({ en: 'A choice-powered journey through the places we call home.', ar: 'رحلة تقودها الاختيارات عبر الأماكن التي نسميها وطننا.' }, lang)}</p></div></div><div className="bg-[#fffaf2] p-6 text-[#174b44] sm:p-10">{finished ? <div className="flex min-h-[370px] flex-col justify-center text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#f2c95c] text-[#174b44]"><Trophy className="h-9 w-9" /></div><p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Trail complete', ar: 'اكتمل المسار' }, lang)}</p><h2 className="mt-2 font-display text-4xl font-bold tracking-tight">{t({ en: 'You made room for tomorrow.', ar: 'لقد صنعت مساحة للغد.' }, lang)}</h2><p className="mx-auto mt-4 max-w-md text-[#688079]">{t({ en: 'Four thoughtful choices, one brighter trail. Your progress is saved on this device.', ar: 'أربعة اختيارات واعية ومسار أكثر إشراقاً. تم حفظ تقدمك على هذا الجهاز.' }, lang)}</p><div className="mx-auto mt-7 flex items-center gap-6 rounded-2xl bg-[#e6f1eb] px-6 py-4"><div><span className="block font-display text-2xl font-bold" data-testid="text-final-score">{score}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'score', ar: 'النقاط' }, lang)}</span></div><div className="h-9 w-px bg-[#c7ded1]" /><div><span className="block font-display text-2xl font-bold">100%</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'trail complete', ar: 'اكتمل المسار' }, lang)}</span></div></div><button onClick={restart} className="mx-auto mt-7 inline-flex items-center gap-2 rounded-full bg-[#e8755f] px-6 py-3 font-bold text-[#fff7e8] transition hover:-translate-y-0.5" data-testid="button-restart-game"><RotateCcw className="h-4 w-4" /> {t({ en: 'Play the trail again', ar: 'العب المسار مجدداً' }, lang)}</button></div> : <div><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Choice', ar: 'الاختيار' }, lang)} {round + 1} / {rounds.length}</p><div className="mt-3 flex gap-1.5">{rounds.map((_, index) => <span key={index} className={`h-1.5 w-10 rounded-full ${index <= round ? 'bg-[#e8755f]' : 'bg-[#dfd2bd]'}`} />)}</div></div><div className="flex items-center gap-2 rounded-full bg-[#e6f1eb] px-3 py-1.5 text-sm font-bold"><Star className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-game-score">{score}</span></div></div><h2 className="mt-12 max-w-xl font-display text-3xl font-bold leading-tight sm:text-4xl">{t(current.prompt, lang)}</h2><p className="mt-3 max-w-xl text-[#688079]">{t(current.detail, lang)}</p><div className="mt-7 grid gap-3">{current.options.map((option, index) => { const active = selected === index; const correct = active && option.good; return <button key={index} onClick={() => choose(index)} aria-pressed={active} className={`group flex items-center gap-4 rounded-2xl border p-4 text-start transition-all ${active ? correct ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd2bd] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-choice-${index + 1}`}><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display font-bold ${active ? correct ? 'bg-[#33705f] text-white' : 'bg-[#e8755f] text-white' : 'bg-[#efe4cf] text-[#557068]'}`}>{active ? correct ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" /> : index + 1}</span><span className="flex-1 text-sm font-semibold text-[#174b44]">{t(option.label, lang)}</span><ChevronRight className={`h-4 w-4 text-[#9aaba0] transition-transform group-hover:translate-x-1 rtl:rotate-180 ${active ? 'opacity-100' : 'opacity-0'}`} /></button>; })}</div>{selected !== null && <div className={`mt-5 rounded-2xl p-4 ${current.options[selected].good ? 'bg-[#e6f1eb]' : 'bg-[#fff0eb]'}`} role="status" data-testid="status-choice-feedback"><p className="text-sm font-semibold leading-relaxed text-[#174b44]">{t(current.options[selected].note, lang)}</p><button onClick={next} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-4 py-2 text-xs font-bold text-[#fff4df]" data-testid="button-next-choice">{round >= rounds.length - 1 ? t({ en: 'Finish trail', ar: 'إنهاء المسار' }, lang) : t({ en: 'Next choice', ar: 'الاختيار التالي' }, lang)} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></button></div>}</div>}</div></div></section><p className="mt-5 text-center text-xs font-semibold text-[#688079]">{t({ en: 'Choose with 1, 2, or 3 · Press Enter to continue', ar: 'اختر باستخدام 1 أو 2 أو 3 · اضغط Enter للمتابعة' }, lang)}</p></div>;
+  return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12"><div className="mb-7 flex items-center justify-between"><Link href="/library" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-home"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game library', ar: 'العودة إلى مكتبة الألعاب' }, lang)}</Link><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-game-coins">{coins}</span></div></div><section className="overflow-hidden rounded-[30px] bg-[#174b44] text-[#fff4df] shadow-float"><div className="grid lg:grid-cols-[.78fr_1.22fr]"><div className="relative min-h-[240px] overflow-hidden bg-[#2d675d] p-7 sm:p-10"><div className="absolute -end-16 -top-14 h-52 w-52 rounded-full bg-[#f2c95c]" /><div className="absolute bottom-[-60px] start-[-25px] h-48 w-72 rotate-[-17deg] rounded-[50%] bg-[#71a695]" /><div className="absolute bottom-[-65px] end-[-25px] h-48 w-64 rotate-[12deg] rounded-[50%] bg-[#3b8876]" /><div className="relative"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-[#d7e8df]"><Leaf className="h-4 w-4 text-[#f2c95c]" /> Eco Future</div><h1 className="mt-8 max-w-xs font-display text-5xl font-semibold leading-[.9] tracking-[-.06em]">{t({ en: 'Grow the good.', ar: 'ازرع الخير.' }, lang)}</h1><p className="mt-4 max-w-xs text-sm leading-relaxed text-[#c0dbcf]">{t({ en: 'A choice-powered journey through the places we call home.', ar: 'رحلة تقودها الاختيارات عبر الأماكن التي نسميها وطننا.' }, lang)}</p></div></div><div className="bg-[#fffaf2] p-6 text-[#174b44] sm:p-10">{finished ? <div className="flex min-h-[370px] flex-col justify-center text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#f2c95c] text-[#174b44]"><Trophy className="h-9 w-9" /></div><p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Trail complete', ar: 'اكتمل المسار' }, lang)}</p><h2 className="mt-2 font-display text-4xl font-bold tracking-tight">{t({ en: 'You made room for tomorrow.', ar: 'لقد صنعت مساحة للغد.' }, lang)}</h2><p className="mx-auto mt-4 max-w-md text-[#688079]">{t({ en: 'Four thoughtful choices, one brighter trail. Your progress is saved on this device.', ar: 'أربعة اختيارات واعية ومسار أكثر إشراقاً. تم حفظ تقدمك على هذا الجهاز.' }, lang)}</p><div className="mx-auto mt-7 flex items-center gap-6 rounded-2xl bg-[#e6f1eb] px-6 py-4"><div><span className="block font-display text-2xl font-bold" data-testid="text-final-score">{score}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'score', ar: 'النقاط' }, lang)}</span></div><div className="h-9 w-px bg-[#c7ded1]" /><div><span className="block font-display text-2xl font-bold">100%</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'trail complete', ar: 'اكتمل المسار' }, lang)}</span></div></div><button onClick={restart} className="mx-auto mt-7 inline-flex items-center gap-2 rounded-full bg-[#e8755f] px-6 py-3 font-bold text-[#fff7e8] transition hover:-translate-y-0.5" data-testid="button-restart-game"><RotateCcw className="h-4 w-4" /> {t({ en: 'Play the trail again', ar: 'العب المسار مجدداً' }, lang)}</button></div> : <div><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Choice', ar: 'الاختيار' }, lang)} {round + 1} / {rounds.length}</p><div className="mt-3 flex gap-1.5">{rounds.map((_, index) => <span key={index} className={`h-1.5 w-10 rounded-full ${index <= round ? 'bg-[#e8755f]' : 'bg-[#dfd2bd]'}`} />)}</div></div><div className="flex items-center gap-2 rounded-full bg-[#e6f1eb] px-3 py-1.5 text-sm font-bold"><Star className="h-4 w-4 text-[#e8755f]" /> <span data-testid="text-game-score">{score}</span></div></div><h2 className="mt-12 max-w-xl font-display text-3xl font-bold leading-tight sm:text-4xl">{t(current.prompt, lang)}</h2><p className="mt-3 max-w-xl text-[#688079]">{t(current.detail, lang)}</p><div className="mt-7 grid gap-3">{current.options.map((option, index) => { const active = selected === index; const correct = active && option.good; return <button key={index} onClick={() => choose(index)} aria-pressed={active} className={`group flex items-center gap-4 rounded-2xl border p-4 text-start transition-all ${active ? correct ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd2bd] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-choice-${index + 1}`}><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display font-bold ${active ? correct ? 'bg-[#33705f] text-white' : 'bg-[#e8755f] text-white' : 'bg-[#efe4cf] text-[#557068]'}`}>{active ? correct ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" /> : index + 1}</span><span className="flex-1 text-sm font-semibold text-[#174b44]">{t(option.label, lang)}</span><ChevronRight className={`h-4 w-4 text-[#9aaba0] transition-transform group-hover:translate-x-1 rtl:rotate-180 ${active ? 'opacity-100' : 'opacity-0'}`} /></button>; })}</div>{selected !== null && <div className={`mt-5 rounded-2xl p-4 ${current.options[selected].good ? 'bg-[#e6f1eb]' : 'bg-[#fff0eb]'}`} role="status" data-testid="status-choice-feedback"><p className="text-sm font-semibold leading-relaxed text-[#174b44]">{t(current.options[selected].note, lang)}</p><button onClick={next} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-4 py-2 text-xs font-bold text-[#fff4df]" data-testid="button-next-choice">{round >= rounds.length - 1 ? t({ en: 'Finish trail', ar: 'إنهاء المسار' }, lang) : t({ en: 'Next choice', ar: 'الاختيار التالي' }, lang)} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></button></div>}</div>}</div></div></section><p className="mt-5 text-center text-xs font-semibold text-[#688079]">{t({ en: 'Choose with 1, 2, or 3 · Press Enter to continue', ar: 'اختر باستخدام 1 أو 2 أو 3 · اضغط Enter للمتابعة' }, lang)}</p></div>;
 }
 
 function Admin({ lang }: { lang: Lang }) {
@@ -830,8 +927,7 @@ function AdminRoute({ lang }: { lang: Lang }) {
 }
 
 function RootPage({ lang }: { lang: Lang }) {
-  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
-  return profile ? <Home lang={lang} /> : <Welcome lang={lang} />;
+  return <Welcome />;
 }
 
 function GameRoute({ lang }: { lang: Lang }) {
@@ -841,7 +937,13 @@ function GameRoute({ lang }: { lang: Lang }) {
 }
 
 function RouterContent({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void }) {
-  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoRoute lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/store" component={() => <Store lang={lang} />} /><Route path="/player" component={() => <PlayerProgress lang={lang} />} /><Route path="/admin" component={() => <AdminRoute lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
+  const [location] = useLocation();
+
+  if (location === '/' || location === '/welcome') {
+    return <Welcome />;
+  }
+
+  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoRoute lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/store" component={() => <Store lang={lang} />} /><Route path="/player" component={() => <PlayerProgress lang={lang} />} /><Route path="/admin" component={() => <AdminRoute lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
 }
 
 function App() {

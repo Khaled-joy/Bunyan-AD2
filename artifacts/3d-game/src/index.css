@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -32,6 +32,8 @@
   --font-sans: var(--app-font-sans);
   --font-display: var(--app-font-display);
   --font-mono: var(--app-font-mono);
+  --font-sci-display: 'Space Grotesk', sans-serif;
+  --font-sci-sans: 'Inter', sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -106,6 +108,8 @@
 
 @layer utilities {
   .font-display { font-family: var(--app-font-display); }
+  .font-sci-display { font-family: var(--font-sci-display); }
+  .font-sci-sans { font-family: var(--font-sci-sans); }
   .text-balance { text-wrap: balance; }
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-float { box-shadow: var(--shadow-float); }
@@ -189,4 +193,24 @@
 .login-skyline { position: absolute; bottom: 0; left: 0; z-index: 0; width: 100%; height: auto; pointer-events: none; animation: login-rise 1s cubic-bezier(.22,.9,.28,1) .15s both; }
 @keyframes login-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 400px) { .login-pills { grid-template-columns: repeat(4, 1fr); gap: 6px; }.login-pill { min-height: 43px; font-size: 15px; } }
-@media (prefers-reduced-motion: reduce) { .login-card, .login-logo, .login-skyline { animation: none; } }
+@media (prefers-reduced-motion: reduce) { 
+  .login-card, .login-logo, .login-skyline, .reveal, .pulse-soft, .drift { animation: none !important; transform: none !important; }
+}
+
+.sci-grid {
+  background-image: 
+    linear-gradient(to right, rgba(245, 245, 240, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(245, 245, 240, 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+  animation: drift-bg 30s linear infinite;
+}
+@keyframes drift-bg {
+  0% { background-position: 0px 0px; }
+  100% { background-position: 40px 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .sci-grid { animation: none; }
+}

@@ -1,0 +1,42 @@
+Build a single home page (one page only, no other routes, no backend) for Bunyan AD, an Abu Dhabi behavioral-science company that converts gameplay into psychometric data.
+
+Stack: React + Vite + Tailwind CSS.
+Look: dark theme — background 
+#0B0F1A, text 
+#F5F5F0, accent gold 
+#C9A227. Headings in Space Grotesk, body in Inter. Large type, heavy whitespace, minimal chrome. Research-lab feel, not startup-SaaS. Fully responsive, mobile-first. Everything lives on this one scrolling page.
+
+Content blocks, top to bottom on the home page:
+
+1. Hero (full viewport)
+
+Eyebrow, small caps, letter-spaced: ABU DHABI
+H1: We turn play into evidence.
+Sub: Bunyan AD converts gameplay into structured behavioral data.
+Background: faint animated grid or slow-drifting particles, subtle, low opacity.
+One outline button: How it works → smooth-scrolls to block 2.
+
+2. The Trace
+
+H2: Every game is a decision made under pressure.
+Body: What to risk, when to wait, how to recover from a mistake, whether to cooperate or compete. Those decisions leave a trace. We instrument that trace — timing, hesitation, error correction, persistence after failure, strategy shifts — and convert it into structured behavioral data.
+
+3. Why behavior, not self-report (two columns on desktop, stacked on mobile)
+
+Left column, small heading SELF-REPORT: Most of what organizations know about people comes from asking them. Surveys depend on a person being willing to answer honestly, able to observe themselves accurately, and unaffected by how they want to be seen. Memory, mood, and social desirability shape every answer.
+Right column, small heading BEHAVIOR: A player absorbed in a game does not decide to appear patient on move forty. They simply act — and the pattern of those actions is the signal. We measure what people do, repeatedly, under conditions we control.
+
+4. What we measure
+
+H2: What gameplay gives us
+Six items in a responsive grid (3 across desktop, 2 tablet, 1 mobile), each a label + one line: Risk appetite · Learning rate · Attention stability · Response to setback · Planning horizon · Social orientation.
+Closing line under the grid, centered, larger: Captured continuously — not at a single point in time, and free of language and cultural bias.
+
+5. Closing
+
+Centered, large: Not what someone says about themselves. What they demonstrate.
+Below it, smaller, gold: Bunyan AD — Games in. Insight out.
+
+6. Footer
+
+Minimal single line: Bunyan AD · Abu Dhabi, UAE · hello@bunyan.ad
