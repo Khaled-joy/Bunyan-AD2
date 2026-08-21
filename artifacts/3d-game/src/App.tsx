@@ -12,7 +12,7 @@ import {
   Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BarChart3, BookOpen, Check,
   ChevronRight, CircleHelp, Clock3, Coins, Compass, Crown, Footprints, Gamepad2,
   Globe2, Leaf, LockKeyhole, Menu, Pause, Play, RotateCcw, ShoppingBag, Sparkles, Star, Trophy,
-  Users, X, Zap,
+  Lightbulb, Users, X, Zap,
 } from 'lucide-react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
 import NotFound from '@/pages/not-found';
@@ -357,8 +357,13 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
             <div className="absolute -bottom-24 -start-20 h-56 w-[130%] rounded-[50%] bg-[#b9d6c7]" />
             <div className="absolute bottom-0 end-0 h-28 w-40 rounded-tl-[100%] bg-[#e8755f]/75" />
             <img src={logoPath} alt="" className="relative z-10 mx-auto w-[min(90%,390px)] object-contain drop-shadow-[0_14px_16px_rgba(23,75,68,.2)]" />
-            <div className="relative z-10 mx-auto mt-7 grid max-w-sm grid-cols-2 gap-2 text-center text-xs font-bold text-[#174b44] sm:max-w-none sm:grid-cols-4">
-              {[{ label: { en: 'Play', ar: 'العب' }, color: 'bg-[#f4b60b]' }, { label: { en: 'Discover', ar: 'اكتشف' }, color: 'bg-[#16a7bc]' }, { label: { en: 'Learn', ar: 'تعلّم' }, color: 'bg-[#d8232a]' }, { label: { en: 'Start a Knowledge Quest', ar: 'ابدأ رحلة من المعرفة' }, color: 'bg-[#2140a8]' }].map((item) => <div key={item.label.en} className={`rounded-2xl ${item.color} px-2 py-2.5 leading-snug text-white shadow-sm`}>{homeCopy(item.label)}</div>)}
+            <div className="relative z-10 mx-auto mt-7 grid max-w-sm grid-cols-2 gap-2 text-center text-xs font-bold text-[#174b44] sm:max-w-none sm:grid-cols-4" aria-label={homeCopy({ en: 'Knowledge quest steps', ar: 'مراحل رحلة المعرفة' })}>
+              {[
+                { label: { en: 'Play', ar: 'العب' }, icon: Gamepad2, color: 'bg-[#f4b60b]' },
+                { label: { en: 'Discover', ar: 'اكتشف' }, icon: Compass, color: 'bg-[#16a7bc]' },
+                { label: { en: 'Learn', ar: 'تعلّم' }, icon: BookOpen, color: 'bg-[#d8232a]' },
+                { label: { en: 'Start a Knowledge Quest', ar: 'ابدأ رحلة من المعرفة' }, icon: Lightbulb, color: 'bg-[#2140a8]' },
+              ].map((item) => { const Icon = item.icon; return <div key={item.label.en} title={homeCopy(item.label)} aria-label={homeCopy(item.label)} className={`grid min-h-[58px] place-items-center rounded-2xl ${item.color} px-2 py-2.5 text-white shadow-sm`}><Icon className="h-7 w-7" aria-hidden="true" /><span className="sr-only">{homeCopy(item.label)}</span></div>; })}
             </div>
           </div>
           <div className="absolute -bottom-5 -start-3 rounded-2xl border-2 border-white bg-[#fff3cc] px-4 py-3 shadow-soft sm:-start-7"><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-[#b35d4c]">{homeCopy({ en: 'The new method', ar: 'الطريقة الجديدة' })}</p><p className="mt-1 font-display font-bold text-[#174b44]">{homeCopy({ en: 'From play to knowledge', ar: 'من اللعب إلى المعرفة' })}</p></div>
