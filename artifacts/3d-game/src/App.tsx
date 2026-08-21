@@ -994,6 +994,13 @@ function RouterContent({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) =>
 function App() {
   const [lang, setLang] = useLocal<Lang>('bunayn-language', 'ar');
   useEffect(() => {
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') ?? document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/png';
+    favicon.href = logoPath;
+    if (!favicon.parentElement) document.head.appendChild(favicon);
+  }, []);
+  useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }, [lang]);
