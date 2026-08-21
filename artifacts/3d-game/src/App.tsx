@@ -4,6 +4,8 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import logoPath from '@assets/image_1787208364235-transparent.png';
+import learningWorldPath from '@assets/generated_images/bunayn-learning-world.png';
+import { getColorFocusLevel, getContentCycle, getHeritageItem, getHeritageItemCount, getInnovationItem, getInnovationItemCount, getMenuItem, getMenuItemCount, getMenuTask, getNumeracyItem, getNumeracyItemCount, getPackCopy, getTruthItem, getTruthItemCount, getWordItem, getWordItemCount } from './contentPack';
 import {
   Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BarChart3, BookOpen, Check,
   ChevronRight, CircleHelp, Clock3, Coins, Compass, Crown, Footprints, Gamepad2,
@@ -119,6 +121,10 @@ function useLocal<T>(key: string, initial: T) {
   return [value, setValue] as const;
 }
 
+function usePlayerContentCycle() {
+  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
+  return getContentCycle(profile?.grade);
+}
 function usePlayerSummary() {
   const [ecoRound] = useLocal<number>('bunayn-eco-round', 0);
   const [ecoScore] = useLocal<number>('bunayn-eco-score', 0);
@@ -194,7 +200,7 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
   const activeProfile = savedProfile || profile;
   const isAdmin = hasAdminSession();
   const isActive = (path: string) => location === path;
-  const initials = activeProfile?.avatar || activeProfile?.name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'GU';
+  const initials = activeProfile?.avatar || activeProfile?.name?.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'GU';
   const nav = [
     { href: '/', label: { en: 'Home', ar: 'الرئيسية' }, id: 'home' },
     { href: '/library', label: { en: 'Game Library', ar: 'مكتبة الألعاب' }, id: 'library' },
@@ -226,7 +232,7 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
     <footer className="border-t border-[#2140a8] bg-[#2140a8] px-5 py-10 text-white lg:px-10">
       <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-7 sm:flex-row sm:items-end">
         <div><Logo compact /><p className="mt-4 max-w-sm text-sm leading-relaxed text-[#d7f0f5]">{t({ en: 'A digital playground from Abu Dhabi for curious minds, thoughtful choices, and the people shaping tomorrow.', ar: 'ملعب رقمي من أبوظبي للعقول الفضولية والاختيارات الواعية والأشخاص الذين يصنعون الغد.' }, lang)}</p></div>
-        <div className="text-sm text-[#cfe9f7]"><p>© 2024 Bunayn AD</p><p className="mt-1">Learning through play.</p></div>
+        <div className="text-sm text-[#cfe9f7]"><p>© 2026 Bunayn AD</p><p className="mt-1">Learning through play.</p></div>
       </div>
     </footer>
   </div>;
@@ -545,7 +551,7 @@ function makeChallenges(gameId: string): Challenge[] {
 
 type GameProgress = { level: number; question: number; score: number; coins: number; finished: boolean };
 
-type SignatureProgress = { level: number; score: number; coins: number; finished: boolean };
+type SignatureProgress = { level: number; question?: number; score: number; coins: number; finished: boolean };
 function GameRoom({ lang, gameId }: { lang: Lang; gameId: string }) {
   const game = gameBlueprints.find((item) => item.id === gameId && item.id !== 'basket-challenge') || gameBlueprints[1];
   const challenges = useMemo(() => makeChallenges(game.id), [game.id]);
@@ -611,7 +617,7 @@ function GameRoom({ lang, gameId }: { lang: Lang; gameId: string }) {
         <div className="bg-[#fffaf2] p-6 text-[#174b44] sm:p-10">
           {progress.finished ? <div className="flex min-h-[390px] flex-col justify-center text-center">
             <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#f2c95c] text-[#174b44]"><Trophy className="h-9 w-9" /></div>
-            <p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Three levels complete', ar: 'اكتملت المستويات الثلاثة' }, lang)}</p>
+            <p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Learning complete', ar: 'اكتمل التعلّم' }, lang)}</p>
             <h2 className="mt-2 font-display text-4xl font-bold tracking-tight">{t({ en: 'You kept growing.', ar: 'واصلت النمو.' }, lang)}</h2>
             <p className="mx-auto mt-4 max-w-md text-[#688079]">{t({ en: 'Your choices, focus, and persistence are part of your learning trail.', ar: 'اختياراتك وتركيزك ومثابرتك جزء من مسار تعلمك.' }, lang)}</p>
             <div className="mx-auto mt-7 flex items-center gap-6 rounded-2xl bg-[#e6f1eb] px-6 py-4"><div><span className="block font-display text-2xl font-bold" data-testid="text-generic-game-score">{progress.score}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'score', ar: 'النقاط' }, lang)}</span></div><div className="h-9 w-px bg-[#c7ded1]" /><div><span className="block font-display text-2xl font-bold">{progress.coins}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'coins', ar: 'العملات' }, lang)}</span></div></div>
@@ -942,19 +948,26 @@ function ColorFocus({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'color-focus')!;
   const [progress, setProgress] = useSignatureProgress(game.id);
   const [picked, setPicked] = useState<number | null>(null);
-  const boards = [
-    { target: '#e8755f', label: { en: 'coral', ar: 'مرجاني' }, colors: ['#a8d7dc', '#e8755f', '#f2c95c', '#71a695', '#d6c5dd', '#e8755f', '#b9d6c7', '#a8d7dc', '#f0b092'] },
-    { target: '#b9d6c7', label: { en: 'mint', ar: 'نعناعي' }, colors: ['#c6d88e', '#a9c7d8', '#b9d6c7', '#e8755f', '#b9d6c7', '#d6c5dd', '#f2c95c', '#a8d7dc', '#b9d6c7'] },
-    { target: '#f2c95c', label: { en: 'sun yellow', ar: 'أصفر شمسي' }, colors: ['#a8d7dc', '#f2c95c', '#e8755f', '#d6c5dd', '#71a695', '#f2c95c', '#b9d6c7', '#f0b092', '#f2c95c'] },
-  ];
-  const board = boards[progress.level];
+  const cycle = usePlayerContentCycle();
+  const packLevel = getColorFocusLevel(cycle);
+  const palette = packLevel.palette;
+  const question = progress.question ?? 0;
+  const target = palette[(progress.level * QUESTIONS_PER_LEVEL + question) % palette.length];
+  const shapeMarkers = ['●', '■', '▲', '◆', '★', '✚', '⬟', '✦', '⬢'];
+  const board = {
+    target,
+    targetIndex: (question * 3 + 1) % 9,
+    targetShape: shapeMarkers[(question * 3 + 1) % 9],
+    label: { en: `signal ${target} square`, ar: `إشارة مربعة ${target}` },
+    colors: Array.from({ length: 9 }, (_, index) => palette[(index * 3 + progress.level + question) % palette.length]).map((color, index) => (index === (question * 3 + 1) % 9 ? target : color)),
+  };
   const choose = (index: number) => { if (picked === null) setPicked(index); };
-  const good = picked !== null && board.colors[picked] === board.target;
-  const next = () => { if (progress.level === 2) setProgress((value) => ({ ...value, score: value.score + 100, coins: value.coins + 10, finished: true })); else { setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + 100, coins: value.coins + 10 })); setPicked(null); } };
+  const good = picked === board.targetIndex;
+  const next = () => { if (progress.level === 2 && question === QUESTIONS_PER_LEVEL - 1) setProgress((value) => ({ ...value, score: value.score + 100, coins: value.coins + 10, finished: true })); else { setProgress((value) => ({ ...value, level: question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: question === QUESTIONS_PER_LEVEL - 1 ? 0 : question + 1, score: value.score + 100, coins: value.coins + 10 })); setPicked(null); } };
   const retry = () => setPicked(null);
   const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setPicked(null); };
   return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Touch a matching tile, or use Tab then Enter/Space to choose one', ar: 'اضغط بلاطة مطابقة، أو استخدم Tab ثم Enter أو Space للاختيار' }}>
-    <SignatureProgressBar progress={progress} lang={lang} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Signal hunt', ar: 'صيد الإشارة' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t({ en: 'Find the target colour.', ar: 'اعثر على اللون المستهدف.' }, lang)}</h2><p className="mt-3 text-[#688079]">{t({ en: 'Stay with one signal even when the board gets busy.', ar: 'ركز على إشارة واحدة حتى تصبح اللوحة مزدحمة.' }, lang)} <strong className="text-[#174b44]">{board.label.en}</strong></p><div className="mx-auto mt-7 grid max-w-[360px] grid-cols-3 gap-3">{board.colors.map((color, index) => <button key={index} onClick={() => choose(index)} aria-label={`Color tile ${index + 1}`} className={`signature-tile grid aspect-square place-items-center rounded-2xl border-4 transition ${picked === index ? good ? 'border-[#33705f] scale-105' : 'border-[#e8755f] scale-95' : 'border-[#efe4cf] hover:scale-105'}`} style={{ backgroundColor: color }} data-testid={`button-color-tile-${index + 1}`}><span className="rounded-full bg-white/50 px-2 py-1 text-xs font-bold text-[#174b44]">{index + 1}</span></button>)}</div>{picked !== null && <LevelFeedback good={good} message={good ? { en: 'You held your focus and found the signal.', ar: 'حافظت على تركيزك ووجدت الإشارة.' } : { en: 'That colour was a distraction. Scan again and try the highlighted signal.', ar: 'كان ذلك اللون تشتيتاً. امسح اللوحة وحاول العثور على الإشارة.' }} lang={lang} onNext={next} onRetry={retry} final={progress.level === 2} />}</SignatureFrame>;
+    <SignatureProgressBar progress={progress} lang={lang} question={question} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Signal hunt', ar: 'صيد الإشارة' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t({ en: 'Find the target colour and shape.', ar: 'اعثر على اللون والشكل المستهدفين.' }, lang)}</h2><p className="mt-3 text-[#688079]">{t({ en: 'Stay with one signal even when the board gets busy. Match both its colour and its square shape.', ar: 'ركز على إشارة واحدة حتى تصبح اللوحة مزدحمة. طابق اللون والشكل المربع معًا.' }, lang)} <strong className="text-[#174b44]">{board.label[lang]} {board.targetShape}</strong></p><div className="mx-auto mt-7 grid max-w-[360px] grid-cols-3 gap-3">{board.colors.map((color, index) => <button key={index} onClick={() => choose(index)} aria-label={`Color tile ${index + 1}, ${shapeMarkers[index]}`} className={`signature-tile grid aspect-square place-items-center rounded-2xl border-4 transition ${picked === index ? good ? 'border-[#33705f] scale-105' : 'border-[#e8755f] scale-95' : 'border-[#dfd2bd] hover:scale-105'}`} style={{ backgroundColor: color }} data-testid={`button-color-tile-${index + 1}`}><span className="rounded-full bg-white/50 px-2 py-1 text-sm font-bold text-[#174b44]">{shapeMarkers[index]}</span></button>)}</div>{picked !== null && <LevelFeedback good={good} message={good ? { en: 'You held your focus and found the signal.', ar: 'حافظت على تركيزك ووجدت الإشارة.' } : { en: 'That colour or shape was a distraction. Scan again and try the highlighted signal.', ar: 'كان ذلك اللون أو الشكل تشتيتاً. امسح اللوحة وحاول العثور على الإشارة.' }} lang={lang} onNext={next} onRetry={retry} final={progress.level === 2 && question === QUESTIONS_PER_LEVEL - 1} />}</SignatureFrame>;
 }
 
 function CommonGround({ lang }: { lang: Lang }) {
@@ -979,10 +992,27 @@ function BotWorkshop({ lang }: { lang: Lang }) {
     <SignatureProgressBar progress={progress} lang={lang} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Block builder', ar: 'باني الكتل' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t(level.goal, lang)}</h2><div className="mt-7 rounded-[24px] bg-[#174b44] p-5 text-[#fff4df]"><div className="flex min-h-20 flex-wrap items-center gap-2">{program.length ? program.map((block, index) => <span key={`${block}-${index}`} className="rounded-xl bg-[#f2c95c] px-3 py-2 text-xs font-bold text-[#174b44]">{index + 1}. {block}</span>) : <span className="text-sm text-[#b7d1c5]">{t({ en: 'Add blocks to wake up the bot.', ar: 'أضف الكتل لإيقاظ الروبوت.' }, lang)}</span>}</div></div><div className="mt-5 grid grid-cols-2 gap-3">{level.blocks.map((block, index) => <button key={block} onClick={() => !ran && setProgram((value) => [...value, block])} disabled={ran} className="rounded-2xl border border-[#dfd4c1] bg-[#fcf8f0] p-3 text-sm font-bold hover:border-[#33705f] disabled:opacity-50" data-testid={`button-bot-block-${index + 1}`}>{block}</button>)}</div>{!ran ? <div className="mt-5 flex gap-2"><button onClick={reset} className="rounded-full border border-[#c8d2c7] px-4 py-2 text-sm font-bold" data-testid="button-reset-bot"><RotateCcw className="me-1 inline h-4 w-4" />{t({ en: 'Clear', ar: 'مسح' }, lang)}</button><button onClick={run} disabled={!program.length} className="rounded-full bg-[#e8755f] px-5 py-2 text-sm font-bold text-[#fff7e8] disabled:opacity-40" data-testid="button-run-bot"><Play className="me-1 inline h-4 w-4" />{t({ en: 'Run bot', ar: 'شغّل الروبوت' }, lang)}</button></div> : <LevelFeedback good={good} message={good ? { en: 'Program complete. The bot followed your plan.', ar: 'اكتمل البرنامج. اتبع الروبوت خطتك.' } : { en: 'The bot reached the wrong place. Clear the blocks and plan one step at a time.', ar: 'وصل الروبوت إلى المكان الخطأ. امسح الكتل وخطط خطوة بعد خطوة.' }} lang={lang} onNext={next} onRetry={reset} final={progress.level === 2} />}</SignatureFrame>;
 }
 
-function SignatureProgressBar({ progress, lang }: { progress: SignatureProgress; lang: Lang }) {
-  return <div className="mb-8 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Level', ar: 'المستوى' }, lang)} {progress.level + 1} / 3</p><div className="mt-3 flex gap-1.5">{[0, 1, 2].map((index) => <span key={index} className={`h-1.5 w-12 rounded-full ${index <= progress.level ? 'bg-[#e8755f]' : 'bg-[#dfd2bd]'}`} />)}</div></div><div className="flex items-center gap-2 rounded-full bg-[#e6f1eb] px-3 py-1.5 text-sm font-bold"><Star className="h-4 w-4 text-[#e8755f]" /> <span>{progress.score}</span></div></div>;
+const QUESTIONS_PER_LEVEL = 3;
+function SignatureProgressBar({ progress, lang, total = 3, question }: { progress: SignatureProgress; lang: Lang; total?: number; question?: number }) {
+  // Pack-backed worlds have a non-default level count; show the first prompt
+  // immediately even when opening an older save that has no question cursor.
+  const activeQuestion = question ?? progress.question ?? (total !== 3 ? 0 : undefined);
+  return <div className="mb-8 flex items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Level', ar: 'المستوى' }, lang)} {progress.level + 1} / {total}</p><div className="mt-3 flex gap-1.5">{Array.from({ length: total }, (_, index) => <span key={index} className={`h-1.5 min-w-6 flex-1 rounded-full ${index <= progress.level ? 'bg-[#e8755f]' : 'bg-[#dfd2bd]'}`} />)}</div></div>{activeQuestion !== undefined && <div className="rounded-2xl bg-[#efe4cf] px-3 py-2 text-center text-xs font-bold text-[#174b44]"><span className="block text-[#a66a40]">{t({ en: 'Question', ar: 'السؤال' }, lang)}</span>{activeQuestion + 1} / {QUESTIONS_PER_LEVEL}</div>}<div className="flex items-center gap-2 rounded-full bg-[#e6f1eb] px-3 py-1.5 text-sm font-bold"><Star className="h-4 w-4 text-[#e8755f]" /> <span>{progress.score}</span></div></div>;
 }
 
+function useBoundedSignatureProgress(progress: SignatureProgress, setProgress: React.Dispatch<React.SetStateAction<SignatureProgress>>, total: number) {
+  useEffect(() => {
+    if (!progress.finished && progress.question === undefined && progress.level > 0) {
+      // Earlier saves used level as a question index. Translate that cursor
+      // rather than erasing a child's earned score and coins.
+      const legacyPosition = Math.min(progress.level, total * QUESTIONS_PER_LEVEL - 1);
+      setProgress((value) => ({ ...value, level: Math.floor(legacyPosition / QUESTIONS_PER_LEVEL), question: legacyPosition % QUESTIONS_PER_LEVEL }));
+    } else if (!progress.finished && progress.level >= total) {
+      const lastPosition = total * QUESTIONS_PER_LEVEL - 1;
+      setProgress((value) => ({ ...value, level: Math.floor(lastPosition / QUESTIONS_PER_LEVEL), question: lastPosition % QUESTIONS_PER_LEVEL }));
+    }
+  }, [progress.finished, progress.level, progress.question, setProgress, total]);
+}
 function LibrarySort({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'library-sort')!;
   const [progress, setProgress] = useSignatureProgress(game.id);
@@ -1007,48 +1037,153 @@ function LibrarySort({ lang }: { lang: Lang }) {
 function InnovationLab({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'innovation-lab')!;
   const [progress, setProgress] = useSignatureProgress(game.id);
-  const [parts, setParts] = useState<string[]>([]); const [tested, setTested] = useState(false);
-  const levels = [
-    { challenge: { en: 'Help a plant get more sunlight.', ar: 'ساعد نبتة على الحصول على مزيد من الضوء.' }, parts: [{ id: 'mirror', label: { en: 'Mirror', ar: 'مرآة' } }, { id: 'wheel', label: { en: 'Wheel', ar: 'عجلة' } }, { id: 'stand', label: { en: 'Stand', ar: 'حامل' } }], answer: ['mirror', 'stand'] },
-    { challenge: { en: 'Make a water bottle easier to carry.', ar: 'اجعل زجاجة الماء أسهل للحمل.' }, parts: [{ id: 'handle', label: { en: 'Handle', ar: 'مقبض' } }, { id: 'bell', label: { en: 'Bell', ar: 'جرس' } }, { id: 'strap', label: { en: 'Strap', ar: 'حزام' } }], answer: ['handle', 'strap'] },
-    { challenge: { en: 'Help a neighbour hear the doorbell.', ar: 'ساعد الجار على سماع جرس الباب.' }, parts: [{ id: 'light', label: { en: 'Flashing light', ar: 'ضوء وامض' } }, { id: 'bell', label: { en: 'Bell', ar: 'جرس' } }, { id: 'magnet', label: { en: 'Magnet', ar: 'مغناطيس' } }], answer: ['light', 'bell'] },
-  ];
-  const level = levels[progress.level]; const good = parts.length === 2 && level.answer.every((part) => parts.includes(part));
-  const test = () => setTested(true); const next = () => { if (progress.level === 2) setProgress((value) => ({ ...value, score: value.score + 130, coins: value.coins + 13, finished: true })); else { setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + 130, coins: value.coins + 13 })); setParts([]); setTested(false); } }; const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setParts([]); setTested(false); };
-  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Choose two parts, then test the prototype · Keyboard: Tab then Enter/Space', ar: 'اختر جزأين ثم اختبر النموذج · لوحة المفاتيح: Tab ثم Enter أو Space' }}>
-    <SignatureProgressBar progress={progress} lang={lang} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Prototype bench', ar: 'طاولة النماذج' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t({ en: 'Build, test, improve.', ar: 'ابنِ واختبر وحسّن.' }, lang)}</h2><p className="mt-3 rounded-2xl bg-[#efe4cf] p-4 text-sm font-semibold">{t(level.challenge, lang)}</p><div className="mt-6 flex min-h-24 items-center justify-center gap-3 rounded-[22px] border-2 border-dashed border-[#c8d2c7] bg-[#fcf8f0]">{parts.length ? parts.map((part) => <span key={part} className="signature-pop rounded-xl bg-[#f2c95c] px-4 py-3 text-sm font-bold">{t(level.parts.find((item) => item.id === part)!.label, lang)}</span>) : <span className="text-sm font-semibold text-[#9aaba0]">{t({ en: 'Your prototype is waiting for parts.', ar: 'نموذجك ينتظر الأجزاء.' }, lang)}</span>}</div><div className="mt-5 grid grid-cols-3 gap-3">{level.parts.map((part, index) => <button key={part.id} onClick={() => setParts((value) => value.includes(part.id) ? value.filter((item) => item !== part.id) : value.length < 2 ? [...value, part.id] : value)} className={`rounded-2xl border p-3 text-sm font-bold ${parts.includes(part.id) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`} data-testid={`button-prototype-part-${index + 1}`}>{t(part.label, lang)}</button>)}</div>{!tested ? <button onClick={test} disabled={parts.length !== 2} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-5 py-3 text-sm font-bold text-[#fff4df] disabled:opacity-40" data-testid="button-test-prototype"><Zap className="h-4 w-4" /> {t({ en: 'Test prototype', ar: 'اختبر النموذج' }, lang)}</button> : <LevelFeedback good={good} message={good ? { en: 'Your small test taught you something useful. That is innovation.', ar: 'علّمك الاختبار الصغير شيئاً مفيداً. هذا هو الابتكار.' } : { en: 'The prototype needs a new idea. Swap a part and test again.', ar: 'يحتاج النموذج إلى فكرة جديدة. بدّل جزءاً واختبر مجدداً.' }} lang={lang} onNext={next} onRetry={() => { setParts([]); setTested(false); }} final={progress.level === 2} />}</SignatureFrame>;
+  const [parts, setParts] = useState<string[]>([]);
+  const [tested, setTested] = useState(false);
+  const [rulesBuilt, setRulesBuilt] = useState<{ condition: string; action: string }[]>([]);
+  const [reflection, setReflection] = useState('');
+  const [trainingIndex, setTrainingIndex] = useState(0);
+  const [fixes, setFixes] = useState<string[]>([]);
+  const [fixSubmitted, setFixSubmitted] = useState(false);
+  const [edgeCase, setEdgeCase] = useState<number | null>(null);
+  const [humanFallback, setHumanFallback] = useState(false);
+  const cycle = usePlayerContentCycle();
+  const totalQuestions = getInnovationItemCount(cycle);
+  const round = getQuestionRound(progress, totalQuestions);
+  const item = getInnovationItem(cycle, round.itemIndex);
+  useBoundedSignatureProgress(progress, setProgress, round.totalLevels);
+  const isTraining = !('type' in item);
+  const isRuleBuilder = !isTraining && item.type === 'rule_builder';
+  const trainingIcons = isTraining ? item.icons : [];
+  const trainingIcon = trainingIcons[trainingIndex];
+  const categoryA = isTraining ? item.category_a : { en: 'Group A', ar: 'المجموعة أ' };
+  const categoryB = isTraining ? item.category_b : { en: 'Group B', ar: 'المجموعة ب' };
+  const isFlaw = !isTraining && item.type === 'find_the_flaw';
+  const options = isFlaw ? item.options : [];
+  const prompt = isFlaw ? item.prompt : { en: 'Build, test, improve.', ar: 'ابنِ واختبر وحسّن.' };
+  const mission = isRuleBuilder ? item.mission : prompt;
+  const rules = isRuleBuilder ? item.rule_parts : undefined;
+  const edgeCases = isRuleBuilder ? item.edge_cases : [];
+  const hasFixTask = isFlaw && Boolean(item.fix_task && item.fix_options && item.fix_answer);
+  const coveredEdges = isRuleBuilder ? edgeCases.filter((assessment) => !assessment.requires_human_fallback && assessment.required_rule_ids.every((required) => rulesBuilt.some((rule) => `${rule.condition}:${rule.action}` === required))) : [];
+  const unresolvedEdges = isRuleBuilder ? edgeCases.filter((assessment) => assessment.requires_human_fallback) : [];
+  const policyScore = coveredEdges.length;
+  const expected = isTraining ? trainingIcon?.answer : isFlaw ? item.answer : '';
+  const selectedCondition = parts.find((part) => part.startsWith('condition:'))?.split(':')[1] ?? '';
+  const selectedAction = parts.find((part) => part.startsWith('action:'))?.split(':')[1] ?? '';
+  const good = isRuleBuilder
+    ? policyScore === edgeCases.filter((assessment) => !assessment.requires_human_fallback).length && edgeCase !== null && edgeCases[edgeCase]?.requires_human_fallback && humanFallback && reflection.trim().length >= 8
+    : isFlaw && hasFixTask
+      ? parts[0] === expected && fixes.length === item.fix_answer!.length && item.fix_answer!.every((answer) => fixes.includes(answer)) && fixSubmitted
+      : parts[0] === expected;
+  const addRule = () => {
+    if (!selectedCondition || !selectedAction || rulesBuilt.length >= 3) return;
+    if (!rulesBuilt.some((rule) => rule.condition === selectedCondition && rule.action === selectedAction)) {
+      setRulesBuilt((value) => [...value, { condition: selectedCondition, action: selectedAction }]);
+    }
+    setParts([]);
+  };
+  const reset = () => { setParts([]); setTested(false); setRulesBuilt([]); setReflection(''); setTrainingIndex(0); setFixes([]); setFixSubmitted(false); setEdgeCase(null); setHumanFallback(false); };
+  const test = () => {
+    if (isTraining && trainingIcon && parts[0] === trainingIcon.answer && trainingIndex < trainingIcons.length - 1) {
+      setTrainingIndex((value) => value + 1);
+      setParts([]);
+      return;
+    }
+    setTested(true);
+  };
+  const next = () => {
+    const reward = Number(item.sparks) || 10;
+    if (round.finalQuestion) setProgress((value) => ({ ...value, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true }));
+    else { setProgress((value) => ({ ...value, level: round.question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: round.question === QUESTIONS_PER_LEVEL - 1 ? 0 : round.question + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) })); reset(); }
+  };
+  const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); reset(); };
+  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Choose an idea, test it, and improve it · Keyboard: Tab then Enter/Space', ar: 'اختر فكرة واختبرها وحسّنها · لوحة المفاتيح: Tab ثم Enter أو Space' }}>
+    <SignatureProgressBar progress={progress} lang={lang} total={round.totalLevels} question={round.question} />
+    <p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Prototype bench', ar: 'طاولة النماذج' }, lang)}</p>
+    <h2 className="mt-3 font-display text-3xl font-bold">{isRuleBuilder ? mission[lang] : prompt[lang]}</h2>
+    {isFlaw && <p className="mt-3 rounded-2xl bg-[#efe4cf] p-4 text-sm font-semibold">{item.scenario[lang]}</p>}
+    {isTraining && trainingIcon ? <>
+      <p className="mt-5 text-[#688079]">{lang === 'en' ? `Sort ${trainingIndex + 1} of ${trainingIcons.length}: where does “${trainingIcon.icon.replaceAll('_', ' ')}” belong?` : `رتّب ${trainingIndex + 1} من ${trainingIcons.length}: أين ينتمي «${trainingIcon.icon.replaceAll('_', ' ')}»؟`}</p>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <button onClick={() => !tested && setParts(['a'])} className={`rounded-2xl border p-4 font-bold ${parts[0] === 'a' ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`} data-testid="button-prototype-part-1">{categoryA[lang]}</button>
+        <button onClick={() => !tested && setParts(['b'])} className={`rounded-2xl border p-4 font-bold ${parts[0] === 'b' ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`} data-testid="button-prototype-part-2">{categoryB[lang]}</button>
+      </div>
+    </> : isRuleBuilder ? <>
+      <p className="mt-4 text-sm text-[#688079]">{t({ en: 'Build three different IF/THEN rules, then name an edge case that needs a person.', ar: 'ابنِ ثلاث قواعد مختلفة «إذا/فإن»، ثم سمِّ حالة استثنائية تحتاج إلى شخص.' }, lang)}</p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div><p className="mb-2 text-sm font-bold">{t({ en: 'IF…', ar: 'إذا…' }, lang)}</p>{(rules?.conditions ?? []).map((rule) => <button key={rule.id} onClick={() => !tested && setParts((value) => [...value.filter((part) => !part.startsWith('condition:')), `condition:${rule.id}`])} className={`mb-2 w-full rounded-xl border p-3 text-start text-sm font-semibold ${parts.includes(`condition:${rule.id}`) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`}>{rule[lang]}</button>)}</div>
+        <div><p className="mb-2 text-sm font-bold">{t({ en: 'THEN…', ar: 'فإن…' }, lang)}</p>{(rules?.actions ?? []).map((rule) => <button key={rule.id} onClick={() => !tested && setParts((value) => [...value.filter((part) => !part.startsWith('action:')), `action:${rule.id}`])} className={`mb-2 w-full rounded-xl border p-3 text-start text-sm font-semibold ${parts.includes(`action:${rule.id}`) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`}>{rule[lang]}</button>)}</div>
+      </div>
+      <button onClick={addRule} disabled={!selectedCondition || !selectedAction || rulesBuilt.length >= 3} className="mt-3 rounded-full border border-[#33705f] px-4 py-2 text-sm font-bold text-[#174b44] disabled:opacity-40" data-testid="button-add-rule">{t({ en: 'Add this rule', ar: 'أضف هذه القاعدة' }, lang)}</button>
+      <div className="mt-4 space-y-2">{rulesBuilt.map((rule, index) => <p key={`${rule.condition}-${rule.action}`} className="rounded-xl bg-[#e6f1eb] p-3 text-sm font-semibold">{index + 1}. {rules?.conditions?.find((entry) => entry.id === rule.condition)?.[lang]} → {rules?.actions?.find((entry) => entry.id === rule.action)?.[lang]}</p>)}</div>
+      {rulesBuilt.length === 3 && <div className="mt-4"><p className="text-sm font-bold">{t({ en: `Your rules safely handle ${policyScore} of ${coveredEdges.length + unresolvedEdges.length} edge cases. Choose one that still needs a human.`, ar: `تعالج قواعدك بأمان ${policyScore} من أصل ${coveredEdges.length + unresolvedEdges.length} حالات استثنائية. اختر واحدة ما زالت تحتاج إلى إنسان.` }, lang)}</p><div className="mt-2 space-y-2">{edgeCases.map((assessment, index) => <button key={assessment.id} onClick={() => setEdgeCase(index)} className={`w-full rounded-xl border p-3 text-start text-sm ${edgeCase === index ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`}>{assessment[lang]} {assessment.requires_human_fallback && <span className="ms-1 text-xs font-bold text-[#a94d40]">({t({ en: 'human check', ar: 'فحص بشري' }, lang)})</span>}</button>)}</div>{edgeCase !== null && <><button onClick={() => setHumanFallback(true)} disabled={!edgeCases[edgeCase]?.requires_human_fallback} className={`mt-3 rounded-full border px-4 py-2 text-sm font-bold ${humanFallback ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1]'} disabled:opacity-40`} data-testid="button-human-fallback">{t({ en: 'Ask a human to check this case', ar: 'اطلب من إنسان فحص هذه الحالة' }, lang)}</button><label className="mt-3 block text-sm font-bold">{t({ en: 'Explain why a person should decide:', ar: 'اشرح لماذا ينبغي أن يقرر شخص:' }, lang)}<input value={reflection} onChange={(event) => setReflection(event.target.value)} className="mt-2 block w-full rounded-xl border border-[#dfd4c1] bg-[#fcf8f0] px-3 py-2 font-normal outline-none focus:border-[#33705f]" data-testid="input-rule-reflection" /></label></>}</div>}
+    </> : <div className="mt-5 grid gap-3">{options.map((option, index) => <button key={option.id} onClick={() => !tested && setParts([option.id])} className={`rounded-2xl border p-4 text-start font-semibold ${parts[0] === option.id ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`} data-testid={`button-prototype-part-${index + 1}`}>{option[lang]}</button>)}</div>}
+    {isFlaw && hasFixTask && tested && parts[0] === expected && !fixSubmitted ? <div className="mt-6 rounded-2xl bg-[#efe4cf] p-4"><p className="font-bold">{item.fix_task![lang]}</p><div className="mt-3 grid grid-cols-2 gap-2">{item.fix_options!.map((option) => <button key={option} onClick={() => setFixes((value) => value.includes(option) ? value.filter((entry) => entry !== option) : value.length < item.fix_answer!.length ? [...value, option] : value)} className={`rounded-xl border p-3 text-sm font-semibold ${fixes.includes(option) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`}>{option.replaceAll('_', ' ')}</button>)}</div><button onClick={() => setFixSubmitted(true)} disabled={fixes.length !== item.fix_answer!.length} className="mt-4 rounded-full bg-[#174b44] px-4 py-2 text-sm font-bold text-[#fff4df] disabled:opacity-40" data-testid="button-apply-fixes">{t({ en: 'Apply examples', ar: 'طبّق الأمثلة' }, lang)}</button></div> : !tested ? <button onClick={test} disabled={isRuleBuilder ? rulesBuilt.length < 3 : !parts.length} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-5 py-3 text-sm font-bold text-[#fff4df] disabled:opacity-40" data-testid="button-test-prototype"><Zap className="h-4 w-4" /> {isRuleBuilder ? t({ en: 'Review rules', ar: 'راجع القواعد' }, lang) : t({ en: 'Test prototype', ar: 'اختبر النموذج' }, lang)}</button> : <LevelFeedback good={good} message={isRuleBuilder ? good ? { en: `Your rules handle ${policyScore} safety cases and your human fallback protects the rest.`, ar: `تعالج قواعدك ${policyScore} من حالات السلامة وبديلك البشري يحمي الباقي.` } : { en: `Your rules handle ${policyScore} clear cases. Cover every safe edge case, then choose a supplied human-check case and explain why.`, ar: `تعالج قواعدك ${policyScore} من الحالات الواضحة. عالج كل الحالات الآمنة ثم اختر حالة فحص بشري من المحتوى واشرح السبب.` } : good ? getPackCopy(isFlaw ? item.explain : undefined, { en: 'Your small test taught you something useful. That is innovation.', ar: 'علّمك الاختبار الصغير شيئاً مفيداً. هذا هو الابتكار.' }) : { en: hasFixTask && fixSubmitted ? 'Those examples still leave the robot with a narrow view. Choose three varied birds.' : 'Try a different choice and test the idea again.', ar: hasFixTask && fixSubmitted ? 'تلك الأمثلة ما زالت تمنح الروبوت رؤية ضيقة. اختر ثلاثة طيور متنوعة.' : 'جرّب خيارًا مختلفًا واختبر الفكرة مجددًا.' }} lang={lang} onNext={next} onRetry={reset} final={round.finalQuestion} />}
+  </SignatureFrame>;
 }
 
 function HeritageSequence({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'heritage')!;
   const [progress, setProgress] = useSignatureProgress(game.id);
   const [chosen, setChosen] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [memoryPick, setMemoryPick] = useState<string | null>(null);
+  const [memoryMatches, setMemoryMatches] = useState<number[]>([]);
   const [wrong, setWrong] = useState(false);
-  const levels = [
-    [{ id: 'story', label: { en: 'Listen to an elder', ar: 'استمع إلى كبير السن' } }, { id: 'pattern', label: { en: 'Notice the pattern', ar: 'لاحظ النقش' } }, { id: 'share', label: { en: 'Share the story', ar: 'شارك القصة' } }],
-    [{ id: 'water', label: { en: 'Prepare clean water', ar: 'حضّر الماء النظيف' } }, { id: 'wash', label: { en: 'Wash hands and arms', ar: 'اغسل اليدين والذراعين' } }, { id: 'face', label: { en: 'Wipe head and ears', ar: 'امسح الرأس والأذنين' } }, { id: 'feet', label: { en: 'Wash the feet', ar: 'اغسل القدمين' } }],
-    [{ id: 'dhow', label: { en: 'Dhow carries the crew', ar: 'يحمل القارب الطاقم' } }, { id: 'pearl', label: { en: 'Divers seek pearls', ar: 'يبحث الغواصون عن اللؤلؤ' } }, { id: 'market', label: { en: 'The pearl reaches market', ar: 'يصل اللؤلؤ إلى السوق' } }],
-  ];
-  const cards = levels[progress.level];
+  const cycle = usePlayerContentCycle();
+  const totalQuestions = getHeritageItemCount(cycle);
+  const round = getQuestionRound(progress, totalQuestions);
+  const total = round.totalLevels;
+  const item = getHeritageItem(cycle, round.itemIndex);
+  useBoundedSignatureProgress(progress, setProgress, round.totalLevels);
+  const cards = item.type === 'order' ? item.steps : [];
+  const options = item.type === 'mcq' ? item.options : [];
+  const pairs = item.type === 'memory_match' ? item.pairs : [];
+  const prompt = item.prompt;
+  const explanation = item.type === 'memory_match' ? { en: 'Careful learning helps stories and knowledge travel forward.', ar: 'التعلّم المتأني يساعد القصص والمعرفة على المضيّ قدمًا.' } : item.explain;
+  const isOrder = item.type === 'order' && cards.length > 0;
+  const isMemory = item.type === 'memory_match';
+  const answer = item.type === 'mcq' ? item.answer : '';
   const select = (id: string) => { if (wrong || chosen.includes(id)) return; const expected = cards[chosen.length]?.id; if (id !== expected) setWrong(true); else setChosen((value) => [...value, id]); };
-  const complete = chosen.length === cards.length;
-  const next = () => { if (progress.level === 2) setProgress((value) => ({ ...value, score: value.score + 120, coins: value.coins + 12, finished: true })); else { setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + 120, coins: value.coins + 12 })); setChosen([]); setWrong(false); } };
-  const retry = () => { setChosen([]); setWrong(false); };
+  const complete = isOrder && chosen.length === cards.length;
+  const good = isOrder ? complete : isMemory ? memoryMatches.length === pairs.length : selected === answer;
+  const selectMemory = (card: string) => {
+    if (memoryMatches.includes(Number(card.split(':')[1]))) return;
+    if (!memoryPick) { setMemoryPick(card); return; }
+    const [firstSide, firstIndex] = memoryPick.split(':'); const [nextSide, nextIndex] = card.split(':');
+    if (firstIndex === nextIndex && firstSide !== nextSide) { setMemoryMatches((value) => [...value, Number(nextIndex)]); setMemoryPick(null); }
+    else { setMemoryPick(card); setWrong(true); }
+  };
+  const next = () => {
+    const reward = Number(item.sparks) || 10;
+    if (round.finalQuestion) setProgress((value) => ({ ...value, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true }));
+    else { setProgress((value) => ({ ...value, level: round.question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: round.question === QUESTIONS_PER_LEVEL - 1 ? 0 : round.question + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) })); setChosen([]); setSelected(null); setMemoryPick(null); setMemoryMatches([]); setWrong(false); }
+  };
+  const retry = () => { setChosen([]); setSelected(null); setMemoryPick(null); setMemoryMatches([]); setWrong(false); };
   const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); retry(); };
   return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Tap the cards in order, or use Tab then Enter/Space', ar: 'اضغط البطاقات بالترتيب، أو استخدم Tab ثم Enter أو Space' }}>
-    <SignatureProgressBar progress={progress} lang={lang} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Story steps', ar: 'خطوات القصة' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t({ en: 'Put the moments in order.', ar: 'رتّب اللحظات.' }, lang)}</h2><p className="mt-3 text-[#688079]">{t({ en: 'Respect grows when we listen, notice, and pass stories on.', ar: 'ينمو الاحترام عندما نستمع ونلاحظ وننقل القصص.' }, lang)}</p><div className="mt-7 grid gap-3">{cards.map((card, index) => <button key={card.id} onClick={() => select(card.id)} disabled={chosen.includes(card.id)} className={`flex items-center gap-4 rounded-2xl border p-4 text-start transition ${chosen.includes(card.id) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-heritage-step-${index + 1}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#efe4cf] font-display font-bold">{chosen.indexOf(card.id) >= 0 ? chosen.indexOf(card.id) + 1 : index + 1}</span><span className="font-semibold">{t(card.label, lang)}</span>{chosen.includes(card.id) && <Check className="ms-auto h-5 w-5 text-[#33705f]" />}</button>)}</div>{(wrong || complete) && <LevelFeedback good={complete} message={complete ? { en: 'Beautiful sequence. You carried the story with care.', ar: 'تسلسل جميل. حملت القصة بعناية.' } : { en: 'That moment belongs later. Start this sequence again and listen for the next step.', ar: 'تلك اللحظة تأتي لاحقاً. ابدأ التسلسل من جديد وابحث عن الخطوة التالية.' }} lang={lang} onNext={next} onRetry={retry} final={progress.level === 2} />}</SignatureFrame>;
+    <SignatureProgressBar progress={progress} lang={lang} total={total} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Heritage challenge', ar: 'تحدّي التراث' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t(prompt, lang)}</h2>{isOrder ? <div className="mt-7 grid gap-3">{cards.map((card, index) => <button key={card.id} onClick={() => select(card.id)} disabled={chosen.includes(card.id)} className={`flex items-center gap-4 rounded-2xl border p-4 text-start transition ${chosen.includes(card.id) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-heritage-step-${index + 1}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#efe4cf] font-display font-bold">{chosen.indexOf(card.id) >= 0 ? chosen.indexOf(card.id) + 1 : index + 1}</span><span className="font-semibold">{card[lang]}</span>{chosen.includes(card.id) && <Check className="ms-auto h-5 w-5 text-[#33705f]" />}</button>)}</div> : isMemory ? <div className="mt-7 grid gap-3 sm:grid-cols-2">{pairs.flatMap((pair, index) => [['a', pair.a], ['b', pair.b]] as const).map(([side, label], index) => { const card = `${side}:${Math.floor(index / 2)}`; const matched = memoryMatches.includes(Math.floor(index / 2)); return <button key={card} onClick={() => selectMemory(card)} disabled={matched} className={`rounded-2xl border p-4 text-start font-semibold ${matched ? 'border-[#33705f] bg-[#e6f1eb]' : memoryPick === card ? 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`}>{label[lang]}</button>; })}</div> : <div className="mt-7 grid gap-3">{options.map((option, index) => <button key={option.id ?? option.en} onClick={() => !selected && setSelected(option.id ?? option.en)} className={`rounded-2xl border p-4 text-start font-semibold transition ${selected === (option.id ?? option.en) ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-heritage-step-${index + 1}`}>{option[lang]}</button>)}</div>}{(wrong || complete || selected !== null || (isMemory && memoryMatches.length === pairs.length)) && <LevelFeedback good={good} message={good ? explanation : { en: 'Try again and look carefully at the question and its choices.', ar: 'حاول مجددًا وانظر بعناية إلى السؤال وخياراته.' }} lang={lang} onNext={next} onRetry={retry} final={progress.level === total - 1} />}</SignatureFrame>;
 }
 
 function NumeracyCheck({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'numeracy-check')!;
   const [progress, setProgress] = useSignatureProgress(game.id);
-  const [answer, setAnswer] = useState(''); const [submitted, setSubmitted] = useState(false); const [time, setTime] = useState(20);
-  const levels = [{ equation: '7 + 5', answer: '12' }, { equation: '24 ÷ 6', answer: '4' }, { equation: '3 × 8', answer: '24' }];
-  const level = levels[progress.level]; const good = answer.trim() === level.answer; const submit = () => { if (answer.trim()) setSubmitted(true); };
+  const cycle = usePlayerContentCycle();
+  const startTime = cycle === 2 ? 18 : 20;
+  const [answer, setAnswer] = useState(''); const [submitted, setSubmitted] = useState(false); const [time, setTime] = useState(startTime);
+  const totalQuestions = getNumeracyItemCount(cycle);
+  const round = getQuestionRound(progress, totalQuestions);
+  const total = round.totalLevels;
+  const item = getNumeracyItem(cycle, round.itemIndex);
+  useBoundedSignatureProgress(progress, setProgress, round.totalLevels);
+  const options = item.options;
+  const prompt = item.prompt;
+  const correctAnswer = item.answer;
+  const good = answer.trim() === correctAnswer; const submit = () => { if (answer.trim()) setSubmitted(true); };
   useEffect(() => { if (submitted || progress.finished) return; const timer = window.setInterval(() => setTime((value) => Math.max(0, value - 1)), 1000); return () => window.clearInterval(timer); }, [submitted, progress.finished]);
-  const next = () => { if (progress.level === 2) setProgress((value) => ({ ...value, score: value.score + (good ? 100 + time * 2 : 25), coins: value.coins + (good ? 15 : 3), finished: true })); else { setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + (good ? 100 + time * 2 : 25), coins: value.coins + (good ? 15 : 3) })); setAnswer(''); setSubmitted(false); setTime(20); } }; const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setAnswer(''); setSubmitted(false); setTime(20); };
+  const next = () => { const reward = (Number(item.sparks) || 5) * 10 + time * 2; if (round.finalQuestion) setProgress((value) => ({ ...value, score: value.score + reward, coins: value.coins + Math.ceil(reward / 20), finished: true })); else { setProgress((value) => ({ ...value, level: round.question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: round.question === QUESTIONS_PER_LEVEL - 1 ? 0 : round.question + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 20) })); setAnswer(''); setSubmitted(false); setTime(startTime); } }; const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setAnswer(''); setSubmitted(false); setTime(startTime); };
   return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Type an answer and press Enter · Timer rewards calm, careful thinking', ar: 'اكتب الإجابة واضغط Enter · يكافئ الوقت التفكير الهادئ الدقيق' }}>
-    <SignatureProgressBar progress={progress} lang={lang} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Maths marathon', ar: 'ماراثون الرياضيات' }, lang)}</p><div className="mt-3 flex items-center justify-between gap-3"><h2 className="font-display text-3xl font-bold">{t({ en: 'Solve the gate.', ar: 'حل المسألة.' }, lang)}</h2><span className={`rounded-full px-3 py-2 text-sm font-bold ${time < 6 ? 'bg-[#fff0eb] text-[#a94d40]' : 'bg-[#e6f1eb] text-[#33705f]'}`}><Clock3 className="me-1 inline h-4 w-4" />{time}s</span></div><div className="mt-8 rounded-[24px] bg-[#efe4cf] p-8 text-center"><p className="font-display text-5xl font-bold tracking-tight">{level.equation} = ?</p><form onSubmit={(event) => { event.preventDefault(); submit(); }}><input autoFocus value={answer} onChange={(event) => setAnswer(event.target.value.replace(/[^0-9]/g, ''))} inputMode="numeric" aria-label="Math answer" className="mx-auto mt-6 block w-40 rounded-2xl border-2 border-[#c8d2c7] bg-[#fffaf2] px-4 py-3 text-center font-display text-2xl font-bold outline-none focus:border-[#33705f]" data-testid="input-math-answer" /><button type="submit" disabled={!answer || submitted} className="mt-4 rounded-full bg-[#174b44] px-6 py-3 text-sm font-bold text-[#fff4df] disabled:opacity-40" data-testid="button-submit-math">{t({ en: 'Check answer', ar: 'تحقق من الإجابة' }, lang)}</button></form></div>{submitted && <LevelFeedback good={good} message={good ? { en: 'Correct! Your number sense is getting faster.', ar: 'صحيح! إحساسك بالأرقام يصبح أسرع.' } : { en: `The answer is ${level.answer}. Reset and try the next gate with a fresh strategy.`, ar: `الإجابة هي ${level.answer}. أعد المحاولة وجرب استراتيجية جديدة.` }} lang={lang} onNext={next} onRetry={() => { setAnswer(''); setSubmitted(false); setTime(20); }} final={progress.level === 2} />}</SignatureFrame>;
+    <SignatureProgressBar progress={progress} lang={lang} total={total} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Maths marathon', ar: 'ماراثون الرياضيات' }, lang)}</p><div className="mt-3 flex items-center justify-between gap-3"><h2 className="font-display text-3xl font-bold">{t({ en: 'Solve the gate.', ar: 'حل المسألة.' }, lang)}</h2><span className={`rounded-full px-3 py-2 text-sm font-bold ${time < 6 ? 'bg-[#fff0eb] text-[#a94d40]' : 'bg-[#e6f1eb] text-[#33705f]'}`}><Clock3 className="me-1 inline h-4 w-4" />{time}s</span></div><div className="mt-8 rounded-[24px] bg-[#efe4cf] p-8 text-center"><p className="font-display text-4xl font-bold tracking-tight">{prompt[lang]}</p><div className="mx-auto mt-6 grid max-w-md grid-cols-2 gap-3">{options.map((option, index) => <button key={option} onClick={() => !submitted && setAnswer(option)} className={`rounded-2xl border px-3 py-3 font-bold ${answer === option ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fffaf2]'}`} data-testid={`button-math-option-${index + 1}`}>{option}</button>)}</div><form onSubmit={(event) => { event.preventDefault(); submit(); }}><input value={answer} onChange={(event) => setAnswer(event.target.value)} aria-label="Math answer" className="mx-auto mt-5 block w-56 rounded-2xl border-2 border-[#c8d2c7] bg-[#fffaf2] px-4 py-3 text-center font-display text-xl font-bold outline-none focus:border-[#33705f]" data-testid="input-math-answer" /><button type="submit" disabled={!answer || submitted} className="mt-4 rounded-full bg-[#174b44] px-6 py-3 text-sm font-bold text-[#fff4df] disabled:opacity-40" data-testid="button-submit-math">{t({ en: 'Check answer', ar: 'تحقق من الإجابة' }, lang)}</button></form></div>{submitted && <LevelFeedback good={good} message={good ? { en: 'Correct! Your number sense is getting faster.', ar: 'صحيح! إحساسك بالأرقام يصبح أسرع.' } : { en: `The answer is ${correctAnswer}. Reset and try the next gate with a fresh strategy.`, ar: `الإجابة هي ${correctAnswer}. أعد المحاولة وجرب استراتيجية جديدة.` }} lang={lang} onNext={next} onRetry={() => { setAnswer(''); setSubmitted(false); setTime(startTime); }} final={progress.level >= total - 1} />}</SignatureFrame>;
 }
 
 function SparkStudio({ lang }: { lang: Lang }) {
@@ -1064,32 +1199,73 @@ function WordJourney({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'word-journey')!;
   const [progress, setProgress] = useSignatureProgress(game.id);
   const [picked, setPicked] = useState<string | null>(null);
-  const levels = [
-    { sentence: { en: 'I can ___ a friend.', ar: 'يمكنني ___ صديقاً.' }, choices: [{ en: 'help', ar: 'مساعدة' }, { en: 'jump', ar: 'قفز' }, { en: 'hide', ar: 'اختباء' }], answer: 'help' },
-    { sentence: { en: 'The word “kind” means ___.', ar: 'كلمة «لطيف» تعني ___.' }, choices: [{ en: 'caring', ar: 'مُهتم' }, { en: 'noisy', ar: 'صاخب' }, { en: 'empty', ar: 'فارغ' }], answer: 'caring' },
-    { sentence: { en: 'We ___ ideas together.', ar: 'نحن ___ الأفكار معاً.' }, choices: [{ en: 'share', ar: 'نتشارك' }, { en: 'break', ar: 'نكسر' }, { en: 'forget', ar: 'ننسى' }], answer: 'share' },
-  ];
-  const level = levels[progress.level]; const good = picked === level.answer;
-  const next = () => { if (progress.level === 2) setProgress((value) => ({ ...value, score: value.score + 100, coins: value.coins + 10, finished: true })); else { setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + 100, coins: value.coins + 10 })); setPicked(null); } };
+  const cycle = usePlayerContentCycle();
+  const totalQuestions = getWordItemCount(cycle, lang);
+  const round = getQuestionRound(progress, totalQuestions);
+  const total = round.totalLevels;
+  const item = getWordItem(cycle, round.itemIndex, lang);
+  useBoundedSignatureProgress(progress, setProgress, total);
+  const choices = item.options;
+  const prompt = item.prompt;
+  const passage = getPackCopy(item.passage, { en: '', ar: '' });
+  const display = item.display ?? '';
+  const correctAnswer = item.answer;
+  const good = picked === correctAnswer;
+  const next = () => { const reward = Number(item.sparks) || 8; if (round.finalQuestion) setProgress((value) => ({ ...value, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true })); else { setProgress((value) => ({ ...value, level: round.question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: round.question === QUESTIONS_PER_LEVEL - 1 ? 0 : round.question + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) })); setPicked(null); } };
   const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setPicked(null); };
   return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Tap a word tile · Keyboard: Tab then Enter/Space', ar: 'اضغط بلاطة كلمة · لوحة المفاتيح: Tab ثم Enter أو Space' }}>
-    <SignatureProgressBar progress={progress} lang={lang} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Word bridge', ar: 'جسر الكلمات' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t({ en: 'Complete the sentence.', ar: 'أكمل الجملة.' }, lang)}</h2><div className="mt-8 rounded-[24px] bg-[#efe4cf] p-7 text-center"><p className="font-display text-2xl font-bold text-[#174b44]">{t(level.sentence, lang)}</p><div className="mt-6 flex flex-wrap justify-center gap-3">{level.choices.map((choice, index) => <button key={choice.en} onClick={() => setPicked(choice.en)} className={`rounded-2xl border px-5 py-3 font-bold transition ${picked === choice.en ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-word-choice-${index + 1}`}>{t(choice, lang)}</button>)}</div></div>{picked !== null && <LevelFeedback good={good} message={good ? { en: 'The right word makes the meaning clear.', ar: 'الكلمة الصحيحة تجعل المعنى واضحاً.' } : { en: 'Read the whole sentence again. Meaning is your map—try another word.', ar: 'اقرأ الجملة كاملة. المعنى هو خريطتك، جرب كلمة أخرى.' }} lang={lang} onNext={next} onRetry={() => setPicked(null)} final={progress.level === 2} />}</SignatureFrame>;
+    <SignatureProgressBar progress={progress} lang={lang} total={total} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Word bridge', ar: 'جسر الكلمات' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{prompt[lang]}</h2><div className="mt-8 rounded-[24px] bg-[#efe4cf] p-7 text-center">{passage[lang] && <p className="mb-5 text-sm leading-relaxed text-[#557068]">{passage[lang]}</p>}{display && <p className="mb-5 font-display text-3xl font-bold text-[#174b44]">{display}</p>}<div className="mt-6 flex flex-wrap justify-center gap-3">{choices.map((choice, index) => <button key={choice} onClick={() => !picked && setPicked(choice)} className={`rounded-2xl border px-5 py-3 font-bold transition ${picked === choice ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-word-choice-${index + 1}`}>{choice}</button>)}</div></div>{picked !== null && <LevelFeedback good={good} message={good ? getPackCopy(item.explain, { en: 'The right word makes the meaning clear.', ar: 'الكلمة الصحيحة تجعل المعنى واضحاً.' }) : { en: 'Read the whole clue again. Meaning is your map—try another word.', ar: 'اقرأ الدليل كاملاً. المعنى هو خريطتك، جرب كلمة أخرى.' }} lang={lang} onNext={next} onRetry={() => setPicked(null)} final={progress.level === total - 1} />}</SignatureFrame>;
 }
 
 function TruthLab({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'truth-lab')!;
-  const [progress, setProgress] = useSignatureProgress(game.id); const [verdict, setVerdict] = useState<string | null>(null);
-  const levels = [{ claim: { en: 'Every shiny stone is gold.', ar: 'كل حجر لامع هو ذهب.' }, answer: 'unsure' }, { claim: { en: 'An official health page is stronger evidence than a rumour.', ar: 'صفحة صحية رسمية دليل أقوى من إشاعة.' }, answer: 'true' }, { claim: { en: 'A dramatic photo alone proves the whole story.', ar: 'الصورة المثيرة وحدها تثبت القصة كاملة.' }, answer: 'false' }];
-  const level = levels[progress.level]; const good = verdict === level.answer; const bins = [{ id: 'true', label: { en: 'True', ar: 'صحيح' }, icon: '✓' }, { id: 'false', label: { en: 'False', ar: 'خطأ' }, icon: '×' }, { id: 'unsure', label: { en: 'Not sure', ar: 'لست متأكداً' }, icon: '?' }];
-  const next = () => { if (progress.level === 2) setProgress((value) => ({ ...value, score: value.score + 130, coins: value.coins + 13, finished: true })); else { setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + 130, coins: value.coins + 13 })); setVerdict(null); } }; const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setVerdict(null); };
+  const [progress, setProgress] = useSignatureProgress(game.id); const [verdict, setVerdict] = useState<string | null>(null); const [sources, setSources] = useState<string[]>([]); const [submitted, setSubmitted] = useState(false);
+  const cycle = usePlayerContentCycle();
+   const totalQuestions = getTruthItemCount(cycle);
+   const round = getQuestionRound(progress, totalQuestions);
+   const total = round.totalLevels;
+   const item = getTruthItem(cycle, round.itemIndex);
+   useBoundedSignatureProgress(progress, setProgress, total);
+  const claim = item.type === 'newsroom' ? item.story : item.claim;
+  const isEvidence = item.type === 'evidence_match';
+  const isNewsroom = item.type === 'newsroom';
+  const evidence = isEvidence ? item.evidence : [];
+  const storySources = isNewsroom ? item.sources : [];
+  const verdictOptions = isNewsroom ? item.verdict_options : [];
+  const expected = isNewsroom ? item.answer_verdict : item.answer;
+  const expectedSources = isNewsroom ? item.answer_sources : [];
+  const good = isNewsroom ? verdict === expected && expectedSources.every((source) => sources.includes(source)) && sources.length === expectedSources.length : verdict === expected;
+  const bins = isEvidence ? evidence : isNewsroom ? verdictOptions : [{ id: 'true', en: 'True', ar: 'صحيح' }, { id: 'false', en: 'False', ar: 'خطأ' }, { id: 'not_sure', en: 'Not sure', ar: 'لست متأكداً' }];
+   const next = () => { const reward = Number(item.sparks) || 8; if (round.finalQuestion) setProgress((value) => ({ ...value, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true })); else { setProgress((value) => ({ ...value, level: round.question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: round.question === QUESTIONS_PER_LEVEL - 1 ? 0 : round.question + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) })); setVerdict(null); setSources([]); setSubmitted(false); } }; const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setVerdict(null); setSources([]); setSubmitted(false); };
   return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Drop the claim into a bin by tapping · Keyboard: Tab then Enter/Space', ar: 'ضع الادعاء في الصندوق بالضغط · لوحة المفاتيح: Tab ثم Enter أو Space' }}>
-    <SignatureProgressBar progress={progress} lang={lang} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Claim sorter', ar: 'فرز الادعاءات' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t({ en: 'What should a careful thinker say?', ar: 'ماذا يقول المفكر الحريص؟' }, lang)}</h2><div className="mt-7 rounded-[24px] border-2 border-dashed border-[#c8d2c7] bg-[#efe4cf] p-7 text-center"><CircleHelp className="mx-auto h-8 w-8 text-[#e8755f]" /><p className="mt-4 font-display text-2xl font-bold">{t(level.claim, lang)}</p></div><div className="mt-5 grid grid-cols-3 gap-3">{bins.map((bin) => <button key={bin.id} onClick={() => !verdict && setVerdict(bin.id)} className={`rounded-2xl border p-4 transition ${verdict === bin.id ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-truth-bin-${bin.id}`}><span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-[#efe4cf] font-display text-2xl font-bold">{bin.icon}</span><span className="mt-2 block text-sm font-bold">{t(bin.label, lang)}</span></button>)}</div>{verdict && <LevelFeedback good={good} message={good ? { en: 'Good checking. “Not sure” is a strong answer when evidence is missing.', ar: 'تحقق جيد. «لست متأكداً» إجابة قوية عندما ينقصنا الدليل.' } : { en: 'Pause before sharing. Ask who said it and what evidence supports it.', ar: 'توقف قبل المشاركة. اسأل من قالها وما الدليل الذي يدعمها.' }} lang={lang} onNext={next} onRetry={() => setVerdict(null)} final={progress.level === 2} />}</SignatureFrame>;
+    <SignatureProgressBar progress={progress} lang={lang} total={total} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Claim sorter', ar: 'فرز الادعاءات' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{isEvidence ? t({ en: 'Choose the strongest evidence.', ar: 'اختر الدليل الأقوى.' }, lang) : isNewsroom ? t({ en: 'Check the story like a newsroom.', ar: 'تحقق من القصة كغرفة أخبار.' }, lang) : t({ en: 'What should a careful thinker say?', ar: 'ماذا يقول المفكر الحريص؟' }, lang)}</h2><div className="mt-7 rounded-[24px] border-2 border-dashed border-[#c8d2c7] bg-[#efe4cf] p-7 text-center"><CircleHelp className="mx-auto h-8 w-8 text-[#e8755f]" /><p className="mt-4 font-display text-2xl font-bold">{claim[lang]}</p></div><div className="mt-5 grid gap-3 sm:grid-cols-3">{bins.map((bin) => <button key={bin.id ?? bin.en} onClick={() => !submitted && setVerdict(bin.id ?? bin.en)} className={`rounded-2xl border p-4 transition ${verdict === (bin.id ?? bin.en) ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-truth-bin-${bin.id ?? bin.en}`}><span className="block text-sm font-bold">{bin[lang]}</span></button>)}</div>{isNewsroom && verdict && <div className="mt-5"><p className="mb-2 text-sm font-bold">{t({ en: 'Which sources support your conclusion?', ar: 'أي المصادر تدعم استنتاجك؟' }, lang)}</p>{storySources.map((source) => <button key={source.id ?? source.en} onClick={() => !submitted && setSources((value) => value.includes(source.id ?? source.en) ? value.filter((id) => id !== (source.id ?? source.en)) : [...value, source.id ?? source.en])} className={`mb-2 w-full rounded-xl border p-3 text-start text-sm font-semibold ${sources.includes(source.id ?? source.en) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`}>{source[lang]}</button>)}<button onClick={() => setSubmitted(true)} disabled={!verdict || !sources.length} className="mt-3 rounded-full bg-[#174b44] px-5 py-3 text-sm font-bold text-[#fff4df] disabled:opacity-40" data-testid="button-check-newsroom">{t({ en: 'Check story', ar: 'تحقق من القصة' }, lang)}</button></div>}{((!isNewsroom && verdict) || (isNewsroom && submitted)) && <LevelFeedback good={good} message={good ? getPackCopy(isNewsroom ? undefined : item.explain, { en: 'Good checking. You used evidence before deciding.', ar: 'تحقق جيد. استخدمت الدليل قبل اتخاذ القرار.' }) : { en: 'Pause before sharing. Check the claim, its source, and the evidence again.', ar: 'توقف قبل المشاركة. تحقق من الادعاء ومصدره والدليل مجددًا.' }} lang={lang} onNext={next} onRetry={() => { setVerdict(null); setSources([]); setSubmitted(false); }} final={progress.level === total - 1} />}</SignatureFrame>;
 }
 
-function LevelFeedback({ good, message, lang, onNext, onRetry, final = false }: { good: boolean; message: Copy; lang: Lang; onNext: () => void; onRetry?: () => void; final?: boolean }) {
-  return <div className={`mt-6 rounded-2xl p-4 ${good ? 'bg-[#e6f1eb]' : 'bg-[#fff0eb]'}`} role="status" data-testid="status-signature-feedback"><p className="text-sm font-semibold leading-relaxed text-[#174b44]">{t(message, lang)}</p><div className="mt-3 flex flex-wrap gap-2">{!good && onRetry && <button onClick={onRetry} className="inline-flex items-center gap-2 rounded-full border border-[#e8755f] px-4 py-2 text-xs font-bold text-[#a94d40]" data-testid="button-signature-retry"><RotateCcw className="h-3.5 w-3.5" /> {t({ en: 'Try again', ar: 'حاول مجدداً' }, lang)}</button>}{good && <button onClick={onNext} className="inline-flex items-center gap-2 rounded-full bg-[#174b44] px-4 py-2 text-xs font-bold text-[#fff4df]" data-testid="button-signature-next">{final ? t({ en: 'Finish game', ar: 'إنهاء اللعبة' }, lang) : t({ en: 'Next level', ar: 'المستوى التالي' }, lang)} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></button>}</div></div>;
+function LevelFeedback({ good, message, lang, onNext, onRetry }: { good: boolean; message: Copy; lang: Lang; onNext: () => void; onRetry?: () => void; final?: boolean }) {
+  return <div className={`mt-6 rounded-2xl p-4 ${good ? 'bg-[#e6f1eb]' : 'bg-[#fff0eb]'}`} role="status" data-testid="status-signature-feedback"><p className="text-sm font-semibold leading-relaxed text-[#174b44]">{t(message, lang)}</p><div className="mt-3 flex flex-wrap gap-2">{!good && onRetry && <button onClick={onRetry} className="inline-flex items-center gap-2 rounded-full border border-[#e8755f] px-4 py-2 text-xs font-bold text-[#a94d40]" data-testid="button-signature-retry"><RotateCcw className="h-3.5 w-3.5" /> {t({ en: 'Try again', ar: 'حاول مجدداً' }, lang)}</button>}{good && <button onClick={onNext} className="inline-flex items-center gap-2 rounded-full bg-[#174b44] px-4 py-2 text-xs font-bold text-[#fff4df]" data-testid="button-signature-next">{t({ en: 'Next activity', ar: 'النشاط التالي' }, lang)} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" /></button>}</div></div>;
 }
 
+function WorldIllustration({ game, lang }: { game: typeof gameBlueprints[number]; lang: Lang }) {
+  const Icon = game.icon;
+  const art: Record<string, { emoji: string; label: Copy }> = {
+    heritage: { emoji: '⛵', label: { en: 'Discover', ar: 'اكتشف' } },
+    'word-journey': { emoji: '🔤', label: { en: 'Word explorer', ar: 'مستكشف الكلمات' } },
+    'numeracy-check': { emoji: '➕', label: { en: 'Number hero', ar: 'بطل الأرقام' } },
+    'healthy-restaurant': { emoji: '🥗', label: { en: 'Menu maker', ar: 'صانع القائمة' } },
+    'truth-lab': { emoji: '🔎', label: { en: 'Fact finder', ar: 'باحث الحقائق' } },
+    'innovation-lab': { emoji: '🤖', label: { en: 'Idea builder', ar: 'صانع الأفكار' } },
+    'color-focus': { emoji: '🌈', label: { en: 'Focus quest', ar: 'مهمة التركيز' } },
+  };
+  const detail = art[game.id] ?? { emoji: '✨', label: { en: 'Play and learn', ar: 'العب وتعلّم' } };
+  return <div className="relative mt-6 overflow-hidden rounded-[24px] border border-white/20 bg-[#194f48]/70 p-3 shadow-inner">
+    <img src={learningWorldPath} alt="" className="h-32 w-full rounded-[18px] object-cover object-center opacity-80 mix-blend-screen" />
+    <div className="absolute inset-3 rounded-[18px] bg-gradient-to-t from-[#123f3a]/90 via-transparent to-transparent" />
+    <div className="absolute bottom-5 start-5 flex items-center gap-3">
+      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#fff4df] text-2xl shadow-soft">{detail.emoji}</span>
+      <span className="rounded-full bg-[#174b44]/90 px-3 py-1.5 text-xs font-bold text-[#fff4df]"><Icon className="me-1 inline h-3.5 w-3.5 text-[#f2c95c]" />{t(detail.label, lang)}</span>
+    </div>
+  </div>;
+}
 function SignatureFrame({ game, lang, progress, onRestart, instruction, children }: {
   game: typeof gameBlueprints[number];
   lang: Lang;
@@ -1114,12 +1290,13 @@ function SignatureFrame({ game, lang, progress, onRestart, instruction, children
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-[#d7e8df]"><Icon className="h-4 w-4 text-[#f2c95c]" /> {t(game.title, lang)}</div>
             <h1 className="mt-8 max-w-xs font-display text-4xl font-semibold leading-[.95] tracking-[-.06em]">{t({ en: 'A world with its own way to play.', ar: 'عالم بطريقته الخاصة للعب.' }, lang)}</h1>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-[#c0dbcf]">{t(game.description, lang)}</p>
+            <WorldIllustration game={game} lang={lang} />
           </div>
         </div>
         <div className="bg-[#fffaf2] p-6 text-[#174b44] sm:p-10">
           {progress.finished ? <div className="flex min-h-[430px] flex-col justify-center text-center">
             <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#f2c95c] text-[#174b44]"><Trophy className="h-9 w-9" /></div>
-            <p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Three levels complete', ar: 'اكتملت المستويات الثلاثة' }, lang)}</p>
+            <p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[#e8755f]">{t({ en: 'Learning complete', ar: 'اكتمل التعلّم' }, lang)}</p>
             <h2 className="mt-2 font-display text-4xl font-bold tracking-tight">{t({ en: 'You found your way to learn.', ar: 'وجدت طريقك إلى التعلم.' }, lang)}</h2>
             <p className="mx-auto mt-4 max-w-md text-[#688079]">{t({ en: 'Your choices and practice are saved on this device.', ar: 'تم حفظ اختياراتك وتدريبك على هذا الجهاز.' }, lang)}</p>
             <div className="mx-auto mt-7 flex items-center gap-6 rounded-2xl bg-[#e6f1eb] px-6 py-4"><div><span className="block font-display text-2xl font-bold" data-testid={`text-${game.id}-score`}>{progress.score}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'score', ar: 'النقاط' }, lang)}</span></div><div className="h-9 w-px bg-[#c7ded1]" /><div><span className="block font-display text-2xl font-bold">{progress.coins}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'coins', ar: 'العملات' }, lang)}</span></div></div>
@@ -1160,16 +1337,30 @@ function HealthyRestaurant({ lang }: { lang: Lang }) {
   const [progress, setProgress] = useSignatureProgress(game.id);
   const [plate, setPlate] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
-  const levels = [
-    { guest: { en: 'Breakfast for a busy swimmer', ar: 'إفطار لسبّاح نشيط' }, items: [{ id: 'oats', label: { en: 'Oats', ar: 'شوفان' } }, { id: 'water', label: { en: 'Water', ar: 'ماء' } }, { id: 'candy', label: { en: 'Candy', ar: 'حلوى' } }, { id: 'fruit', label: { en: 'Fruit', ar: 'فاكهة' } }], answer: ['oats', 'water', 'fruit'] },
-    { guest: { en: 'Lunch for a sunny day', ar: 'غداء ليوم مشمس' }, items: [{ id: 'bread', label: { en: 'Wholegrain bread', ar: 'خبز حبوب كاملة' } }, { id: 'soda', label: { en: 'Soda', ar: 'مشروب غازي' } }, { id: 'salad', label: { en: 'Salad', ar: 'سلطة' } }, { id: 'water', label: { en: 'Water', ar: 'ماء' } }], answer: ['bread', 'salad', 'water'] },
-    { guest: { en: 'A balanced family dinner', ar: 'عشاء متوازن للعائلة' }, items: [{ id: 'rice', label: { en: 'Rice', ar: 'أرز' } }, { id: 'fish', label: { en: 'Fish', ar: 'سمك' } }, { id: 'veg', label: { en: 'Vegetables', ar: 'خضروات' } }, { id: 'sweets', label: { en: 'Sweets', ar: 'حلويات' } }], answer: ['rice', 'fish', 'veg'] },
-  ];
-  const level = levels[progress.level]; const good = plate.length === 3 && level.answer.every((item) => plate.includes(item));
-  const toggle = (id: string) => { if (submitted) return; setPlate((value) => value.includes(id) ? value.filter((item) => item !== id) : value.length < 3 ? [...value, id] : value); };
+  const cycle = usePlayerContentCycle();
+  const task = getMenuTask(cycle);
+  const totalQuestions = getMenuItemCount(cycle);
+  const round = getQuestionRound(progress, totalQuestions);
+  const total = round.totalLevels;
+  const item = getMenuItem(cycle, round.itemIndex);
+  useBoundedSignatureProgress(progress, setProgress, total);
+  const options = item.options;
+  const prompt = item.prompt;
+  const answer = item.answer;
+  const good = plate[0] === answer;
+  const toggle = (id: string) => { if (!submitted) setPlate((value) => value[0] === id ? [] : [id]); };
   const submit = () => setSubmitted(true);
-  const next = () => { if (progress.level === 2) setProgress((value) => ({ ...value, score: value.score + 120, coins: value.coins + 12, finished: true })); else { setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + 120, coins: value.coins + 12 })); setPlate([]); setSubmitted(false); } };
+  const next = () => { const reward = Number(item.sparks) || 8; if (round.finalQuestion) setProgress((value) => ({ ...value, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true })); else { setProgress((value) => ({ ...value, level: round.question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: round.question === QUESTIONS_PER_LEVEL - 1 ? 0 : round.question + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) })); setPlate([]); setSubmitted(false); } };
   const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setPlate([]); setSubmitted(false); };
-  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Tap up to 3 ingredients, then serve · Keyboard: Tab then Enter/Space', ar: 'اضغط حتى ٣ مكونات ثم قدّم الطبق · لوحة المفاتيح: Tab ثم Enter أو Space' }}>
-    <SignatureProgressBar progress={progress} lang={lang} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Menu maker', ar: 'صانع القائمة' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t(level.guest, lang)}</h2><p className="mt-2 text-[#688079]">{t({ en: 'Build a balanced plate with three choices.', ar: 'كوّن طبقاً متوازناً من ثلاثة اختيارات.' }, lang)}</p><div className="mt-7 grid grid-cols-2 gap-3">{level.items.map((item, index) => <button key={item.id} onClick={() => toggle(item.id)} className={`rounded-2xl border p-4 text-start font-semibold transition ${plate.includes(item.id) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-menu-item-${index + 1}`}><span className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-[#efe4cf] text-xl">{['🥣', '💧', '🍬', '🍎'][index]}</span>{t(item.label, lang)}{plate.includes(item.id) && <Check className="float-end h-4 w-4 text-[#33705f]" />}</button>)}</div>{!submitted ? <button onClick={submit} disabled={plate.length !== 3} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-5 py-3 text-sm font-bold text-[#fff4df] disabled:opacity-40" data-testid="button-serve-menu"><Check className="h-4 w-4" /> {t({ en: 'Serve this plate', ar: 'قدّم هذا الطبق' }, lang)}</button> : <LevelFeedback good={good} message={good ? { en: 'A thoughtful menu: balanced, varied, and full of energy.', ar: 'قائمة واعية: متوازنة ومتنوعة ومليئة بالطاقة.' } : { en: 'Taste and balance again. Choose three foods that support the guest.', ar: 'فكر في التوازن مجدداً. اختر ثلاثة أطعمة تدعم الضيف.' }} lang={lang} onNext={next} onRetry={() => { setPlate([]); setSubmitted(false); }} final={progress.level === 2} />}</SignatureFrame>;
+  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Choose a menu option, then serve · Keyboard: Tab then Enter/Space', ar: 'اختر خيارًا من القائمة ثم قدّمه · لوحة المفاتيح: Tab ثم Enter أو Space' }}>
+    <SignatureProgressBar progress={progress} lang={lang} total={total} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Menu maker', ar: 'صانع القائمة' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{task[lang]}</h2><p className="mt-3 rounded-2xl bg-[#efe4cf] p-4 text-lg font-semibold">{prompt[lang]}</p><div className="mt-7 grid grid-cols-2 gap-3">{options.map((option, index) => <button key={option.id} onClick={() => toggle(option.id)} className={`rounded-2xl border p-4 text-start font-semibold transition ${plate.includes(option.id) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-menu-item-${index + 1}`}><span className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-[#efe4cf] text-xl">{['🥗', '💧', '🍊', '🍞'][index % 4]}</span>{option[lang]}{plate.includes(option.id) && <Check className="float-end h-4 w-4 text-[#33705f]" />}</button>)}</div>{!submitted ? <button onClick={submit} disabled={!plate.length} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#174b44] px-5 py-3 text-sm font-bold text-[#fff4df] disabled:opacity-40" data-testid="button-serve-menu"><Check className="h-4 w-4" /> {t({ en: 'Serve this choice', ar: 'قدّم هذا الخيار' }, lang)}</button> : <LevelFeedback good={good} message={good ? getPackCopy(item.explain, { en: 'A thoughtful everyday choice supports energy and balance.', ar: 'الخيار اليومي الواعي يدعم الطاقة والتوازن.' }) : { en: 'Try adding a different everyday choice to this menu.', ar: 'جرّب إضافة خيار يومي مختلف إلى هذه القائمة.' }} lang={lang} onNext={next} onRetry={() => { setPlate([]); setSubmitted(false); }} final={progress.level >= total - 1} />}</SignatureFrame>;
+}
+
+function getQuestionRound(progress: SignatureProgress, itemCount: number) {
+  const question = Math.min(Math.max(progress.question ?? 0, 0), QUESTIONS_PER_LEVEL - 1);
+  const totalLevels = Math.max(1, Math.ceil(itemCount / QUESTIONS_PER_LEVEL));
+  const position = progress.level * QUESTIONS_PER_LEVEL + question;
+  // The adapters intentionally wrap sparse banks. Keep the round position
+  // independent so a padded level always presents all three questions.
+  return { question, itemIndex: position, totalLevels, finalQuestion: position >= itemCount - 1 };
 }
