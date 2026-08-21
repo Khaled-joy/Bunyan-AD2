@@ -262,123 +262,104 @@ function LoginSkyline() {
   </svg>;
 }
 
-function Welcome() {
+function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void }) {
+  const [traceFocused, setTraceFocused] = useState(false);
+  const homeCopy = (copy: Copy) => copy[lang];
   const scrollToTrace = () => {
     const trace = document.getElementById('trace');
     if (trace) {
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       trace.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+      setTraceFocused(true);
       trace.focus({ preventScroll: true });
     }
   };
 
-  return <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#0B0F1A] font-sci-sans text-[#F5F5F0] selection:bg-[#C9A227] selection:text-[#0B0F1A]">
-    <div className="sci-grid fixed inset-0 pointer-events-none opacity-[0.04]"></div>
-    
-    <header className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between p-6 sm:p-10">
-      <div className="font-sci-display font-bold text-xl tracking-tight text-[#F5F5F0]">Bunyan AD</div>
-      <div className="flex gap-6 text-sm font-medium">
-        <Link href="/library" className="text-[#A1A9B8] hover:text-[#C9A227] transition-colors">Library</Link>
-        <Link href="/login" className="text-[#A1A9B8] hover:text-[#C9A227] transition-colors">Player Login</Link>
-      </div>
+  return <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[#e8f4fa] font-sans text-[#174b44]">
+    <div className="sci-grid fixed inset-0 pointer-events-none opacity-70" aria-hidden="true" />
+    <div className="home-orb home-orb-yellow absolute -end-24 top-24 h-72 w-72 rounded-full sm:h-96 sm:w-96" aria-hidden="true" />
+    <div className="home-orb home-orb-coral absolute -start-24 top-[42%] h-64 w-64 rounded-full sm:h-80 sm:w-80" aria-hidden="true" />
+
+    <header className="relative z-20 flex items-center justify-between border-b border-[#d6e2e9] bg-[#e8f4fa]/85 px-5 py-4 backdrop-blur-md sm:px-10">
+      <Link href="/" className="rounded-xl" data-testid="link-home-logo">
+        <img src={logoPath} alt={homeCopy({ en: 'Bunayn AD — a world of knowledge', ar: 'بنيان أبوظبي — عالم من المعرفة' })} className="h-12 w-[140px] object-contain sm:h-14 sm:w-[165px]" />
+      </Link>
+      <nav className="flex items-center gap-2 text-sm font-bold sm:gap-5" aria-label={homeCopy({ en: 'Main navigation', ar: 'التنقل الرئيسي' })}>
+        <Link href="/library" className="rounded-full px-2 py-2 text-[#2140a8] transition hover:bg-white hover:text-[#0b6a79]" data-testid="link-home-library">{homeCopy({ en: 'Game Library', ar: 'مكتبة الألعاب' })}</Link>
+        <Link href="/login" className="hidden rounded-full bg-[#e8755f] px-4 py-2 text-white shadow-[0_3px_0_#b85c4e] transition hover:-translate-y-0.5 sm:inline-flex" data-testid="link-home-login">{homeCopy({ en: 'Player Login', ar: 'دخول اللاعب' })}</Link>
+        <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="rounded-full border border-[#a9c7d8] bg-white/75 px-3 py-2 text-xs font-extrabold text-[#0b6a79] transition hover:border-[#16a7bc] hover:bg-white" data-testid="button-home-language" aria-label={homeCopy({ en: 'Switch language', ar: 'تغيير اللغة' })}>{lang === 'en' ? 'العربية' : 'English'}</button>
+      </nav>
     </header>
 
-    <main>
-      <section className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center px-6 pt-20 text-center">
-        <div className="reveal">
-          <p className="mb-6 text-xs font-bold uppercase tracking-[0.2em] text-[#C9A227] sm:text-sm">
-            ABU DHABI
-          </p>
-          <h1 className="mx-auto mb-6 max-w-5xl font-sci-display text-[clamp(2.5rem,6vw,5.5rem)] font-bold leading-[1.05] tracking-tight text-[#F5F5F0] text-balance">
-            We turn play into evidence.
-          </h1>
-          <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-[#A1A9B8] text-balance sm:text-xl">
-            Bunyan AD converts gameplay into structured behavioral data.
-          </p>
-          <button
-            onClick={scrollToTrace}
-            className="group inline-flex items-center justify-center gap-2 rounded-full border border-[#F5F5F0]/20 px-8 py-4 font-medium text-[#F5F5F0] transition-all hover:scale-105 hover:bg-[#F5F5F0] hover:text-[#0B0F1A] active:scale-95"
-            aria-label="Scroll to the trace section"
-            data-testid="button-how-it-works"
-          >
-            How it works <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
-        </div>
-      </section>
-
-      <section id="trace" tabIndex={-1} className="relative z-10 mx-auto max-w-4xl px-6 py-24 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-8 focus-visible:outline-[#C9A227] sm:py-32">
-        <div className="reveal reveal-delay-1">
-          <h2 className="mb-8 font-sci-display text-3xl font-semibold leading-tight text-[#F5F5F0] text-balance sm:text-4xl lg:text-5xl">
-            Every game is a decision made under pressure.
-          </h2>
-          <p className="text-lg leading-relaxed text-[#A1A9B8] text-balance sm:text-xl">
-            What to risk, when to wait, how to recover from a mistake, whether to cooperate or compete. Those decisions leave a trace. We instrument that trace — timing, hesitation, error correction, persistence after failure, strategy shifts — and convert it into structured behavioral data.
-          </p>
-        </div>
-      </section>
-
-      <section className="relative z-10 border-y border-[#F5F5F0]/5 bg-[#111726]/50 px-6 py-24 sm:py-32" aria-labelledby="behavior-heading">
-        <h2 id="behavior-heading" className="sr-only">Why behavior, not self-report</h2>
-        <div className="mx-auto grid max-w-5xl gap-12 sm:gap-20 md:grid-cols-2">
-          <div className="reveal">
-            <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.15em] text-[#C9A227]">Self-Report</h3>
-            <p className="text-base leading-relaxed text-[#A1A9B8] sm:text-lg">
-              Most of what organizations know about people comes from asking them. Surveys depend on a person being willing to answer honestly, able to observe themselves accurately, and unaffected by how they want to be seen. Memory, mood, and social desirability shape every answer.
-            </p>
-          </div>
-          <div className="reveal reveal-delay-1">
-            <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.15em] text-[#C9A227]">Behavior</h3>
-            <p className="text-base leading-relaxed text-[#F5F5F0] sm:text-lg">
-              A player absorbed in a game does not decide to appear patient on move forty. They simply act — and the pattern of those actions is the signal. We measure what people do, repeatedly, under conditions we control.
-            </p>
+    <main className="relative z-10">
+      <section className="mx-auto grid min-h-[calc(100dvh-81px)] max-w-[1440px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:py-20">
+        <div className="reveal text-center lg:text-start">
+          <p className="mb-5 inline-flex rounded-full border border-[#b9d6c7] bg-[#e6f1eb] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#33705f]">{homeCopy({ en: 'ABU DHABI · A NEW WAY TO LEARN', ar: 'أبوظبي · طريقة جديدة للتعلّم' })}</p>
+          <h1 className="max-w-3xl font-display text-[clamp(2.8rem,6.5vw,6.4rem)] font-bold leading-[.94] tracking-[-.055em] text-[#174b44] text-balance">{homeCopy({ en: 'A world of knowledge starts with data.', ar: 'عالم من المعرفة يبدأ بالبيانات.' })}</h1>
+          <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-[#557068] text-balance lg:mx-0 sm:text-xl">{homeCopy({ en: 'Bunayn AD gathers meaningful data through a new method: fun games that reveal how people think, choose, learn, and grow.', ar: 'يجمع بنيان أبوظبي بيانات مفيدة من خلال طريقة جديدة: ألعاب ممتعة تكشف كيف يفكر الناس ويختارون ويتعلمون وينمون.' })}</p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            <button onClick={scrollToTrace} className="group inline-flex items-center gap-2 rounded-full bg-[#2140a8] px-6 py-3.5 font-bold text-white shadow-[0_6px_0_#152c79] transition hover:-translate-y-1 active:translate-y-1" aria-label={homeCopy({ en: 'Learn how Bunayn gathers data', ar: 'تعرّف كيف يجمع بنيان البيانات' })} data-testid="button-how-it-works">
+              {homeCopy({ en: 'How it works', ar: 'كيف نعمل' })} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 rtl:rotate-180" />
+            </button>
+            <Link href="/library" className="inline-flex items-center gap-2 rounded-full border-2 border-[#33705f] bg-white/75 px-5 py-3 font-bold text-[#174b44] transition hover:-translate-y-0.5 hover:bg-white" data-testid="link-home-play">
+              {homeCopy({ en: 'Play and explore', ar: 'العب واستكشف' })} <Gamepad2 className="h-4 w-4" />
+            </Link>
           </div>
         </div>
+        <div className="reveal reveal-delay-1 relative mx-auto w-full max-w-[540px]">
+          <div className="relative overflow-hidden rounded-[38px] border-4 border-white/80 bg-[#dff0f5] px-6 pb-9 pt-10 shadow-[0_24px_0_rgba(33,64,168,.12),0_30px_70px_rgba(23,75,68,.16)] sm:px-10">
+            <div className="absolute -end-12 -top-12 h-40 w-40 rounded-full bg-[#f4b60b]" />
+            <div className="absolute -bottom-24 -start-20 h-56 w-[130%] rounded-[50%] bg-[#b9d6c7]" />
+            <div className="absolute bottom-0 end-0 h-28 w-40 rounded-tl-[100%] bg-[#e8755f]/75" />
+            <img src={logoPath} alt="" className="relative z-10 mx-auto w-[min(90%,390px)] object-contain drop-shadow-[0_14px_16px_rgba(23,75,68,.2)]" />
+            <div className="relative z-10 mx-auto mt-7 grid max-w-sm grid-cols-3 gap-2 text-center text-xs font-bold text-[#174b44]">
+              {[{ label: { en: 'Play', ar: 'العب' }, color: 'bg-[#f4b60b]' }, { label: { en: 'Observe', ar: 'لاحظ' }, color: 'bg-[#16a7bc]' }, { label: { en: 'Learn', ar: 'تعلّم' }, color: 'bg-[#d8232a]' }].map((item) => <div key={item.label.en} className={`rounded-2xl ${item.color} px-2 py-2.5 text-white shadow-sm`}>{homeCopy(item.label)}</div>)}
+            </div>
+          </div>
+          <div className="absolute -bottom-5 -start-3 rounded-2xl border-2 border-white bg-[#fff3cc] px-4 py-3 shadow-soft sm:-start-7"><p className="text-[10px] font-extrabold uppercase tracking-[.16em] text-[#b35d4c]">{homeCopy({ en: 'The new method', ar: 'الطريقة الجديدة' })}</p><p className="mt-1 font-display font-bold text-[#174b44]">{homeCopy({ en: 'Fun games → useful data', ar: 'ألعاب ممتعة ← بيانات مفيدة' })}</p></div>
+        </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-6xl px-6 py-24 sm:py-32" aria-labelledby="measures-heading">
-        <div className="reveal">
-          <h2 id="measures-heading" className="mb-16 text-center font-sci-display text-3xl font-semibold text-[#F5F5F0] sm:text-4xl">
-            What gameplay gives us
-          </h2>
-          <div className="mb-20 grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 md:grid-cols-3">
+      <section id="trace" tabIndex={-1} onBlur={() => setTraceFocused(false)} style={traceFocused ? { outline: '3px solid #d8232a', outlineOffset: '8px' } : undefined} className="relative mx-auto max-w-[1440px] px-5 py-20 outline-none sm:px-10 sm:py-28">
+        <div className="grid gap-8 rounded-[32px] border border-[#c7ded1] bg-white/85 p-7 shadow-soft sm:p-10 lg:grid-cols-[.75fr_1.25fr] lg:items-center lg:p-14">
+          <div className="reveal"><p className="text-xs font-extrabold uppercase tracking-[.18em] text-[#d8232a]">{homeCopy({ en: 'From play to insight', ar: 'من اللعب إلى الفهم' })}</p><h2 className="mt-3 font-display text-4xl font-bold leading-tight text-[#174b44] text-balance sm:text-5xl">{homeCopy({ en: 'Every game is a decision made under pressure.', ar: 'كل لعبة قرار يُتخذ تحت الضغط.' })}</h2></div>
+          <p className="reveal reveal-delay-1 text-lg leading-relaxed text-[#557068] sm:text-xl">{homeCopy({ en: 'What to risk, when to wait, how to recover from a mistake, whether to cooperate or compete. Those decisions leave a trace. Our fun games capture timing, hesitation, error correction, persistence after failure, and strategy shifts — turning natural play into structured behavioral data.', ar: 'ماذا نخاطر به، ومتى ننتظر، وكيف نتعافى من الخطأ، وهل نتعاون أم نتنافس. تترك هذه القرارات أثراً. تلتقط ألعابنا الممتعة التوقيت والتردد وتصحيح الأخطاء والاستمرار بعد الفشل وتغيّر الاستراتيجيات، فتحوّل اللعب الطبيعي إلى بيانات سلوكية منظمة.' })}</p>
+        </div>
+      </section>
+
+      <section className="border-y border-[#c7ded1] bg-[#dff0f5] px-5 py-20 sm:px-10 sm:py-28" aria-labelledby="behavior-heading">
+        <div className="mx-auto grid max-w-[1180px] gap-5 md:grid-cols-2">
+          <div className="reveal rounded-[28px] bg-[#2140a8] p-7 text-white sm:p-10"><p className="text-xs font-extrabold uppercase tracking-[.16em] text-[#f4b60b]">{homeCopy({ en: 'Self-report', ar: 'التقرير الذاتي' })}</p><h2 id="behavior-heading" className="mt-3 font-display text-3xl font-bold text-balance">{homeCopy({ en: 'What people say is only one part of the story.', ar: 'ما يقوله الناس جزء واحد فقط من القصة.' })}</h2><p className="mt-5 leading-relaxed text-[#d7f0f5]">{homeCopy({ en: 'Surveys depend on memory, mood, and how someone wants to be seen.', ar: 'تعتمد الاستبيانات على الذاكرة والمزاج والصورة التي يريد الشخص أن يظهر بها.' })}</p></div>
+          <div className="reveal reveal-delay-1 rounded-[28px] bg-[#e8755f] p-7 text-white sm:p-10"><p className="text-xs font-extrabold uppercase tracking-[.16em] text-[#fff3cc]">{homeCopy({ en: 'Behavior in play', ar: 'السلوك أثناء اللعب' })}</p><h2 className="mt-3 font-display text-3xl font-bold text-balance">{homeCopy({ en: 'Fun makes the signal natural.', ar: 'المتعة تجعل الإشارة طبيعية.' })}</h2><p className="mt-5 leading-relaxed text-[#fff4df]">{homeCopy({ en: 'A player absorbed in a game does not decide to appear patient on move forty. They simply act — and that pattern is the signal.', ar: 'لا يقرر اللاعب المنغمس في اللعبة أن يبدو صبوراً في الحركة الأربعين. إنه يتصرف ببساطة، وهذا النمط هو الإشارة.' })}</p></div>
+        </div>
+      </section>
+
+      <section className="relative mx-auto max-w-[1440px] px-5 py-20 sm:px-10 sm:py-28" aria-labelledby="measures-heading">
+        <div className="reveal"><div className="mx-auto max-w-2xl text-center"><p className="text-xs font-extrabold uppercase tracking-[.18em] text-[#0b6a79]">{homeCopy({ en: 'What the games reveal', ar: 'ما تكشفه الألعاب' })}</p><h2 id="measures-heading" className="mt-3 font-display text-4xl font-bold text-[#174b44] sm:text-5xl">{homeCopy({ en: 'What gameplay gives us', ar: 'ماذا يمنحنا اللعب' })}</h2></div>
+          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {[
-              { label: 'Risk appetite', desc: 'How much certainty is required to act.' },
-              { label: 'Learning rate', desc: 'Adaptation to changing rules.' },
-              { label: 'Attention stability', desc: 'Focus over prolonged durations.' },
-              { label: 'Response to setback', desc: 'Behavioral changes after failure.' },
-              { label: 'Planning horizon', desc: 'Short-term gains vs long-term viability.' },
-              { label: 'Social orientation', desc: 'Cooperation in multi-agent spaces.' },
-            ].map((item) => (
-              <article key={item.label} className="group rounded-2xl border border-[#F5F5F0]/10 bg-[#111726]/30 p-8 backdrop-blur-sm transition-all hover:border-[#C9A227]/30 hover:bg-[#111726]/80">
-                <div className="mb-6 h-1 w-6 rounded-full bg-[#C9A227]/40 transition-colors group-hover:bg-[#C9A227]" />
-                <h3 className="mb-2 font-sci-display text-xl font-medium text-[#F5F5F0]">{item.label}</h3>
-                <p className="text-sm leading-relaxed text-[#A1A9B8]">{item.desc}</p>
-              </article>
-            ))}
+              { label: { en: 'Risk appetite', ar: 'الرغبة في المخاطرة' }, desc: { en: 'How much certainty is required to act.', ar: 'مقدار اليقين المطلوب لاتخاذ القرار.' }, color: 'border-t-[#d8232a]' },
+              { label: { en: 'Learning rate', ar: 'سرعة التعلّم' }, desc: { en: 'How quickly a player adapts.', ar: 'سرعة تكيف اللاعب مع التغيير.' }, color: 'border-t-[#16a7bc]' },
+              { label: { en: 'Attention stability', ar: 'ثبات الانتباه' }, desc: { en: 'Focus across a longer challenge.', ar: 'التركيز خلال التحدي.' }, color: 'border-t-[#f4b60b]' },
+              { label: { en: 'Response to setback', ar: 'الاستجابة للعقبات' }, desc: { en: 'What happens after a mistake.', ar: 'ما يحدث بعد الخطأ.' }, color: 'border-t-[#e8755f]' },
+              { label: { en: 'Planning horizon', ar: 'أفق التخطيط' }, desc: { en: 'Short-term choice or long-term view.', ar: 'اختيار قصير المدى أم رؤية بعيدة.' }, color: 'border-t-[#2140a8]' },
+              { label: { en: 'Social orientation', ar: 'التوجه الاجتماعي' }, desc: { en: 'How people cooperate and share.', ar: 'كيف يتعاون الناس ويتشاركون.' }, color: 'border-t-[#71a695]' },
+            ].map((item) => <article key={item.label.en} className={`group rounded-[22px] border border-[#d6e2e9] border-t-4 ${item.color} bg-white p-6 shadow-soft transition hover:-translate-y-1`}><h3 className="font-display text-xl font-bold text-[#174b44]">{homeCopy(item.label)}</h3><p className="mt-2 text-sm leading-relaxed text-[#688079]">{homeCopy(item.desc)}</p></article>)}
           </div>
-          <p className="mx-auto max-w-3xl text-center font-sci-display text-xl leading-relaxed text-[#A1A9B8] text-balance sm:text-2xl">
-            Captured continuously — not at a single point in time, and free of language and cultural bias.
-          </p>
+          <p className="mx-auto mt-12 max-w-3xl text-center font-display text-xl font-bold leading-relaxed text-[#33705f] text-balance sm:text-2xl">{homeCopy({ en: 'Captured continuously — not at a single point in time, and free of language and cultural bias.', ar: 'نلتقطها باستمرار، لا في لحظة واحدة، وبعيداً عن تحيز اللغة والثقافة.' })}</p>
         </div>
+      </section>
+
+      <section className="bg-[#174b44] px-5 py-20 text-center text-white sm:px-10 sm:py-28">
+        <h2 className="mx-auto max-w-4xl font-display text-4xl font-bold leading-tight text-balance sm:text-6xl">{homeCopy({ en: 'A world of knowledge starts with data — and data can start with fun.', ar: 'عالم من المعرفة يبدأ بالبيانات، والبيانات يمكن أن تبدأ بالمتعة.' })}</h2>
+        <p className="mt-6 font-display text-xl font-bold text-[#f4b60b]">{homeCopy({ en: 'Bunayn AD — Games in. Insight out.', ar: 'بنيان أبوظبي — ألعاب ممتعة، وفهم أعمق.' })}</p>
       </section>
     </main>
 
-    <footer className="py-24 sm:py-32 px-6 flex flex-col items-center justify-center text-center z-10 relative bg-[#06080E] mt-auto">
-      <div className="reveal mb-24">
-        <h2 className="font-sci-display text-2xl sm:text-3xl md:text-5xl font-semibold mb-6 text-[#F5F5F0] max-w-4xl mx-auto text-balance leading-tight">
-          Not what someone says about themselves.<br/>What they demonstrate.
-        </h2>
-        <p className="text-[#C9A227] font-sci-display text-lg sm:text-xl font-medium">
-          Bunyan AD — Games in. Insight out.
-        </p>
-      </div>
-      
-      <div className="text-[#A1A9B8]/50 text-sm flex flex-col sm:flex-row gap-4 sm:gap-6">
-        <span>Bunyan AD</span>
-        <span className="hidden sm:inline">·</span>
-        <span>Abu Dhabi, UAE</span>
-        <span className="hidden sm:inline">·</span>
-        <a href="mailto:hello@bunyan.ad" className="hover:text-[#F5F5F0] transition-colors">hello@bunyan.ad</a>
+    <footer className="border-t-4 border-[#f4b60b] bg-[#2140a8] px-5 py-8 text-white sm:px-10">
+      <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-start">
+        <img src={logoPath} alt={homeCopy({ en: 'Bunayn AD — a world of knowledge', ar: 'بنيان أبوظبي — عالم من المعرفة' })} className="h-10 w-[120px] object-contain brightness-0 invert" />
+        <p className="text-sm font-semibold text-[#d7f0f5]">{homeCopy({ en: 'Bunayn AD · Abu Dhabi, UAE · hello@bunyan.ad', ar: 'بنيان أبوظبي · أبوظبي، الإمارات · hello@bunyan.ad' })}</p>
       </div>
     </footer>
   </div>;
@@ -927,7 +908,7 @@ function AdminRoute({ lang }: { lang: Lang }) {
 }
 
 function RootPage({ lang }: { lang: Lang }) {
-  return <Welcome />;
+  return <Welcome lang={lang} setLang={() => undefined} />;
 }
 
 function GameRoute({ lang }: { lang: Lang }) {
@@ -940,10 +921,10 @@ function RouterContent({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) =>
   const [location] = useLocation();
 
   if (location === '/' || location === '/welcome') {
-    return <Welcome />;
+    return <Welcome lang={lang} setLang={setLang} />;
   }
 
-  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoRoute lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/store" component={() => <Store lang={lang} />} /><Route path="/player" component={() => <PlayerProgress lang={lang} />} /><Route path="/admin" component={() => <AdminRoute lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
+  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} setLang={setLang} />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoRoute lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/store" component={() => <Store lang={lang} />} /><Route path="/player" component={() => <PlayerProgress lang={lang} />} /><Route path="/admin" component={() => <AdminRoute lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
 }
 
 function App() {
