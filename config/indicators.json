@@ -1,0 +1,50 @@
+{
+  "version": "1.0.0",
+  "indicators": [
+    {
+      "id": "persistence",
+      "source_metrics": ["persistence_index", "resilience_slope"],
+      "direction": 1,
+      "min_observations": 3,
+      "seed_norm": {
+        "cycle1": { "median": 0.5, "mad": 0.2 },
+        "cycle2": { "median": 0.55, "mad": 0.2 },
+        "cycle3": { "median": 0.6, "mad": 0.2 }
+      },
+      "bands": {
+        "en": { "not_yet": "Not yet", "growing": "Growing", "strong": "Strong" },
+        "ar": { "not_yet": "ليس بعد", "growing": "في نمو", "strong": "قوي" }
+      }
+    },
+    {
+      "id": "self_correction",
+      "source_metrics": ["self_correction_rate", "error_recovery_ms"],
+      "direction": 1,
+      "min_observations": 3,
+      "seed_norm": {
+        "cycle1": { "median": 0.45, "mad": 0.2 },
+        "cycle2": { "median": 0.5, "mad": 0.2 },
+        "cycle3": { "median": 0.55, "mad": 0.2 }
+      },
+      "bands": {
+        "en": { "not_yet": "Not yet", "growing": "Growing", "strong": "Strong" },
+        "ar": { "not_yet": "ليس بعد", "growing": "في نمو", "strong": "قوي" }
+      }
+    },
+    {
+      "id": "exploration",
+      "source_metrics": ["exploration_breadth", "challenge_seeking"],
+      "direction": 1,
+      "min_observations": 3,
+      "seed_norm": {
+        "cycle1": { "median": 0.4, "mad": 0.2 },
+        "cycle2": { "median": 0.45, "mad": 0.2 },
+        "cycle3": { "median": 0.5, "mad": 0.2 }
+      },
+      "bands": {
+        "en": { "not_yet": "Not yet", "growing": "Growing", "strong": "Strong" },
+        "ar": { "not_yet": "ليس بعد", "growing": "في نمو", "strong": "قوي" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "idle_threshold_ms": 3000,
+  "archetypes": [
+    "timed_selection",
+    "drag_sort",
+    "construction",
+    "navigation_maze"
+  ],
+  "manifest_schema": {
+    "required": ["game_id", "game_version", "archetypes", "capture"],
+    "capture": {
+      "pointer_path": "boolean"
+    }
+  },
+  "events": {
+    "session.start": { "required_payload": [] },
+    "session.end": { "required_payload": ["end_reason"] },
+    "level.start": { "required_payload": ["level_id"] },
+    "level.end": { "required_payload": ["level_id"] },
+    "item.present": { "required_payload": ["difficulty", "modality"] },
+    "item.first_input": { "required_payload": [] },
+    "item.change": { "required_payload": ["value"] },
+    "item.submit": { "required_payload": ["value"] },
+    "item.resolve": { "required_payload": ["correct"] },
+    "item.skip": { "required_payload": [] },
+    "item.timeout": { "required_payload": [] },
+    "hint.requested": { "required_payload": ["hint_level"] },
+    "language.switched": { "required_payload": ["to"] },
+    "difficulty.selected": { "required_payload": ["level", "was_voluntary"] },
+    "focus.lost": { "required_payload": [] },
+    "focus.gained": { "required_payload": [] },
+    "idle.start": { "required_payload": [] },
+    "idle.end": { "required_payload": [] },
+    "pointer.sample": { "required_payload": ["path"] },
+    "drag.drop": { "required_payload": ["gesture_type", "duration_ms", "path_length", "straight_distance"] },
+    "drag.cancel": { "required_payload": ["gesture_type", "duration_ms", "path_length", "straight_distance"] },
+    "custom": { "required_payload": ["name", "value"] }
+  }
+}
