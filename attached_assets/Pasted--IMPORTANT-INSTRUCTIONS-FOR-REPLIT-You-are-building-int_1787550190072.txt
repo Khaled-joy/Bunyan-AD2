@@ -1,0 +1,712 @@
+# IMPORTANT INSTRUCTIONS FOR REPLIT
+
+You are building interactive games inside the **Bunyan Abu Dhabi** platform.
+
+Do not create simple static prototypes or mockups. Build **fully functional, playable games** with real game logic, level progression, age-based difficulty, timers, scoring, animations, and analytics event tracking.
+
+Before starting development, carefully follow all requirements below.
+
+---
+
+## 1. FIRST: UNDERSTAND THE EXISTING PLATFORM
+
+The games must feel like a natural part of the existing **Bunyan Abu Dhabi platform**.
+
+Before designing any new components:
+
+* Review the existing application's UI.
+* Identify the existing color palette.
+* Reuse the existing primary and secondary colors.
+* Reuse existing typography where possible.
+* Follow the existing border radius, button styles, cards, shadows, spacing, and layout.
+* Do not create a completely different visual identity.
+* Do not redesign the entire Bunyan platform.
+* The games should look like they belong inside the same website.
+
+If there are existing CSS variables, Tailwind configuration, theme files, or reusable UI components, use them instead of creating duplicate styles.
+
+Create reusable game components that follow the existing design system.
+
+---
+
+# 2. BUILD THE GAMES AS A REUSABLE GAME SYSTEM
+
+Do not build each game completely independently.
+
+Create a reusable architecture that can support future Bunyan Abu Dhabi games.
+
+The structure should separate:
+
+### Game Engine
+
+Responsible for:
+
+* Starting games
+* Ending games
+* Pausing games
+* Level progression
+* Timers
+* Difficulty management
+* Age adaptation
+* Scoring
+* Rewards
+
+### Game Content
+
+Store questions, words, images, colors, and challenges separately from the UI.
+
+Do not hard-code game questions directly inside React components.
+
+Use configurable data structures.
+
+For example:
+
+* game configuration
+* levels
+* questions
+* difficulty
+* age ranges
+* language
+* rewards
+
+Future administrators should be able to add or change game content without rewriting the entire game.
+
+---
+
+# 3. AGE ADAPTATION ENGINE
+
+Create a reusable **Age Difficulty Engine**.
+
+The system must adapt every game based on the player's age.
+
+Supported ages:
+
+**6 to 17 years old**
+
+Use age groups internally, for example:
+
+* Ages 6–8
+* Ages 9–12
+* Ages 13–15
+* Ages 16–17
+
+However, also use the player's exact age where appropriate to make gradual adjustments.
+
+The game difficulty should not suddenly become much harder at one specific age.
+
+The system should adjust variables such as:
+
+* Game speed
+* Number of distractors
+* Question complexity
+* Vocabulary difficulty
+* Number of answer options
+* Hint availability
+* Time limits
+* Object size
+* Reading complexity
+* Obstacle frequency
+* Number of simultaneous tasks
+
+Example:
+
+A 6-year-old and a 17-year-old can both play **Color Focus Level 1**, but their Level 1 experience should not be identical.
+
+The 6-year-old should receive:
+
+* Slower speed
+* Larger objects
+* Fewer distractors
+* More visual support
+
+The 17-year-old should receive:
+
+* Faster gameplay
+* More distractors
+* More difficult decisions
+* More complex rule changes
+
+---
+
+# 4. THREE-LEVEL SYSTEM
+
+Every game must have exactly three main levels:
+
+## Level 1 – Easy
+
+Introduce the game mechanics.
+
+The player should understand:
+
+* What to do
+* What to collect or select
+* How to interact
+
+Provide more guidance and visual support.
+
+---
+
+## Level 2 – Medium
+
+Increase the challenge.
+
+Possible changes:
+
+* Faster gameplay
+* More options
+* More distractors
+* More complex questions
+* Reduced hints
+* More difficult interactions
+
+---
+
+## Level 3 – Challenging
+
+Create the highest level of difficulty appropriate to the player's age.
+
+Increase challenge without making the game unfair.
+
+Possible changes:
+
+* Faster speed
+* More complex rules
+* Multiple objectives
+* Advanced vocabulary
+* More distractors
+* More challenging sequences
+* Reduced assistance
+
+---
+
+# 5. ADAPTIVE DIFFICULTY
+
+In addition to age adaptation, monitor the player's performance.
+
+For example:
+
+If the player is consistently performing very well:
+
+* Gradually increase difficulty.
+* Increase speed.
+* Reduce hints.
+* Introduce more challenging content.
+
+If the player is struggling:
+
+* Do not immediately end the game.
+* Provide supportive feedback.
+* Slightly reduce difficulty.
+* Provide visual guidance.
+* Offer hints where appropriate.
+
+Do not make difficulty changes obvious to the player.
+
+The game should feel natural.
+
+---
+
+# 6. ANALYTICS AND EVENT TRACKING
+
+This is one of the most important requirements.
+
+The games are part of Bunyan Abu Dhabi and must capture gameplay events for later analysis.
+
+Create a reusable:
+
+`AnalyticsService`
+
+Every game must send structured events.
+
+Use a common event format.
+
+Example:
+
+```javascript
+{
+  event_name: "item_resolve",
+  timestamp: Date.now(),
+  session_id: "...",
+  player_id: "...",
+  game_id: "color_focus",
+  game_version: "1.0.0",
+  level: 1,
+  age_months: 96,
+  age_band: "cycle1",
+  language: "ar",
+  device_class: "tablet",
+  input_type: "touch",
+  item_id: "color_blue_01",
+  difficulty: 2,
+  correct: true,
+  custom: {}
+}
+```
+
+The analytics system must be reusable across all games.
+
+Do not create completely different event formats for every game.
+
+---
+
+## Required Session Events
+
+Capture:
+
+* `session.start`
+* `session.end`
+* `level.start`
+* `level.complete`
+* `game.complete`
+* `game.abandon`
+* `timeout`
+* `focus.lost`
+* `focus.returned`
+* `idle.start`
+* `idle.end`
+
+Track the final session end reason:
+
+* complete
+* abandon
+* timeout
+* crash
+
+Do not simply ignore abandoned sessions.
+
+---
+
+## Required Item Events
+
+Depending on the game interaction, capture:
+
+* `item.present`
+* `first_input`
+* `item.change`
+* `item.submit`
+* `item.resolve`
+* `hint.request`
+
+For drag-and-drop games also capture:
+
+* `drag.start`
+* `drag.move`
+* `drag.end`
+
+For Color Focus also capture:
+
+* correct collect
+* wrong collect
+* obstacle hit
+* jump
+* slide
+* lane change
+* target color change
+
+---
+
+# 7. TIME MEASUREMENT
+
+Measure timing accurately.
+
+For every item or challenge, calculate:
+
+### Hesitation Time
+
+Time between:
+
+`item.present`
+
+and:
+
+`first_input`
+
+This represents the time before the player starts interacting.
+
+---
+
+### Deliberation Time
+
+Time between:
+
+`first_input`
+
+and:
+
+`item.submit`
+
+This represents the time spent evaluating or changing the answer after starting.
+
+---
+
+### Total Time
+
+Time between:
+
+`item.present`
+
+and:
+
+`item.resolve`
+
+Do not combine these measurements into one generic "response time".
+
+Store them separately.
+
+---
+
+# 8. ITEM-LEVEL DATA
+
+Where applicable, every challenge should capture:
+
+* item_id
+* item_ordinal
+* attempt_number
+* difficulty
+* modality
+* hesitation time
+* deliberation time
+* total completion time
+* correct or incorrect
+* number of answer changes
+* changed to correct
+* hint usage
+* attempts before hint
+* number of options explored
+* selected option dwell time
+* rejected option dwell time where technically possible
+* off-task time
+* repeated previous error
+* moves used
+* optimal moves
+* strategy signature
+
+Do not force variables that do not make sense for a specific interaction.
+
+Use the appropriate data for the game type.
+
+---
+
+# 9. MOVEMENT TRACKING
+
+For drag, swipe, and movement-based games, create optional reusable movement tracking.
+
+When technically appropriate, calculate:
+
+* gesture type
+* duration
+* path length
+* straight distance
+* directness
+* number of reversals
+* pauses
+* total pause time
+* peak velocity
+* time to peak velocity
+* number of zones entered
+* near miss
+* jitter
+
+Do not permanently store unnecessary raw coordinates.
+
+Prefer calculating useful movement features and storing the derived metrics.
+
+Movement metrics must consider the player's input type:
+
+* Touch
+* Mouse
+
+Do not directly compare movement metrics across different input types without preserving the input type in the event.
+
+---
+
+# 10. BILINGUAL SYSTEM
+
+All games must support:
+
+* Arabic
+* English
+
+The application must properly support:
+
+### Arabic
+
+* RTL layout
+* Arabic typography
+* Arabic text alignment
+* Correct UI direction
+* Arabic game content
+
+### English
+
+* LTR layout
+* English typography
+* English game content
+
+Do not rely only on automatic translation.
+
+Create content structures that allow Arabic and English questions to be independently written.
+
+Example:
+
+```javascript
+{
+  id: "question_001",
+  ar: {
+    question: "...",
+    options: ["...", "..."]
+  },
+  en: {
+    question: "...",
+    options: ["...", "..."]
+  }
+}
+```
+
+---
+
+# 11. CHILD-FRIENDLY USER EXPERIENCE
+
+The games must be fun.
+
+Include:
+
+* Smooth animations
+* Positive sound effects
+* Clear visual feedback
+* Progress bars
+* Level indicators
+* Reward animations
+* Stars
+* Badges
+* Unlockable achievements
+
+Avoid:
+
+* Harsh red error screens
+* Negative language
+* "You failed"
+* "You are bad at this"
+* Psychological labels
+* Behavioral scores
+
+Instead use:
+
+* Try again!
+* Great effort!
+* Almost there!
+* Excellent!
+* You unlocked the next challenge!
+
+---
+
+# 12. RESULTS SCREEN
+
+At the end of the game, show a child-friendly summary.
+
+Examples:
+
+* Stars collected
+* Levels completed
+* Achievement badge
+* Game rewards
+* Fun statistics
+
+Do not show backend behavioral metrics directly to the player.
+
+The analysis data should be sent to the analytics system in the background.
+
+---
+
+# 13. PERFORMANCE REQUIREMENTS
+
+The games should:
+
+* Load quickly
+* Work smoothly on standard tablets and computers
+* Avoid unnecessarily large assets
+* Optimize animations
+* Avoid excessive re-renders
+* Handle slow internet connections gracefully
+* Prevent duplicate analytics events
+* Recover safely from temporary errors
+
+For the Color Focus game, prioritize smooth and responsive gameplay.
+
+Use an animation/game loop architecture suitable for a browser-based runner game.
+
+Do not make gameplay dependent on React state updates every animation frame if this causes performance problems.
+
+---
+
+# 14. DATA AND PRIVACY
+
+Use pseudonymous player IDs.
+
+Do not expose personal information inside the game interface.
+
+Analytics should be structured for backend analysis.
+
+Keep:
+
+* player identity
+* game events
+* session information
+
+separate from the visible game interface.
+
+---
+
+# 15. BUILD PROCESS
+
+Follow this order:
+
+## Step 1
+
+Review the existing Bunyan Abu Dhabi application.
+
+Identify:
+
+* Existing colors
+* Typography
+* Components
+* Navigation
+* Layout
+* Design tokens
+
+Do not redesign these.
+
+---
+
+## Step 2
+
+Create the shared game infrastructure:
+
+* GameShell
+* GameHeader
+* LevelProgress
+* Timer
+* AgeDifficultyEngine
+* AnalyticsService
+* LocalizationService
+* RewardSystem
+* ResultsScreen
+
+---
+
+## Step 3
+
+Build the analytics system before or alongside the games.
+
+Ensure events can be logged consistently.
+
+---
+
+## Step 4
+
+Build Game 1: Color Focus.
+
+Test:
+
+* Keyboard controls
+* Touch controls
+* Timer
+* Age adaptation
+* Three levels
+* Difficulty progression
+* Analytics logging
+
+---
+
+## Step 5
+
+Build Game 2: Our Heritage.
+
+Test:
+
+* Questions
+* Image interactions
+* Wudu sequencing
+* Age-based content
+* Arabic/English
+* Three levels
+* Analytics logging
+
+---
+
+## Step 6
+
+Build Game 3: Word Journey.
+
+Test:
+
+* Arabic RTL
+* English LTR
+* Missing letters
+* Sentence completion
+* Picture-to-word
+* Drag-and-drop
+* Age adaptation
+* Three levels
+* Analytics logging
+
+---
+
+## Step 7
+
+Test all games as different users:
+
+* Age 6
+* Age 8
+* Age 10
+* Age 12
+* Age 14
+* Age 17
+
+Verify that the gameplay experience changes appropriately.
+
+---
+
+# 16. DO NOT
+
+Do not:
+
+* Build static mockups instead of playable games.
+* Ignore age adaptation.
+* Make the three levels identical.
+* Hard-code all content directly into UI components.
+* Create a different design system from Bunyan Abu Dhabi.
+* Show analytical or psychological scores to children.
+* Treat the game like a school examination.
+* Remove abandoned sessions from analytics.
+* Combine all timing into one response-time field.
+* Create inconsistent analytics formats between games.
+* Use placeholder gameplay where a real interaction is required.
+
+---
+
+# FINAL EXPECTATION
+
+Build a **fully playable, polished Bunyan Abu Dhabi game ecosystem**.
+
+The first three games are:
+
+1. **Color Focus** – Fast-paced color selection and obstacle runner.
+2. **Our Heritage / تراثنا** – UAE and Islamic heritage interactive learning journey.
+3. **Word Journey / رحلة الكلمات** – Arabic and English literacy adventure.
+
+All three games must share:
+
+* The Bunyan Abu Dhabi visual identity
+* A reusable game architecture
+* Age adaptation for ages 6–17
+* Three progressive levels
+* Interactive gameplay
+* Bilingual support
+* A common analytics event structure
+* Reusable components
+* Child-friendly feedback and rewards
+
+Start by analyzing the existing Bunyan Abu Dhabi application and its design system, then build the shared game infrastructure, and finally implement the three games one by one.
+
+After completing each game, test the full gameplay flow and confirm that analytics events, age adaptation, levels, bilingual support, and responsive design are working correctly.
