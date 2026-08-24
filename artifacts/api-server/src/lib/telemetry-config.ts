@@ -22,7 +22,7 @@ type IndicatorConfig = { version: string; indicators: IndicatorDefinition[] };
 
 const bannedClinicalTerms = ["adhd", "dyslexia", "autism", "disorder", "deficit", "impairment", "diagnosis", "screening", "at-risk", "delayed"];
 
-function loadJson<T>(filename: string) {
+export function loadConfigJson<T>(filename: string) {
   const configDirectory = [
     path.resolve(process.cwd(), "config"),
     path.resolve(process.cwd(), "../../config"),
@@ -32,8 +32,8 @@ function loadJson<T>(filename: string) {
   return JSON.parse(readFileSync(filePath, "utf8")) as T;
 }
 
-export const telemetryCatalog = loadJson<TelemetryCatalog>("telemetry-catalog.json");
-export const indicatorConfig = loadJson<IndicatorConfig>("indicators.json");
+export const telemetryCatalog = loadConfigJson<TelemetryCatalog>("telemetry-catalog.json");
+export const indicatorConfig = loadConfigJson<IndicatorConfig>("indicators.json");
 
 for (const indicator of indicatorConfig.indicators) {
   const normalized = indicator.id.toLowerCase();

@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "universal_rules": {
+    "require_cohort_label": true,
+    "require_n": true,
+    "minimum_confidence": 0.5,
+    "require_uncertainty_interval": true
+  },
+  "audience_gating": {
+    "admin": ["cohort_summary", "effect_interval", "assumption_summary", "global_feature_importance"],
+    "researcher": ["cohort_summary", "effect_interval", "assumption_summary", "global_feature_importance", "model_sensitivity"],
+    "teacher": ["cohort_summary"],
+    "parent": [],
+    "child": []
+  },
+  "plots": {
+    "cohort_summary": { "title": { "en": "Cohort outcome distribution", "ar": "توزيع نتائج المجموعة" } },
+    "effect_interval": { "title": { "en": "Effect estimate and uncertainty", "ar": "تقدير الأثر وعدم اليقين" } },
+    "assumption_summary": { "title": { "en": "Method checks", "ar": "فحوص الطريقة" } },
+    "global_feature_importance": { "title": { "en": "Indicator input alignment", "ar": "اتساق مدخلات المؤشر" } }
+  }
+}

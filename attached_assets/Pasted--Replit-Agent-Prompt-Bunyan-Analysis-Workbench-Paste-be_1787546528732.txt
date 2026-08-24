@@ -1,0 +1,193 @@
+# Replit Agent Prompt — Bunyan Analysis Workbench
+
+Paste below the line into Replit Agent. Upload `method-advisor.json` and `xai-plots.json` to `/config/` first. Assumes the telemetry layer (Layers 0–4) already exists.
+
+---
+
+Build the analysis workbench for Bunyan, an educational game platform for children aged 6–17 in Abu Dhabi. It lets researchers and admins filter behavioral telemetry into cohorts, get AI-recommended statistical methods, run them, and see explainable-AI diagrams.
+
+Stack: Next.js (App Router), TypeScript, Postgres, plus a **Python executor service** (FastAPI) for all statistics and plotting.
+
+Read `/config/method-advisor.json` for the method decision table and `/config/xai-plots.json` for the plot catalog and audience gating. Do not hardcode anything that lives in those files.
+
+## THE CORE ARCHITECTURAL RULE
+
+**The AI never computes a statistic.** The flow is strictly:
+
+```
+User question → AI ADVISOR → StatPlan JSON → user approves
+              → PYTHON EXECUTOR (real computation) → results payload
+              → AI INTERPRETER (reads real numbers only)
+```
+
+An LLM asked for a p-value produces a plausible wrong one that looks right. The advisor writes the recipe; Python runs it; the interpreter only sees output that already exists. Do not build any path where the LLM returns a numeric result directly.
+
+## 1. Cohort filter model
+
+`POST /api/cohorts` accepting the filter JSON:
+
+```json
+{
+  "label": "Cycle 2, Arabic, tablet, last 90 days",
+  "player":  { "age_band": ["cycle2"], "grade": {"gte":5,"lte":8}, "school_id": [...], "is_guest": false },
+  "session": { "game_id": [...], "session_lang": ["ar"], "device_class": ["tablet"], "date_from": "...", "date_to": "..." },
+  "item":    { "difficulty": {"gte":2,"lte":4}, "modality": [...], "component": [...] },
+  "derived": { "confidence": {"gte":0.5}, "provisional": false }
+}
+```
+
+Compile to parameterized SQL. Store cohorts so they are reproducible, shareable, and auditable.
+
+### Minimum cell size — build this FIRST, before any query path exists
+
+- **No query returns a cohort with fewer than 10 distinct players.** Below threshold, return the count and a suppression notice, never rows.
+- **Suppress complements too.** If a parent cohort of 47 and a child cohort of 41 are both visible, the 6-child difference is exposed. Check every cell's complement within its parent.
+- Log all queries. Rate-limit repeated near-threshold queries on overlapping cohorts — differencing attacks are made of many individually innocent queries.
+- Threshold rises to **25** for any filter touching a sensitive attribute.
+
+### Sensitive attributes
+
+`gender` and `nationality` are **not exposed in the filter UI and are disabled by default.** Enabling either requires a named research protocol stored against the cohort, min cell size 25, aggregate output only, and permanent exclusion from teacher views. Do not add them to the default filter builder.
+
+## 2. Data shape probe
+
+Before any method is proposed, compute and return: `n_players`, `n_sessions`, `n_observations`, `obs_per_player_median`, `group_sizes`, `outcome_skewness`, `missing_rate`, `abandoned_session_rate`, `icc_estimate`, `n_schools`, `spans_norm_rebuild_boundary`, `input_type_mix`, `age_range_months`.
+
+Implement every `auto_flag` in `method-advisor.json → step_1_data_shape_probe`. The most important: **if `obs_per_player_median > 1`, the design is repeated-measures and independence-assuming tests are blocked at the API level, not merely discouraged.**
+
+## 3. AI Method Advisor
+
+`POST /api/advisor/plan` — takes the question in natural language plus the resolved cohort's data shape, returns a **StatPlan**:
+
+```json
+{
+  "plan_id": "p_3d81",
+  "question": "...",
+  "cohort_id": "c_7f2a",
+  "design": "repeated_measures",
+  "outcome": { "type": "session_metric", "id": "error_recovery_ms", "transform": "log" },
+  "predictors": [...], "covariates": ["age_months", "difficulty_mean", "game_id"],
+  "nesting": ["school_id", "player_id"],
+  "method": "linear_mixed_model",
+  "random_effects": { "intercept": ["player_id"], "slope": [] },
+  "assumptions_to_check": [...],
+  "effect_size": "marginal_r2_and_beta",
+  "multiple_comparison": "benjamini_hochberg",
+  "plots": [...],
+  "power_estimate": { "n_players": 63, "detectable_d": 0.31 },
+  "caveats": [...]
+}
+```
+
+The advisor reads `method-advisor.json` and follows it as a decision procedure — it does not invent methods. It must:
+
+- Classify the **design** first by counting rows per `player_id`.
+- Detect nesting and refuse independence-assuming tests. This is the most damaging error available in this dataset.
+- Propose a **transform** — response times are right-skewed; never compare raw means.
+- Always require an **effect size**, never a p-value alone. Hedges' g under n=50, omega-squared over eta-squared, marginal and conditional R² for mixed models.
+- Apply **Benjamini–Hochberg**, scoped across all tests run in the analysis session, not just this plan. Re-report adjusted values as the family grows.
+- State **detectable effect size at 80% power** before running. If underpowered, say the cohort cannot answer the question, give the n needed, and do not run it.
+- Enforce every rule in `method-advisor.json → forbidden`.
+
+Show the plan to the user for approval before execution. Plans are editable, versioned, re-runnable against new cohorts.
+
+### Fishing detection
+
+Log every plan with cohort and result. When a session accumulates many plans on overlapping cohorts against the same outcome, surface it and offer to switch to a pre-registered plan with correction across everything run. Frame it as making the eventual finding defensible, not as a warning.
+
+## 4. Python executor service
+
+FastAPI. Libraries: `pandas`, `numpy`, `scipy`, `statsmodels` (MixedLM, GLM), `pingouin`, `scikit-learn`, `xgboost`, `shap`, `factor_analyzer`, `lifelines`, `matplotlib`, `plotly`.
+
+`POST /execute` takes a StatPlan, returns:
+
+```json
+{
+  "plan_id": "...", "n_players": 63, "n_observations": 412,
+  "estimates": [...], "effect_sizes": [...],
+  "p_values_raw": [...], "p_values_adjusted": [...],
+  "assumption_checks": [{ "check": "icc", "value": 0.34, "passed": true, "note": "..." }],
+  "plots": ["..."], "warnings": [...],
+  "executed_at": "...", "executor_version": "..."
+}
+```
+
+Implement every method in `method-advisor.json → methods`. Critical details:
+
+- **Mixed models are the default.** `statsmodels` MixedLM with random intercept on `player_id`, plus `school_id` when `n_schools >= 5`. On convergence failure, simplify the random structure rather than forcing it. On singular fit, drop the zero-variance term. Always report ICC.
+- **ML validation uses `GroupKFold` grouped on `player_id`, never plain k-fold.** Plain k-fold leaks the same child across train and test and inflates performance that will not replicate.
+- **Assumption checks always run and always return**, passed or failed. A failed check surfaces and triggers a proposed robust alternative — it never silently changes the method.
+- **Indicator validation must exclude the indicator's own source metrics** (read them from `indicators.json`). Predicting an indicator from its own inputs validates arithmetic, not construct.
+
+## 5. Plot renderer
+
+Implement the catalog in `xai-plots.json`. Enforce the universal rules in code:
+
+- **The renderer refuses to output any plot without n and cohort label.** Not a warning — a hard failure.
+- Every estimate carries an uncertainty interval. Bare bars and bare points are not available.
+- Bilingual axis labels, titles, and legends with correct RTL when the workbench is in Arabic.
+- Filter `confidence < 0.5` before rendering and state how many observations were excluded.
+- Colour is never the sole channel carrying meaning.
+
+## 6. XAI layer
+
+### Global — what drives an indicator across the population
+
+Fit gradient boosting predicting the indicator from Layer 1/2 variables, then explain it: **SHAP beeswarm**, **PDP + ICE together** (never PDP alone — it averages over interactions and can show flat where strong opposing effects exist), **feature importance**, **interaction heatmap**.
+
+This is the primary validation tool for the indicator formulas. If top SHAP features don't match the `source_metrics` and weights in `indicators.json`, the formula isn't doing what it claims. Build a dedicated view for this comparison.
+
+### Local — why this child got this score
+
+**SHAP waterfall**, gated hard:
+
+- **Suppressed entirely when `confidence < 0.5` or `cross_game_var > 1.0`.** Explaining an unstable score in convincing detail lends false authority to noise, which is worse than showing nothing.
+- Teacher variant is a plain-language summary — two or three sentences, neutral behavioral terms, no attribution values, no chart, consented pathway only.
+- Every render carries a statement that this explains a statistical model of gameplay behavior and is not an assessment of the child.
+
+### Counterfactuals
+
+Available to researchers only, labelled **"model sensitivity"**, never phrased as an action, recommendation, or target. Never rendered to teacher, parent, or child.
+
+Rendered to a teacher as advice, "if hesitation were 300ms shorter the score would be 8 points higher" becomes "train this child to answer faster" — which optimizes the metric and harms the child. The framing constraint is the safeguard, not styling.
+
+### Audience gating
+
+Implement `xai-plots.json → audience_gating` at the API layer, not the UI layer. Roles: `researcher`, `admin`, `teacher`, `parent`, `child`.
+
+## 7. AI Interpreter
+
+`POST /api/interpreter` — takes the executor results payload, returns plain-language interpretation.
+
+Hard constraints, enforced in code:
+
+1. **Numeric validation.** Extract every numeric token from the generated interpretation and verify each against the executor payload. Any mismatch blocks the response and re-prompts. This is the anti-hallucination gate and it is not optional.
+2. **Banned vocabulary check** at runtime on generated text: `ADHD`, `dyslexia`, `autism`, `disorder`, `deficit`, `impairment`, `diagnosis`, `screening`, `at-risk`, `delayed`. Same CI check as the indicator layer.
+3. **Associational phrasing only.** Gameplay data is observational. Block causal verbs and require a statement of what randomization would be needed for a causal claim.
+4. **Mandatory limitations section.** Every interpretation ends with what the analysis cannot establish. Not optional formatting.
+5. **Non-significance in a small cohort is stated as absence of evidence**, never as evidence of no difference.
+6. **No individual child recommendations.** The workbench analyzes cohorts and explains models. Advice about a specific child is an educator's judgment informed by data, not an output of it.
+
+## 8. Audit trail
+
+Log every question, cohort, plan, execution, interpretation, export, and role. Attributable and immutable. This is what makes findings defensible and what makes misuse detectable.
+
+Exports carry `cohort_id`, `plan_id`, `executor_version`, `formula_version`, and confidence values. A plot without provenance cannot be reproduced or corrected later, and scores exported without confidence get quoted out of context in exactly the way that causes harm.
+
+## 9. Build order
+
+1. Cohort filter model, SQL compiler, **min cell size enforcement** — before any query path exists
+2. Data shape probe with auto-flags
+3. Python executor with the core method set (Welch/Mann-Whitney, ANOVA/Kruskal, LMM, correlation, regression)
+4. StatPlan contract, validation, versioning
+5. Plot renderer with mandatory n and cohort labelling
+6. AI advisor over `method-advisor.json`, showing reasoning
+7. AI interpreter with numeric validation
+8. Global XAI (SHAP beeswarm) on indicator validation
+9. Local XAI with audience gating and confidence suppression
+10. Audit log, fishing detection, session-scoped FDR
+11. Saved cohorts, saved plans, scheduled re-runs
+
+## 10. Seed and test
+
+Extend the existing synthetic seed to ~300 children across three age bands, multiple schools, both languages, and both device types, with realistic nesting and attrition. Include a known ground-truth effect so the executor can be verified end to end — if the mixed model doesn't recover a planted effect, the pipeline is wrong and this is how you find out before real analyses run.

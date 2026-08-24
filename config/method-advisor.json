@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "minimum_cell_size": 10,
+  "sensitive_minimum_cell_size": 25,
+  "forbidden": [
+    "independence_test_when_repeated_measures",
+    "p_value_without_effect_size",
+    "raw_response_time_mean_comparison"
+  ],
+  "step_1_data_shape_probe": {
+    "auto_flags": [
+      "repeated_measures_when_obs_per_player_median_gt_1",
+      "transform_right_skewed_response_times",
+      "suppress_when_minimum_cell_not_met"
+    ]
+  },
+  "methods": {
+    "linear_mixed_model": {
+      "designs": ["repeated_measures"],
+      "effect_size": "marginal_r2_and_beta",
+      "requires": ["icc", "residual_check", "random_intercept_player"]
+    },
+    "welch_t_test": {
+      "designs": ["independent_groups"],
+      "effect_size": "hedges_g",
+      "requires": ["variance_check"]
+    },
+    "mann_whitney_u": {
+      "designs": ["independent_groups"],
+      "effect_size": "rank_biserial",
+      "requires": ["distribution_check"]
+    },
+    "correlation": {
+      "designs": ["association"],
+      "effect_size": "correlation_r",
+      "requires": ["linearity_check"]
+    }
+  }
+}
