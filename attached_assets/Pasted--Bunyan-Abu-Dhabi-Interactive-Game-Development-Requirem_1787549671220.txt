@@ -1,0 +1,768 @@
+# Bunyan Abu Dhabi – Interactive Game Development Requirements
+
+Build three interactive educational and behavioral games for the **Bunyan Abu Dhabi** platform.
+
+The games must visually feel like part of the existing Bunyan Abu Dhabi website. Use the same overall visual language already used in the platform: clean modern interface, friendly educational atmosphere, soft rounded components, engaging illustrations, clear Arabic-friendly typography, responsive layouts, and consistent platform colors.
+
+The games must work for children and teenagers aged **6–17** and dynamically adapt their gameplay and content based on the player's age.
+
+Every game must have exactly **3 levels**:
+
+* Level 1: Easy
+* Level 2: Medium
+* Level 3: Challenging
+
+The difficulty must increase through a combination of age adaptation, faster gameplay, more complex content, more distractors, and more difficult decisions.
+
+Do not make the games feel like school exams. The experience should feel playful, interactive, rewarding, and exciting.
+
+---
+
+# Global Technical Requirements
+
+For every game:
+
+1. Support Arabic and English.
+2. Automatically adapt content according to the player's age from 6 to 17.
+3. Keep the same Bunyan Abu Dhabi design system.
+4. Be fully responsive for desktop, tablet, and mobile.
+5. Include a clear start screen, instructions, gameplay screen, pause option where appropriate, and results screen.
+6. Use positive feedback such as animations, sounds, stars, badges, celebrations, and encouraging messages.
+7. Never show psychological scores or behavioral analysis to the child.
+8. Store all game content in configurable JSON or data structures so questions, words, colors, and difficulty can be updated later without rebuilding the entire game.
+9. Build a reusable analytics/event logging service that can be shared across all games.
+
+Each session should capture session context including:
+
+* session_id
+* player_id
+* game_id
+* game_version
+* age_band
+* age_months
+* grade if available
+* session language
+* device type
+* input type
+* session duration
+* completion, abandonment, timeout, or crash reason
+* number of resolved items
+
+Age should be treated as a major difficulty and analytics factor.
+
+Do not merge "time before the player starts acting" and "time spent deciding after acting" into one response-time variable.
+
+---
+
+# GAME 1: COLOR FOCUS
+
+## Brief
+
+Color Focus is a fast-paced endless-runner-style game inspired by the feeling and movement of popular obstacle-running games.
+
+The player is given one **target color** and must remain focused on collecting only objects matching that color while avoiding obstacles and ignoring distracting colors.
+
+The game is designed to challenge:
+
+* Focus
+* Attention
+* Processing speed
+* Decision making
+* Persistence
+
+The main gameplay duration is **60 seconds**.
+
+The game should become progressively faster and more challenging as the player advances.
+
+---
+
+## Gameplay Concept
+
+The player controls a character moving continuously through a colorful interactive environment.
+
+At the beginning of each round, clearly show the target color.
+
+Example:
+
+"Collect BLUE!"
+
+The player must collect objects of the correct color while:
+
+* Jumping over obstacles
+* Sliding under barriers
+* Moving left and right
+* Avoiding wrong-colored objects
+* Reacting quickly as the game speed increases
+
+The game must use clear and accessible controls:
+
+Desktop:
+
+* Arrow keys or WASD
+
+Mobile/Tablet:
+
+* Swipe left
+* Swipe right
+* Swipe up to jump
+* Swipe down to slide
+
+The game should also support simplified interaction for younger children if needed.
+
+---
+
+## Age Adaptation
+
+### Ages 6–8
+
+* Large objects
+* Strongly different colors
+* Fewer distractions
+* Slower movement
+* Simple obstacles
+* Longer reaction windows
+* Target color remains visible longer
+
+### Ages 9–12
+
+* Faster gameplay
+* More distractor colors
+* More frequent obstacles
+* Shorter decision windows
+* Target color may change during gameplay
+
+### Ages 13–17
+
+* Fast movement
+* Multiple distractions
+* Similar-looking colors
+* Rapid target changes
+* More complex obstacle combinations
+* Occasional rule changes, such as:
+
+"Now collect GREEN and PURPLE"
+
+or:
+
+"Do not collect RED"
+
+---
+
+## Levels
+
+### Level 1 – Focus Starter
+
+The player focuses on one clearly visible target color.
+
+* Slow speed
+* Large collectible objects
+* Few obstacles
+* Strong contrast between colors
+* Target color remains constant
+
+Example:
+
+Collect only yellow stars.
+
+---
+
+### Level 2 – Focus Challenge
+
+Increase the challenge.
+
+* Faster movement
+* More wrong-colored objects
+* More obstacles
+* Target color can change once or twice
+* Introduce combinations of jumping, sliding, and moving sideways
+
+Example:
+
+First collect BLUE.
+
+After 20 seconds:
+
+"New target: GREEN!"
+
+---
+
+### Level 3 – Ultimate Focus
+
+Create a high-energy challenge.
+
+* Significantly faster gameplay
+* Multiple distractors
+* More complex obstacle combinations
+* Similar shades of colors for older players
+* Target rules may change dynamically
+* Occasional bonus objects that reward correct focus
+* Wrong objects should have a gameplay consequence, such as reducing points or temporarily slowing the player
+
+Do not make the game impossible. Difficulty should remain adaptive based on the player's performance.
+
+---
+
+## Analytics and Event Logging
+
+Color Focus should use the **Timed Selection** game archetype.
+
+Capture events such as:
+
+* game_start
+* game_end
+* item_present
+* first_input
+* correct_collect
+* wrong_collect
+* obstacle_hit
+* jump
+* slide
+* lane_change
+* target_color_change
+* hint_used if applicable
+* focus_lost
+* focus_returned
+* idle_start
+* idle_end
+* level_start
+* level_complete
+* game_complete
+* game_abandon
+* timeout
+
+For each collectible or decision opportunity, capture:
+
+* item_id
+* item order
+* difficulty
+* time before first action
+* total response time
+* correct or incorrect outcome
+* attempt number
+* off-task time
+* strategy signature
+
+Where technically possible, also capture optional movement characteristics such as:
+
+* movement directness
+* reversals
+* pauses
+* path efficiency
+
+Do not create clinical labels for the child.
+
+---
+
+# GAME 2: OUR HERITAGE – تراثنا
+
+## Brief
+
+Our Heritage is an interactive educational game about:
+
+* UAE heritage
+* UAE culture
+* Islamic knowledge
+* Wudu
+* Traditions
+* Important national and cultural knowledge
+
+The game should feel like a journey through UAE heritage rather than a standard multiple-choice quiz.
+
+Use visual environments inspired by:
+
+* The UAE desert
+* Traditional houses
+* Palm trees
+* The sea and pearl-diving heritage
+* Falcons
+* Traditional markets
+* Mosques
+* Emirati cultural elements
+
+Keep the design respectful, modern, child-friendly, and aligned with the Bunyan Abu Dhabi visual identity.
+
+---
+
+## Game Structure
+
+The game has three levels.
+
+Each level contains **4 interactive challenges or questions**.
+
+A complete game therefore includes at least 12 core interactions.
+
+The question pool must dynamically change based on:
+
+* Player age
+* Selected language
+* Difficulty level
+
+---
+
+## Level 1 – Discover
+
+Four easy questions or activities.
+
+For younger children, use:
+
+* Images
+* Audio
+* Simple choices
+* Drag and drop
+* Matching
+
+Examples:
+
+* Identify the UAE flag
+* Identify a falcon
+* Choose a traditional Emirati item
+* Put simple Wudu steps in the correct order
+
+Questions should use very little text for younger players.
+
+---
+
+## Level 2 – Explore
+
+Four medium-difficulty questions.
+
+Include a mixture of:
+
+* UAE heritage questions
+* Islamic knowledge
+* Wudu sequencing
+* Cultural matching
+* Interactive image questions
+
+Examples:
+
+* Arrange Wudu steps in the correct order
+* Match an Emirati tradition with its description
+* Answer a UAE history question
+* Identify the correct cultural practice
+
+---
+
+## Level 3 – Heritage Master
+
+Four more challenging questions.
+
+For older players:
+
+* More detailed UAE history
+* More challenging Islamic knowledge appropriate to age
+* More complex sequencing
+* Scenario-based cultural questions
+* Questions requiring the player to compare options
+
+Do not use unnecessarily controversial religious content.
+
+Content must be age-appropriate and respectful.
+
+---
+
+## Wudu Interaction
+
+Create a dedicated interactive Wudu activity.
+
+The player receives shuffled steps and must place them in the correct sequence.
+
+For younger players:
+
+* Use pictures and simple step cards
+
+For older players:
+
+* Use more detailed sequencing
+* Include distractor options where appropriate
+
+The system should record:
+
+* Initial arrangement
+* Changes made
+* Final sequence
+* Correctness
+* Number of moves
+* Optimal number of moves
+* Time before first action
+* Total completion time
+* Attempts
+* Hint usage
+* Self-correction behavior
+
+---
+
+## Analytics and Archetypes
+
+Our Heritage should combine:
+
+1. Recall Quiz
+2. Sequencing
+
+This allows the game to capture both knowledge-based responses and behavior during sequencing.
+
+Capture:
+
+* item_present
+* first_input
+* item_change
+* item_submit
+* item_resolve
+* hint_request
+* level_start
+* level_complete
+* game_complete
+* game_abandon
+
+Capture per item:
+
+* item_id
+* difficulty
+* modality: text, audio, image, or mixed
+* hesitation time
+* deliberation time
+* total time
+* correct/incorrect
+* number of answer changes
+* changed-to-correct
+* hint usage
+* attempts
+* options explored where relevant
+* moves used
+* optimal moves
+* repeated previous error
+* strategy signature
+
+For sequencing interactions, capture movement and interaction behavior when technically available, including:
+
+* directness
+* reversals
+* pauses
+* zones entered
+* near misses
+
+---
+
+# GAME 3: WORD JOURNEY – رحلة الكلمات
+
+## Brief
+
+Word Journey is a bilingual Arabic and English literacy adventure.
+
+The player travels through an interactive world and completes language challenges to unlock the next part of the journey.
+
+The game should be colorful, animated, and enjoyable.
+
+It must support both:
+
+* Arabic
+* English
+
+The selected session language determines the main language experience.
+
+Do not simply translate every challenge word-for-word. Arabic and English content should be designed naturally for the literacy level of the player.
+
+---
+
+## Core Activities
+
+Create different types of literacy challenges.
+
+### 1. Complete the Sentence
+
+The player sees a sentence with a missing word.
+
+Example:
+
+"The cat is ___ the table."
+
+The player chooses or drags the correct word.
+
+For Arabic:
+
+Provide age-appropriate Arabic sentence completion activities.
+
+---
+
+### 2. Missing Letter
+
+Show a word with a missing letter.
+
+Example:
+
+C _ T
+
+The player selects the correct letter.
+
+Difficulty can increase by:
+
+* Increasing word length
+* Increasing similar answer choices
+* Removing more support
+* Using more advanced vocabulary
+
+---
+
+### 3. Picture to Word
+
+Show an image.
+
+The player must identify the correct word.
+
+For younger children:
+
+* Multiple-choice
+* Audio support
+* Large illustrations
+
+For older players:
+
+* Type or construct the word
+* Match picture to more advanced vocabulary
+* Include distractor words
+
+---
+
+### 4. Word Building
+
+Provide letters or word pieces.
+
+The player arranges them to create the correct word.
+
+This can use drag-and-drop interaction.
+
+---
+
+### 5. Sentence Journey
+
+For older players, provide mixed-up words that must be placed in the correct order.
+
+This introduces more advanced literacy and sequencing challenges.
+
+---
+
+## Levels
+
+### Level 1 – Word Explorer
+
+For younger players and beginners:
+
+* Picture recognition
+* Simple missing letters
+* Short sentences
+* Audio support
+* Large answer buttons
+* Strong visual hints
+
+Use mostly Pattern Completion and simple Recall interactions.
+
+---
+
+### Level 2 – Word Adventurer
+
+Increase difficulty with:
+
+* Longer words
+* More distractors
+* Sentence completion
+* Word building
+* Mixed visual and text challenges
+
+Reduce hints compared with Level 1.
+
+---
+
+### Level 3 – Word Master
+
+For older players:
+
+* Advanced vocabulary appropriate to their age
+* More complex sentences
+* Multiple missing letters
+* Word ordering
+* Context-based word selection
+* Reduced visual support
+* More challenging distractors
+
+Include bonus challenges that reward players for voluntarily choosing harder questions.
+
+---
+
+## Game World
+
+Make Word Journey feel like an adventure.
+
+Example progression:
+
+1. Start at the "Word Village"
+2. Unlock the "Letter Forest"
+3. Continue to the "Sentence Bridge"
+4. Reach the "Word Castle"
+
+The environment should not distract excessively from the literacy task.
+
+Each completed challenge can:
+
+* Unlock a path
+* Repair a bridge
+* Collect a letter
+* Earn a star
+* Unlock a character reaction
+* Reveal part of the journey
+
+---
+
+## Analytics and Archetypes
+
+Word Journey should combine:
+
+1. Pattern Completion
+2. Sequencing where words or letters are arranged
+3. Recall Quiz where appropriate
+
+Capture:
+
+* item_present
+* first_input
+* answer_change
+* drag_start
+* drag_move
+* drag_end
+* item_submit
+* item_resolve
+* hint_request
+* level_start
+* level_complete
+* game_complete
+* game_abandon
+
+For every challenge, capture:
+
+* item_id
+* item order
+* difficulty
+* modality
+* hesitation time
+* deliberation time
+* total time
+* correct/incorrect
+* number of changes
+* changed-to-correct
+* hint usage
+* attempts
+* options explored
+* repeated errors
+* strategy signature
+
+For drag-and-drop word ordering, also capture:
+
+* moves used
+* optimal moves
+* movement directness
+* reversals
+* pauses
+* near misses where the player almost drops a word in the wrong location but corrects before committing
+
+---
+
+# Shared Analytics Architecture
+
+Create one reusable event logging system for all games.
+
+Use a structure similar to:
+
+Game Session
+→ Level
+→ Item
+→ Player Events
+
+Every event should include:
+
+* timestamp
+* session_id
+* player_id
+* game_id
+* game_version
+* current_level
+* age
+* age_band
+* session language
+* device class
+* input type
+
+Do not store raw movement paths permanently unless required by the backend policy.
+
+Instead, calculate gameplay features such as:
+
+* directness
+* reversals
+* pauses
+* movement efficiency
+* near miss
+* time to first action
+* time to completion
+
+Store these derived values with the relevant item or interaction.
+
+---
+
+# Results Screen
+
+At the end of every game, show a child-friendly result screen.
+
+Do not show behavioral scores such as:
+
+* Attention Stability: 72
+* Processing Speed: 64
+* Cognitive Flexibility: 81
+
+Instead, use positive game feedback.
+
+Examples:
+
+* Great Focus!
+* Excellent Journey!
+* Heritage Explorer!
+* Word Adventurer!
+* You completed Level 3!
+* Amazing effort!
+
+Use stars, badges, achievements, collected items, and encouraging language.
+
+The analytical variables must be sent silently to the backend for Bunyan analysis.
+
+---
+
+# Code Structure
+
+Build the project using reusable components.
+
+Suggested structure:
+
+* GameShell
+* GameHeader
+* LevelProgress
+* Timer
+* PlayerController
+* QuestionCard
+* DragDropArea
+* FeedbackAnimation
+* ResultsScreen
+* AgeDifficultyEngine
+* GameContentService
+* AnalyticsService
+
+Create a configuration-based system so future Bunyan games can reuse:
+
+* Age adaptation
+* Levels
+* Difficulty scaling
+* Event logging
+* Session management
+* Arabic/English localization
+* Rewards
+* Results screens
+
+Do not hard-code questions or difficulty rules directly into the UI components.
+
+The final implementation should feel like one unified Bunyan Abu Dhabi gaming ecosystem, where every game has its own identity but all games share the same design system, analytics framework, level structure, age adaptation logic, and user experience.
