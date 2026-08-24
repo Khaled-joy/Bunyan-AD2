@@ -3,6 +3,8 @@ export type Language = "ar" | "en";
 
 export interface GameContext {
   session: { playerId: string; sessionId: string; gameId: string; ageBand: AgeBand; lang: Language };
+  startSession(): void;
+  endSession(reason: string): void;
   startLevel(levelId: string, meta?: object): void;
   endLevel(levelId: string, meta?: object): void;
   startItem(itemId: string, meta: {
@@ -256,6 +258,11 @@ export function createGameContext(options: TelemetryOptions): GameContext {
 
   return {
     session: options.session,
+    startSession: () => emit("session.start"),
+    endSession: (reason) => {
+      emit("session.end", { end_reason: reason });
+      void flush();
+    },
     startLevel: (levelId, meta = {}) => emit("level.start", { level_id: levelId, ...meta }),
     endLevel: (levelId, meta = {}) => emit("level.end", { level_id: levelId, ...meta }),
     startItem: (itemId, meta) => {

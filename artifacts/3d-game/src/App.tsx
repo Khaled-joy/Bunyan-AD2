@@ -8,6 +8,7 @@ import learningWorldPath from '@assets/generated_images/bunayn-learning-world.pn
 import hamdanPath from '@assets/Hamdan_logo_1787295278410.png';
 import hananPath from '@assets/hanan_logo_1787295278411.png';
 import { getColorFocusLevel, getContentCycle, getHeritageItem, getHeritageItemCount, getInnovationItem, getInnovationItemCount, getMenuItem, getMenuItemCount, getMenuTask, getNumeracyItem, getNumeracyItemCount, getPackCopy, getTruthItem, getTruthItemCount, getWordItem, getWordItemCount } from './contentPack';
+import { useGameRuntime, useTelemetryItem } from './gameRuntime';
 import {
   Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BarChart3, BookOpen, Check,
   ChevronRight, CircleHelp, Clock3, Coins, Compass, Crown, Footprints, Gamepad2,
@@ -131,6 +132,12 @@ function useLocal<T>(key: string, initial: T) {
 
 function usePlayerContentCycle() {
   const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
+  const age = Number.parseInt(profile?.age ?? '', 10);
+  if (Number.isFinite(age)) {
+    if (age >= 13) return 3;
+    if (age >= 9) return 2;
+    return 1;
+  }
   return getContentCycle(profile?.grade);
 }
 function usePlayerSummary() {
@@ -195,7 +202,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
   </Link>;
 }
 
-function useElapsedGameTimer(gameId: string, finished: boolean) {
+function useElapsedGameTimer(gameId: string, finished: boolean, paused = false) {
   const [seconds, setSeconds] = useState(0);
   const wasFinished = useRef(finished);
   useEffect(() => {
@@ -206,21 +213,22 @@ function useElapsedGameTimer(gameId: string, finished: boolean) {
     setSeconds(0);
   }, [gameId]);
   useEffect(() => {
-    if (finished) return;
+    if (finished || paused) return;
     const interval = window.setInterval(() => setSeconds((value) => value + 1), 1000);
     return () => window.clearInterval(interval);
-  }, [finished, gameId]);
+  }, [finished, gameId, paused]);
   return seconds;
 }
 
-function GameTimer({ gameId, lang, finished }: { gameId: string; lang: Lang; finished: boolean }) {
-  const seconds = useElapsedGameTimer(gameId, finished);
+function GameTimer({ gameId, lang, finished, paused = false }: { gameId: string; lang: Lang; finished: boolean; paused?: boolean }) {
+  const seconds = useElapsedGameTimer(gameId, finished, paused);
   const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
   const remainingSeconds = (seconds % 60).toString().padStart(2, '0');
   return <div className="flex items-center gap-1.5 rounded-full border border-[#c7ded1] bg-white px-3 py-2 text-sm font-bold text-[#174b44]" aria-label={t({ en: `Play time ${minutes}:${remainingSeconds}`, ar: `وقت اللعب ${minutes}:${remainingSeconds}` }, lang)}>
     <Clock3 className="h-4 w-4 text-[#16a7bc]" />
     <span className="text-[10px] uppercase tracking-[.1em] text-[#688079]">{t({ en: 'Time', ar: 'الوقت' }, lang)}</span>
     <span data-testid={`text-${gameId}-timer`} dir="ltr">{minutes}:{remainingSeconds}</span>
+    {paused && <span className="sr-only">{t({ en: 'paused', ar: 'متوقف مؤقتاً' }, lang)}</span>}
   </div>;
 }
 
@@ -1058,30 +1066,72 @@ function App() {
 
 export default App;
 
+type ColorRun = { status: 'ready' | 'running' | 'paused'; timeLeft: number; hits: number; misses: number; streak: number };
+
 function ColorFocus({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'color-focus')!;
+  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
   const [progress, setProgress] = useSignatureProgress(game.id);
-  const [picked, setPicked] = useState<number | null>(null);
+  const [run, setRun] = useState<ColorRun>({ status: 'ready', timeLeft: 60, hits: 0, misses: 0, streak: 0 });
   const cycle = usePlayerContentCycle();
-  const packLevel = getColorFocusLevel(cycle);
-  const palette = packLevel.palette;
-  const question = progress.question ?? 0;
-  const target = palette[(progress.level * QUESTIONS_PER_LEVEL + question) % palette.length];
-  const shapeMarkers = ['●', '■', '▲', '◆', '★', '✚', '⬟', '✦', '⬢'];
-  const board = {
-    target,
-    targetIndex: (question * 3 + 1) % 9,
-    targetShape: shapeMarkers[(question * 3 + 1) % 9],
-    label: { en: `signal ${target} square`, ar: `إشارة مربعة ${target}` },
-    colors: Array.from({ length: 9 }, (_, index) => palette[(index * 3 + progress.level + question) % palette.length]).map((color, index) => (index === (question * 3 + 1) % 9 ? target : color)),
+  const config = getColorFocusLevel(cycle);
+  const level = Math.min(progress.level, 2);
+  const runtime = useGameRuntime({ gameId: game.id, lang, level, profile: profile ?? undefined, finished: progress.finished });
+  const boardRound = run.hits + run.misses;
+  const target = config.palette[(boardRound + level) % config.palette.length]!;
+  const targetIndex = (boardRound * 5 + level) % 9;
+  const shapes = ['●', '■', '▲', '◆', '★', '✚', '⬟', '✦', '⬢'];
+  const board = useMemo(() => ({
+    targetIndex,
+    targetShape: shapes[targetIndex]!,
+    colors: Array.from({ length: 9 }, (_, index) => index === targetIndex ? target : config.palette[(index + boardRound + 1) % config.palette.length]!),
+  }), [boardRound, config.palette, target, targetIndex]);
+  const item = useTelemetryItem(runtime.telemetry, `CF-L${level + 1}-R${boardRound + 1}`, {
+    difficulty: runtime.difficulty,
+    modality: 'image',
+    optionCount: board.colors.length,
+  });
+  const startRun = () => setRun({ status: 'running', timeLeft: 60, hits: 0, misses: 0, streak: 0 });
+  const togglePause = () => setRun((value) => value.status === 'running' ? { ...value, status: 'paused' } : value.status === 'paused' ? { ...value, status: 'running' } : value);
+  const choose = (index: number) => {
+    if (run.status !== 'running') return;
+    const good = index === board.targetIndex;
+    item.firstInput();
+    item.submit({ tile: index, color: board.colors[index], shape: shapes[index] });
+    item.resolve({ correct: good, value: index, strategySignature: 'color-shape-match' });
+    setRun((value) => {
+      const hits = value.hits + (good ? 1 : 0);
+      const misses = value.misses + (good ? 0 : 1);
+      const nextLevel = Math.min(2, Math.floor(hits / 5));
+      if (nextLevel > level) runtime.telemetry.endLevel(`level-${level + 1}`, { hits, misses });
+      setProgress((saved) => ({ ...saved, level: nextLevel, score: saved.score + (good ? 80 + runtime.difficulty * 10 : 0), coins: saved.coins + (good && hits % 3 === 0 ? 1 : 0) }));
+      return { ...value, hits, misses, streak: good ? value.streak + 1 : 0 };
+    });
   };
-  const choose = (index: number) => { if (picked === null) setPicked(index); };
-  const good = picked === board.targetIndex;
-  const next = () => { if (progress.level === 2 && question === QUESTIONS_PER_LEVEL - 1) setProgress((value) => ({ ...value, score: value.score + 100, coins: value.coins + 10, finished: true })); else { setProgress((value) => ({ ...value, level: question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: question === QUESTIONS_PER_LEVEL - 1 ? 0 : question + 1, score: value.score + 100, coins: value.coins + 10 })); setPicked(null); } };
-  const retry = () => setPicked(null);
-  const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setPicked(null); };
-  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Touch a matching tile, or use Tab then Enter/Space to choose one', ar: 'اضغط بلاطة مطابقة، أو استخدم Tab ثم Enter أو Space للاختيار' }}>
-    <SignatureProgressBar progress={progress} lang={lang} question={question} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Signal hunt', ar: 'صيد الإشارة' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t({ en: 'Find the target colour and shape.', ar: 'اعثر على اللون والشكل المستهدفين.' }, lang)}</h2><p className="mt-3 text-[#688079]">{t({ en: 'Stay with one signal even when the board gets busy. Match both its colour and its square shape.', ar: 'ركز على إشارة واحدة حتى تصبح اللوحة مزدحمة. طابق اللون والشكل المربع معًا.' }, lang)} <strong className="text-[#174b44]">{board.label[lang]} {board.targetShape}</strong></p><div className="mx-auto mt-7 grid max-w-[360px] grid-cols-3 gap-3">{board.colors.map((color, index) => <button key={index} onClick={() => choose(index)} aria-label={`Color tile ${index + 1}, ${shapeMarkers[index]}`} className={`signature-tile grid aspect-square place-items-center rounded-2xl border-4 transition ${picked === index ? good ? 'border-[#33705f] scale-105' : 'border-[#e8755f] scale-95' : 'border-[#dfd2bd] hover:scale-105'}`} style={{ backgroundColor: color }} data-testid={`button-color-tile-${index + 1}`}><span className="rounded-full bg-white/50 px-2 py-1 text-sm font-bold text-[#174b44]">{shapeMarkers[index]}</span></button>)}</div>{picked !== null && <LevelFeedback good={good} message={good ? { en: 'You held your focus and found the signal.', ar: 'حافظت على تركيزك ووجدت الإشارة.' } : { en: 'That colour or shape was a distraction. Scan again and try the highlighted signal.', ar: 'كان ذلك اللون أو الشكل تشتيتاً. امسح اللوحة وحاول العثور على الإشارة.' }} lang={lang} onNext={next} onRetry={retry} final={progress.level === 2 && question === QUESTIONS_PER_LEVEL - 1} />}</SignatureFrame>;
+  useEffect(() => {
+    if (run.status !== 'running') return;
+    const timer = window.setInterval(() => {
+      setRun((value) => {
+        if (value.timeLeft > 1) return { ...value, timeLeft: value.timeLeft - 1 };
+        item.timeout();
+        setProgress((saved) => ({ ...saved, finished: true, level: 2 }));
+        return { ...value, timeLeft: 0, status: 'ready' };
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [item, run.status, setProgress]);
+  const restart = () => {
+    setProgress({ level: 0, score: 0, coins: 0, finished: false });
+    setRun({ status: 'ready', timeLeft: 60, hits: 0, misses: 0, streak: 0 });
+  };
+  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} paused={run.status === 'paused'} onPause={togglePause} instruction={{ en: 'Start the 60-second run, then match each target colour and shape · Space pauses', ar: 'ابدأ الجولة لمدة ٦٠ ثانية ثم طابق كل لون وشكل مستهدف · المسافة للإيقاف المؤقت' }}>
+    <SignatureProgressBar progress={progress} lang={lang} total={3} />
+    <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: '60-second signal run', ar: 'سباق الإشارة لمدة ٦٠ ثانية' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t({ en: 'Find the target colour and shape.', ar: 'اعثر على اللون والشكل المستهدفين.' }, lang)}</h2></div><div className="rounded-2xl bg-[#174b44] px-4 py-3 text-center text-[#fff4df]"><span className="block font-display text-3xl font-bold" dir="ltr">{run.timeLeft}s</span><span className="text-xs font-bold text-[#b7d1c5]">{t({ en: 'run clock', ar: 'مؤقت الجولة' }, lang)}</span></div></div>
+    {run.status === 'ready' && !progress.finished && <div className="mt-6 rounded-[24px] bg-[#efe4cf] p-5"><p className="font-semibold text-[#557068]">{t({ en: 'The board changes after every choice. Shapes make the challenge fair for every player.', ar: 'تتغير اللوحة بعد كل اختيار. تجعل الأشكال التحدي عادلاً لكل لاعب.' }, lang)}</p><button type="button" onClick={startRun} className="mt-4 rounded-full bg-[#174b44] px-5 py-3 text-sm font-bold text-[#fff4df]" data-testid="button-start-color-run"><Play className="me-2 inline h-4 w-4" />{t({ en: 'Start run', ar: 'ابدأ الجولة' }, lang)}</button></div>}
+    {run.status !== 'ready' && !progress.finished && <><div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-bold text-[#557068]"><span className="rounded-full bg-[#e6f1eb] px-3 py-2">{t({ en: 'Target', ar: 'الهدف' }, lang)} <span className="ms-1 inline-block h-4 w-4 rounded bg-[#174b44] align-middle" style={{ backgroundColor: target }} /> {board.targetShape}</span><span className="rounded-full bg-[#efe4cf] px-3 py-2">{t({ en: 'Hits', ar: 'إصابات صحيحة' }, lang)} {run.hits}</span><span className="rounded-full bg-[#fff0eb] px-3 py-2">{t({ en: 'Streak', ar: 'متتالية' }, lang)} {run.streak}</span></div><p className="mt-4 text-sm text-[#688079]">{t({ en: 'Match both the colour and the shape. Near-shades are deliberate decoys.', ar: 'طابق اللون والشكل معاً. الألوان المتقاربة تشتيت مقصود.' }, lang)}</p><div className="mx-auto mt-6 grid max-w-[390px] grid-cols-3 gap-3">{board.colors.map((color, index) => <button key={`${boardRound}-${index}`} type="button" onClick={() => choose(index)} aria-label={`Color tile ${index + 1}, ${shapes[index]}`} className="signature-tile grid aspect-square place-items-center rounded-2xl border-4 border-[#dfd2bd] transition hover:scale-105" style={{ backgroundColor: color }} data-testid={`button-color-tile-${index + 1}`}><span className="rounded-full bg-white/60 px-2 py-1 text-sm font-bold text-[#174b44]">{shapes[index]}</span></button>)}</div></>}
+    {run.status === 'paused' && !progress.finished && <p className="mt-5 rounded-2xl bg-[#fff3cc] p-4 text-sm font-bold text-[#66532f]" role="status">{t({ en: 'Run paused. Resume when you are ready.', ar: 'توقفت الجولة مؤقتاً. تابع عندما تكون مستعداً.' }, lang)}</p>}
+    {progress.finished && <p className="mt-6 rounded-2xl bg-[#e6f1eb] p-4 text-sm font-bold text-[#174b44]" role="status" data-testid="status-color-finished">{t({ en: `Time! You found ${run.hits} signals and built a ${Math.min(3, Math.floor(run.hits / 5) + 1)}-level focus streak.`, ar: `انتهى الوقت! عثرت على ${run.hits} إشارات وبنيت متتالية تركيز من ${Math.min(3, Math.floor(run.hits / 5) + 1)} مستويات.` }, lang)}</p>}
+  </SignatureFrame>;
 }
 
 function CommonGround({ lang }: { lang: Lang }) {
@@ -1238,18 +1288,23 @@ function InnovationLab({ lang }: { lang: Lang }) {
 
 function HeritageSequence({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'heritage')!;
+  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
   const [progress, setProgress] = useSignatureProgress(game.id);
   const [chosen, setChosen] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [memoryPick, setMemoryPick] = useState<string | null>(null);
   const [memoryMatches, setMemoryMatches] = useState<number[]>([]);
   const [wrong, setWrong] = useState(false);
+  const [paused, setPaused] = useState(false);
   const cycle = usePlayerContentCycle();
-  const totalQuestions = getHeritageItemCount(cycle);
-  const round = getQuestionRound(progress, totalQuestions);
-  const total = round.totalLevels;
-  const item = getHeritageItem(cycle, round.itemIndex);
-  useBoundedSignatureProgress(progress, setProgress, round.totalLevels);
+  const level = Math.min(progress.level, 2);
+  const item = getHeritageItem(cycle, level);
+  const runtime = useGameRuntime({ gameId: game.id, lang, level, profile: profile ?? undefined, finished: progress.finished });
+  const telemetryItem = useTelemetryItem(runtime.telemetry, item.id, {
+    difficulty: runtime.difficulty,
+    modality: item.type === 'memory_match' ? 'mixed' : 'text',
+    optionCount: item.type === 'order' ? item.steps.length : item.type === 'memory_match' ? item.pairs.length * 2 : item.options.length,
+  });
   const cards = item.type === 'order' ? item.steps : [];
   const options = item.type === 'mcq' ? item.options : [];
   const pairs = item.type === 'memory_match' ? item.pairs : [];
@@ -1258,25 +1313,51 @@ function HeritageSequence({ lang }: { lang: Lang }) {
   const isOrder = item.type === 'order' && cards.length > 0;
   const isMemory = item.type === 'memory_match';
   const answer = item.type === 'mcq' ? item.answer : '';
-  const select = (id: string) => { if (wrong || chosen.includes(id)) return; const expected = cards[chosen.length]?.id; if (id !== expected) setWrong(true); else setChosen((value) => [...value, id]); };
+  const reset = () => { setChosen([]); setSelected(null); setMemoryPick(null); setMemoryMatches([]); setWrong(false); };
+  useEffect(() => { reset(); }, [item.id]);
+  const select = (id: string) => {
+    if (paused || wrong || chosen.includes(id)) return;
+    telemetryItem.firstInput();
+    telemetryItem.change(id);
+    const expected = cards[chosen.length]?.id;
+    if (id !== expected) {
+      telemetryItem.resolve({ correct: false, value: id, movesUsed: chosen.length + 1, strategySignature: 'heritage-sequence' });
+      setWrong(true);
+    } else {
+      const nextCount = chosen.length + 1;
+      if (nextCount === cards.length) telemetryItem.resolve({ correct: true, value: id, movesUsed: nextCount, strategySignature: 'heritage-sequence' });
+      setChosen((value) => [...value, id]);
+    }
+  };
   const complete = isOrder && chosen.length === cards.length;
   const good = isOrder ? complete : isMemory ? memoryMatches.length === pairs.length : selected === answer;
   const selectMemory = (card: string) => {
+    if (paused) return;
     if (memoryMatches.includes(Number(card.split(':')[1]))) return;
+    telemetryItem.firstInput();
+    telemetryItem.change(card);
     if (!memoryPick) { setMemoryPick(card); return; }
     const [firstSide, firstIndex] = memoryPick.split(':'); const [nextSide, nextIndex] = card.split(':');
-    if (firstIndex === nextIndex && firstSide !== nextSide) { setMemoryMatches((value) => [...value, Number(nextIndex)]); setMemoryPick(null); }
-    else { setMemoryPick(card); setWrong(true); }
+    if (firstIndex === nextIndex && firstSide !== nextSide) {
+      const nextMatches = memoryMatches.length + 1;
+      if (nextMatches === pairs.length) telemetryItem.resolve({ correct: true, value: `${memoryPick}|${card}`, movesUsed: nextMatches, strategySignature: 'heritage-memory' });
+      setMemoryMatches((value) => [...value, Number(nextIndex)]);
+      setMemoryPick(null);
+    } else {
+      telemetryItem.resolve({ correct: false, value: `${memoryPick}|${card}`, strategySignature: 'heritage-memory' });
+      setMemoryPick(card);
+      setWrong(true);
+    }
   };
   const next = () => {
     const reward = Number(item.sparks) || 10;
-    if (round.finalQuestion) setProgress((value) => ({ ...value, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true }));
-    else { setProgress((value) => ({ ...value, level: round.question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: round.question === QUESTIONS_PER_LEVEL - 1 ? 0 : round.question + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) })); setChosen([]); setSelected(null); setMemoryPick(null); setMemoryMatches([]); setWrong(false); }
+    runtime.telemetry.endLevel(`level-${level + 1}`, { correct: true, item_id: item.id });
+    if (level === 2) setProgress((value) => ({ ...value, level: 2, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true }));
+    else { setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) })); reset(); }
   };
-  const retry = () => { setChosen([]); setSelected(null); setMemoryPick(null); setMemoryMatches([]); setWrong(false); };
-  const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); retry(); };
-  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Tap the cards in order, or use Tab then Enter/Space', ar: 'اضغط البطاقات بالترتيب، أو استخدم Tab ثم Enter أو Space' }}>
-    <SignatureProgressBar progress={progress} lang={lang} total={total} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Heritage challenge', ar: 'تحدّي التراث' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t(prompt, lang)}</h2>{isOrder ? <div className="mt-7 grid gap-3">{cards.map((card, index) => <button key={card.id} onClick={() => select(card.id)} disabled={chosen.includes(card.id)} className={`flex items-center gap-4 rounded-2xl border p-4 text-start transition ${chosen.includes(card.id) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-heritage-step-${index + 1}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#efe4cf] font-display font-bold">{chosen.indexOf(card.id) >= 0 ? chosen.indexOf(card.id) + 1 : index + 1}</span><span className="font-semibold">{card[lang]}</span>{chosen.includes(card.id) && <Check className="ms-auto h-5 w-5 text-[#33705f]" />}</button>)}</div> : isMemory ? <div className="mt-7 grid gap-3 sm:grid-cols-2">{pairs.flatMap((pair, index) => [['a', pair.a], ['b', pair.b]] as const).map(([side, label], index) => { const card = `${side}:${Math.floor(index / 2)}`; const matched = memoryMatches.includes(Math.floor(index / 2)); return <button key={card} onClick={() => selectMemory(card)} disabled={matched} className={`rounded-2xl border p-4 text-start font-semibold ${matched ? 'border-[#33705f] bg-[#e6f1eb]' : memoryPick === card ? 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`}>{label[lang]}</button>; })}</div> : <div className="mt-7 grid gap-3">{options.map((option, index) => <button key={option.id ?? option.en} onClick={() => !selected && setSelected(option.id ?? option.en)} className={`rounded-2xl border p-4 text-start font-semibold transition ${selected === (option.id ?? option.en) ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-heritage-step-${index + 1}`}>{option[lang]}</button>)}</div>}{(wrong || complete || selected !== null || (isMemory && memoryMatches.length === pairs.length)) && <LevelFeedback good={good} message={good ? explanation : { en: 'Try again and look carefully at the question and its choices.', ar: 'حاول مجددًا وانظر بعناية إلى السؤال وخياراته.' }} lang={lang} onNext={next} onRetry={retry} final={progress.level === total - 1} />}</SignatureFrame>;
+  const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); reset(); setPaused(false); };
+  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} paused={paused} onPause={() => setPaused((value) => !value)} instruction={{ en: 'Explore one heritage trail at a time: order, match, or choose · Tab then Enter/Space works too', ar: 'استكشف مسار تراث واحداً تلو الآخر: رتّب أو طابق أو اختر · يعمل Tab ثم Enter أو Space أيضاً' }}>
+    <SignatureProgressBar progress={progress} lang={lang} total={3} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Our heritage journey', ar: 'رحلة تراثنا' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{t(prompt, lang)}</h2><p className="mt-3 text-sm text-[#688079]">{t({ en: 'Each level connects a UAE story, a value, or a thoughtful Islamic practice.', ar: 'يربط كل مستوى قصة إماراتية أو قيمة أو ممارسة إسلامية واعية.' }, lang)}</p>{isOrder ? <div className="mt-7 grid gap-3">{cards.map((card, index) => <button key={card.id} onClick={() => select(card.id)} disabled={chosen.includes(card.id)} className={`flex items-center gap-4 rounded-2xl border p-4 text-start transition ${chosen.includes(card.id) ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5 hover:border-[#33705f]'}`} data-testid={`button-heritage-step-${index + 1}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#efe4cf] font-display font-bold">{chosen.indexOf(card.id) >= 0 ? chosen.indexOf(card.id) + 1 : index + 1}</span><span className="font-semibold">{card[lang]}</span>{chosen.includes(card.id) && <Check className="ms-auto h-5 w-5 text-[#33705f]" />}</button>)}</div> : isMemory ? <div className="mt-7 grid gap-3 sm:grid-cols-2">{pairs.flatMap((pair, index) => [['a', pair.a], ['b', pair.b]] as const).map(([side, label], index) => { const card = `${side}:${Math.floor(index / 2)}`; const matched = memoryMatches.includes(Math.floor(index / 2)); return <button key={card} onClick={() => selectMemory(card)} disabled={matched} className={`rounded-2xl border p-4 text-start font-semibold ${matched ? 'border-[#33705f] bg-[#e6f1eb]' : memoryPick === card ? 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0]'}`}>{label[lang]}</button>; })}</div> : <div className="mt-7 grid gap-3">{options.map((option, index) => <button key={option.id} onClick={() => { if (selected || paused) return; telemetryItem.firstInput(); telemetryItem.submit(option.id); telemetryItem.resolve({ correct: option.id === answer, value: option.id, strategySignature: 'heritage-choice' }); setSelected(option.id); }} className={`rounded-2xl border p-4 text-start font-semibold transition ${selected === option.id ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-heritage-step-${index + 1}`}>{option[lang]}</button>)}</div>}{(wrong || complete || selected !== null || (isMemory && memoryMatches.length === pairs.length)) && <LevelFeedback good={good} message={good ? explanation : { en: 'Take a breath, notice the clue, and try again. Every attempt is part of the journey.', ar: 'خذ نفساً ولاحظ الدليل وحاول مجدداً. كل محاولة جزء من الرحلة.' }} lang={lang} onNext={next} onRetry={reset} final={level === 2} />}</SignatureFrame>;
 }
 
 function NumeracyCheck({ lang }: { lang: Lang }) {
@@ -1311,24 +1392,43 @@ function SparkStudio({ lang }: { lang: Lang }) {
 
 function WordJourney({ lang }: { lang: Lang }) {
   const game = gameBlueprints.find((item) => item.id === 'word-journey')!;
+  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
   const [progress, setProgress] = useSignatureProgress(game.id);
   const [picked, setPicked] = useState<string | null>(null);
+  const [paused, setPaused] = useState(false);
   const cycle = usePlayerContentCycle();
-  const totalQuestions = getWordItemCount(cycle, lang);
-  const round = getQuestionRound(progress, totalQuestions);
-  const total = round.totalLevels;
-  const item = getWordItem(cycle, round.itemIndex, lang);
-  useBoundedSignatureProgress(progress, setProgress, total);
+  const level = Math.min(progress.level, 2);
+  const item = getWordItem(cycle, level, lang);
+  const runtime = useGameRuntime({ gameId: game.id, lang, level, profile: profile ?? undefined, finished: progress.finished });
+  const telemetryItem = useTelemetryItem(runtime.telemetry, item.id, {
+    difficulty: runtime.difficulty,
+    modality: item.type === 'picture_word' ? 'image' : item.passage ? 'mixed' : 'text',
+    optionCount: item.options.length,
+  });
   const choices = item.options;
   const prompt = item.prompt;
   const passage = getPackCopy(item.passage, { en: '', ar: '' });
   const display = item.display ?? '';
   const correctAnswer = item.answer;
   const good = picked === correctAnswer;
-  const next = () => { const reward = Number(item.sparks) || 8; if (round.finalQuestion) setProgress((value) => ({ ...value, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true })); else { setProgress((value) => ({ ...value, level: round.question === QUESTIONS_PER_LEVEL - 1 ? value.level + 1 : value.level, question: round.question === QUESTIONS_PER_LEVEL - 1 ? 0 : round.question + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) })); setPicked(null); } };
-  const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setPicked(null); };
-  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} instruction={{ en: 'Tap a word tile · Keyboard: Tab then Enter/Space', ar: 'اضغط بلاطة كلمة · لوحة المفاتيح: Tab ثم Enter أو Space' }}>
-    <SignatureProgressBar progress={progress} lang={lang} total={total} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Word bridge', ar: 'جسر الكلمات' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{prompt[lang]}</h2><div className="mt-8 rounded-[24px] bg-[#efe4cf] p-7 text-center">{passage[lang] && <p className="mb-5 text-sm leading-relaxed text-[#557068]">{passage[lang]}</p>}{display && <p className="mb-5 font-display text-3xl font-bold text-[#174b44]">{display}</p>}<div className="mt-6 flex flex-wrap justify-center gap-3">{choices.map((choice, index) => <button key={choice} onClick={() => !picked && setPicked(choice)} className={`rounded-2xl border px-5 py-3 font-bold transition ${picked === choice ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-word-choice-${index + 1}`}>{choice}</button>)}</div></div>{picked !== null && <LevelFeedback good={good} message={good ? getPackCopy(item.explain, { en: 'The right word makes the meaning clear.', ar: 'الكلمة الصحيحة تجعل المعنى واضحاً.' }) : { en: 'Read the whole clue again. Meaning is your map—try another word.', ar: 'اقرأ الدليل كاملاً. المعنى هو خريطتك، جرب كلمة أخرى.' }} lang={lang} onNext={next} onRetry={() => setPicked(null)} final={progress.level === total - 1} />}</SignatureFrame>;
+  useEffect(() => { setPicked(null); }, [item.id]);
+  const select = (choice: string) => {
+    if (picked || paused) return;
+    const correct = choice === correctAnswer;
+    telemetryItem.firstInput();
+    telemetryItem.submit(choice);
+    telemetryItem.resolve({ correct, value: choice, strategySignature: `word-${item.type}` });
+    setPicked(choice);
+  };
+  const next = () => {
+    const reward = Number(item.sparks) || 8;
+    runtime.telemetry.endLevel(`level-${level + 1}`, { correct: true, item_id: item.id });
+    if (level === 2) setProgress((value) => ({ ...value, level: 2, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2), finished: true }));
+    else setProgress((value) => ({ ...value, level: value.level + 1, score: value.score + reward, coins: value.coins + Math.ceil(reward / 2) }));
+  };
+  const restart = () => { setProgress({ level: 0, score: 0, coins: 0, finished: false }); setPicked(null); setPaused(false); };
+  return <SignatureFrame game={game} lang={lang} progress={progress} onRestart={restart} paused={paused} onPause={() => setPaused((value) => !value)} instruction={{ en: 'Read the clue, then tap a word tile · Keyboard: Tab then Enter/Space', ar: 'اقرأ الدليل ثم اضغط بلاطة كلمة · لوحة المفاتيح: Tab ثم Enter أو Space' }}>
+    <SignatureProgressBar progress={progress} lang={lang} total={3} /><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{t({ en: 'Word journey', ar: 'رحلة الكلمات' }, lang)}</p><h2 className="mt-3 font-display text-3xl font-bold">{prompt[lang]}</h2><p className="mt-3 text-sm text-[#688079]">{t({ en: 'Three short language adventures grow from decoding to meaning and comprehension.', ar: 'تنمو ثلاث مغامرات لغوية قصيرة من فك الرموز إلى المعنى والفهم.' }, lang)}</p><div className="mt-8 rounded-[24px] bg-[#efe4cf] p-7 text-center">{passage[lang] && <p className="mb-5 text-sm leading-relaxed text-[#557068]">{passage[lang]}</p>}{display && <p className="mb-5 font-display text-3xl font-bold text-[#174b44]">{display}</p>}<div className="mt-6 flex flex-wrap justify-center gap-3">{choices.map((choice, index) => <button key={choice} onClick={() => select(choice)} className={`rounded-2xl border px-5 py-3 font-bold transition ${picked === choice ? good ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#e8755f] bg-[#fff0eb]' : 'border-[#dfd4c1] bg-[#fcf8f0] hover:-translate-y-0.5'}`} data-testid={`button-word-choice-${index + 1}`}>{choice}</button>)}</div></div>{picked !== null && <LevelFeedback good={good} message={good ? getPackCopy(item.explain, { en: 'The right word makes the meaning clear.', ar: 'الكلمة الصحيحة تجعل المعنى واضحاً.' }) : { en: 'Read the clue again, then choose another path. Every try grows your word map.', ar: 'اقرأ الدليل مجدداً ثم اختر مساراً آخر. كل محاولة توسّع خريطة كلماتك.' }} lang={lang} onNext={next} onRetry={() => setPicked(null)} final={level === 2} />}</SignatureFrame>;
 }
 
 function TruthLab({ lang }: { lang: Lang }) {
@@ -1380,19 +1480,21 @@ function WorldIllustration({ game, lang }: { game: typeof gameBlueprints[number]
     </div>
   </div>;
 }
-function SignatureFrame({ game, lang, progress, onRestart, instruction, children }: {
+function SignatureFrame({ game, lang, progress, onRestart, instruction, paused, onPause, children }: {
   game: typeof gameBlueprints[number];
   lang: Lang;
   progress: SignatureProgress;
   onRestart: () => void;
   instruction: Copy;
+  paused?: boolean;
+  onPause?: () => void;
   children: ReactNode;
 }) {
   const Icon = game.icon;
   return <div className="mx-auto max-w-[1120px] px-5 py-8 lg:px-10 lg:py-12">
     <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
       <Link href="/library" className="inline-flex items-center gap-2 text-sm font-bold text-[#557068] transition hover:text-[#174b44]" data-testid="link-back-library"><ArrowLeft className="h-4 w-4" /> {t({ en: 'Back to game library', ar: 'العودة إلى مكتبة الألعاب' }, lang)}</Link>
-      <div className="flex flex-wrap items-center justify-end gap-2"><GameTimer gameId={game.id} lang={lang} finished={progress.finished} /><div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid={`text-${game.id}-coins`}>{progress.coins}</span></div></div>
+      <div className="flex flex-wrap items-center justify-end gap-2"><GameTimer gameId={game.id} lang={lang} finished={progress.finished} paused={paused} />{onPause && <button type="button" onClick={onPause} aria-pressed={paused} className="inline-flex items-center gap-2 rounded-full border border-[#c7ded1] bg-white px-3 py-2 text-sm font-bold text-[#174b44] transition hover:border-[#33705f]" data-testid={`button-${game.id}-pause`}>{paused ? <Play className="h-4 w-4 text-[#33705f]" /> : <Pause className="h-4 w-4 text-[#e8755f]" />}{paused ? t({ en: 'Resume', ar: 'متابعة' }, lang) : t({ en: 'Pause', ar: 'إيقاف مؤقت' }, lang)}</button>}<div className="flex items-center gap-2 rounded-full border border-[#dfd2bd] bg-[#fcf8f0] px-4 py-2 text-sm font-bold text-[#174b44]"><Coins className="h-4 w-4 text-[#e8755f]" /> <span data-testid={`text-${game.id}-coins`}>{progress.coins}</span></div></div>
     </div>
     <section className="overflow-hidden rounded-[30px] bg-[#174b44] text-[#fff4df] shadow-float">
       <div className="grid lg:grid-cols-[.72fr_1.28fr]">
@@ -1415,7 +1517,7 @@ function SignatureFrame({ game, lang, progress, onRestart, instruction, children
             <p className="mx-auto mt-4 max-w-md text-[#688079]">{t({ en: 'Your choices and practice are saved on this device.', ar: 'تم حفظ اختياراتك وتدريبك على هذا الجهاز.' }, lang)}</p>
             <div className="mx-auto mt-7 flex items-center gap-6 rounded-2xl bg-[#e6f1eb] px-6 py-4"><div><span className="block font-display text-2xl font-bold" data-testid={`text-${game.id}-score`}>{progress.score}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'score', ar: 'النقاط' }, lang)}</span></div><div className="h-9 w-px bg-[#c7ded1]" /><div><span className="block font-display text-2xl font-bold">{progress.coins}</span><span className="text-xs font-bold text-[#688079]">{t({ en: 'coins', ar: 'العملات' }, lang)}</span></div></div>
             <button onClick={onRestart} className="mx-auto mt-7 inline-flex items-center gap-2 rounded-full bg-[#e8755f] px-6 py-3 font-bold text-[#fff7e8] transition hover:-translate-y-0.5" data-testid={`button-restart-${game.id}`}><RotateCcw className="h-4 w-4" /> {t({ en: 'Play again', ar: 'العب مجدداً' }, lang)}</button>
-          </div> : children}
+          </div> : <div className={paused ? 'pointer-events-none select-none opacity-60' : ''}>{children}</div>}
         </div>
       </div>
     </section>
