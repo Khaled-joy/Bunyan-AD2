@@ -1,11 +1,12 @@
 import { Router, type IRouter } from "express";
+import { createHash, createHmac } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { analysisAuditLog, analysisCohorts, analysisExecutions, analysisPlans, db } from "@workspace/db";
 import { requireAdmin } from "../lib/admin-auth";
-import { advisorConfig, compactRowsForExecutor, dataShape, parseCohortFilter, resolveCohortRows, xaiPlotConfig } from "../lib/analysis-workbench";
+import { advisorConfig, compactRowsForExecutor, dataShape, meetsOutputCellMinimum, parseCohortFilter, resolveCohortRows, xaiPlotConfig } from "../lib/analysis-workbench";
 
 const router: IRouter = Router();
-router.use(["/cohorts", "/advisor", "/executions", "/interpreter"], requireAdmin);
+router.use(["/cohorts", "/advisor", "/plans", "/executions", "/interpreter"], requireAdmin);
 
 async function audit(action: string, detail: Record<string, unknown>, ids: { cohortId?: string; planId?: string; executionId?: string } = {}) {
   await db.insert(analysisAuditLog).values({ action, actorRole: "admin", detail, ...ids });
@@ -39,8 +40,8 @@ router.post("/cohorts/:id/probe", async (request, response): Promise<void> => {
   const shape = dataShape(rows);
   const minimum = cohort.sensitive ? advisorConfig.sensitive_minimum_cell_size : advisorConfig.minimum_cell_size;
   await audit("cohort.probed", { n_players: shape.n_players, suppressed: shape.n_players < minimum }, { cohortId });
-  if (shape.n_players < minimum) {
-    response.json({ cohort_id: cohortId, n_players: shape.n_players, suppressed: true, notice: `This cohort is below the minimum size of ${minimum} distinct players. No rows or summaries are available.` });
+  if (shape.n_players < minimum || !meetsOutputCellMinimum(rows, "rt_median", minimum)) {
+    response.json({ cohort_id: cohortId, suppressed: true, notice: "This cohort cannot be analysed because one or more output groups are below the privacy minimum. Broaden the date range or filters." });
     return;
   }
   response.json({ cohort_id: cohortId, cohort_label: cohort.label, suppressed: false, ...shape });
@@ -64,12 +65,11 @@ router.post("/advisor/plan", async (request, response): Promise<void> => {
     return;
   }
   const shape = dataShape(await resolveCohortRows(filters));
-  if (shape.n_players < advisorConfig.minimum_cell_size) {
-    response.status(403).json({ error: "This cohort is below the privacy threshold; no plan can be proposed.", n_players: shape.n_players });
+  const outcomeId = question.toLowerCase().includes("accuracy") ? "accuracy" : "rt_median";
+  if (shape.n_players < advisorConfig.minimum_cell_size || !meetsOutputCellMinimum(await resolveCohortRows(filters), outcomeId, advisorConfig.minimum_cell_size)) {
+    response.status(403).json({ error: "This cohort cannot be analysed because one or more output groups are below the privacy minimum." });
     return;
   }
-  const lowered = question.toLowerCase();
-  const outcomeId = lowered.includes("accuracy") ? "accuracy" : "rt_median";
   const repeated = shape.obs_per_player_median > 1;
   const transform = outcomeId === "rt_median" ? "log" : "none";
   const plan = {
@@ -81,17 +81,17 @@ router.post("/advisor/plan", async (request, response): Promise<void> => {
     predictors: ["age_band"],
     covariates: ["game_id"],
     nesting: repeated ? ["player_id"] : [],
-    method: repeated ? "linear_mixed_model" : "welch_t_test",
-    random_effects: repeated ? { intercept: ["player_id"], slope: [] } : { intercept: [], slope: [] },
+    method: repeated ? "participant_aggregated_welch_t_test" : "welch_t_test",
+    random_effects: { intercept: [], slope: [] },
     assumptions_to_check: ["minimum_cell_size", "outcome_skewness", ...(repeated ? ["icc"] : ["variance_check"])],
-    effect_size: repeated ? "marginal_r2_and_beta" : "hedges_g",
+    effect_size: "hedges_g",
     multiple_comparison: "benjamini_hochberg",
     plots: xaiPlotConfig.audience_gating.admin,
     power_estimate: { n_players: shape.n_players, detectable_d: Number((2.8 / Math.sqrt(shape.n_players)).toFixed(2)) },
     caveats: [
       "Gameplay telemetry is observational and cannot establish causation.",
       "The plan must be approved before computation.",
-      ...(repeated ? ["Repeated observations are present, so independence-assuming tests are blocked."] : []),
+      ...(repeated ? ["Repeated observations are aggregated within each player before the between-group contrast."] : []),
     ],
   };
   const [saved] = await db.insert(analysisPlans).values({ cohortId, question, plan }).returning();
@@ -100,15 +100,37 @@ router.post("/advisor/plan", async (request, response): Promise<void> => {
   response.status(201).json(returnedPlan);
 });
 
+router.post("/plans/:id/approve", async (request, response): Promise<void> => {
+  const planId = Array.isArray(request.params.id) ? request.params.id[0] : request.params.id;
+  const [plan] = await db.select().from(analysisPlans).where(eq(analysisPlans.id, planId));
+  if (!plan) {
+    response.status(404).json({ error: "Plan not found." });
+    return;
+  }
+  if (plan.approvedAt) {
+    response.json({ plan_id: plan.id, approved_at: plan.approvedAt, already_approved: true });
+    return;
+  }
+  const approvalHash = createHash("sha256").update(JSON.stringify(plan.plan)).digest("hex");
+  const approvedAt = new Date();
+  await db.update(analysisPlans).set({ approvedAt }).where(eq(analysisPlans.id, plan.id));
+  await audit("plan.approved", { version: plan.version, approval_hash: approvalHash }, { cohortId: plan.cohortId, planId: plan.id });
+  response.json({ plan_id: plan.id, approved_at: approvedAt, already_approved: false });
+});
+
 router.post("/executions", async (request, response): Promise<void> => {
   const planId = typeof request.body?.plan_id === "string" ? request.body.plan_id : "";
-  if (!planId || request.body?.approved !== true) {
-    response.status(400).json({ error: "A saved plan must be explicitly approved before execution." });
+  if (!planId) {
+    response.status(400).json({ error: "A saved plan is required before execution." });
     return;
   }
   const [savedPlan] = await db.select().from(analysisPlans).where(eq(analysisPlans.id, planId));
   if (!savedPlan) {
     response.status(404).json({ error: "Plan not found." });
+    return;
+  }
+  if (!savedPlan.approvedAt) {
+    response.status(403).json({ error: "This saved plan must be approved before execution." });
     return;
   }
   const [cohort] = await db.select().from(analysisCohorts).where(eq(analysisCohorts.id, savedPlan.cohortId));
@@ -120,15 +142,21 @@ router.post("/executions", async (request, response): Promise<void> => {
   const plan = savedPlan.plan as Record<string, any>;
   const rows = await resolveCohortRows(filters);
   const shape = dataShape(rows);
-  if (shape.n_players < advisorConfig.minimum_cell_size) {
+  const outcome = String((plan.outcome as Record<string, unknown>)?.id ?? "rt_median");
+  if (shape.n_players < advisorConfig.minimum_cell_size || !meetsOutputCellMinimum(rows, outcome, advisorConfig.minimum_cell_size)) {
     response.status(403).json({ error: "This cohort is now below the privacy threshold." });
     return;
   }
-  const outcome = String((plan.outcome as Record<string, unknown>)?.id ?? "rt_median");
+  const executorSecret = process.env.SESSION_SECRET;
+  if (!executorSecret) {
+    response.status(503).json({ error: "Analysis service authentication is not configured." });
+    return;
+  }
+  const payload = JSON.stringify({ plan: { ...plan, plan_id: savedPlan.id }, rows: compactRowsForExecutor(rows, outcome) });
   const executorResponse = await fetch(process.env.ANALYSIS_EXECUTOR_URL ?? "http://127.0.0.1:8000/execute", {
     method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ plan: { ...plan, plan_id: savedPlan.id }, rows: compactRowsForExecutor(rows, outcome) }),
+    headers: { "content-type": "application/json", "x-analysis-signature": createHmac("sha256", executorSecret).update(payload).digest("hex") },
+    body: payload,
   });
   if (!executorResponse.ok) {
     request.log.error({ status: executorResponse.status }, "Analysis executor rejected the plan");
@@ -143,7 +171,6 @@ router.post("/executions", async (request, response): Promise<void> => {
     results,
     executorVersion: String(results.executor_version ?? "python-fastapi-1.0.0"),
   }).returning();
-  await db.update(analysisPlans).set({ approvedAt: new Date() }).where(eq(analysisPlans.id, savedPlan.id));
   await audit("plan.executed", { n_players: shape.n_players }, { cohortId: cohort.id, planId: savedPlan.id, executionId: execution!.id });
   response.status(201).json({ execution_id: execution!.id, ...results });
 });

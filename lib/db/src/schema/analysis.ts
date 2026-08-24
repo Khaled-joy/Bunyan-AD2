@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 export const analysisCohorts = pgTable(
   "analysis_cohorts",
@@ -23,6 +23,8 @@ export const analysisPlans = pgTable(
     plan: jsonb("plan").$type<Record<string, unknown>>().notNull(),
     version: integer("version").notNull().default(1),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedBy: text("approved_by"),
+    approvalHash: text("approval_hash"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("analysis_plans_cohort_idx").on(table.cohortId, table.createdAt)],

@@ -134,6 +134,20 @@ export function dataShape(rows: CohortRow[]) {
   };
 }
 
+export function outputGroupSizes(rows: CohortRow[], outcome: string) {
+  const groups = new Map<string, Set<string>>();
+  for (const row of rows) {
+    if (typeof row.metrics[outcome] !== "number") continue;
+    groups.set(row.age_band, (groups.get(row.age_band) ?? new Set()).add(row.player_id));
+  }
+  return Object.fromEntries([...groups.entries()].map(([group, members]) => [group, members.size]));
+}
+
+export function meetsOutputCellMinimum(rows: CohortRow[], outcome: string, minimum: number) {
+  const groups = outputGroupSizes(rows, outcome);
+  return Object.keys(groups).length >= 2 && Object.values(groups).every((size) => size >= minimum);
+}
+
 export function compactRowsForExecutor(rows: CohortRow[], outcome: string) {
   return rows.map((row) => ({
     player_id: row.player_id,

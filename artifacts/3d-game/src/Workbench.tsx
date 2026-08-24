@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCreateCohort, useProbeCohort, useCreatePlan, useExecutePlan, useGetExecution } from './workbench-hooks';
+import { useApprovePlan, useCreateCohort, useProbeCohort, useCreatePlan, useExecutePlan, useGetExecution } from './workbench-hooks';
 import { ArrowLeft, ArrowRight, Check, AlertCircle, BarChart3, Database, FileText, Settings, ShieldAlert, Loader2, Play } from 'lucide-react';
 import { Link } from 'wouter';
 import { t, type Lang } from './App';
@@ -17,6 +17,7 @@ export default function Workbench({ lang }: { lang: Lang }) {
   const createCohort = useCreateCohort();
   const probeCohort = useProbeCohort();
   const createPlan = useCreatePlan();
+  const approvePlan = useApprovePlan();
   const executePlan = useExecutePlan();
   const executionQuery = useGetExecution(executionId);
 
@@ -73,7 +74,8 @@ export default function Workbench({ lang }: { lang: Lang }) {
     if (!cohortId || !plan) return;
     setStep('execute');
     try {
-      const exec = await executePlan.mutateAsync({ planId: plan.plan_id });
+      await approvePlan.mutateAsync(plan.plan_id);
+      const exec = await executePlan.mutateAsync(plan.plan_id);
       setExecutionId(exec.execution_id);
       setExecutionResult(exec);
       setStep('results');
@@ -222,10 +224,12 @@ export default function Workbench({ lang }: { lang: Lang }) {
 
               {probeResult && (
                 <div className="space-y-6">
-                  <div className="rounded-[24px] border border-[#dfd2bd] bg-[#fcf8f0] p-6 text-center">
-                    <span className="block text-sm font-bold uppercase tracking-[.15em] text-[#a9b8b0] mb-2">{t({ en: 'Learners Found', ar: 'المتعلمون الذين تم العثور عليهم' }, lang)}</span>
-                    <span className="font-display text-5xl font-bold text-[#174b44]">{probeResult.n_players}</span>
-                  </div>
+                  {!probeResult.suppressed && (
+                    <div className="rounded-[24px] border border-[#dfd2bd] bg-[#fcf8f0] p-6 text-center">
+                      <span className="block text-sm font-bold uppercase tracking-[.15em] text-[#a9b8b0] mb-2">{t({ en: 'Learners Found', ar: 'المتعلمون الذين تم العثور عليهم' }, lang)}</span>
+                      <span className="font-display text-5xl font-bold text-[#174b44]">{probeResult.n_players}</span>
+                    </div>
+                  )}
 
                   {probeResult.suppressed ? (
                     <div className="rounded-[24px] bg-[#fff0eb] border border-[#e8755f] p-6 flex gap-4">
@@ -303,8 +307,8 @@ export default function Workbench({ lang }: { lang: Lang }) {
                 <button onClick={() => setStep('probe')} className="inline-flex items-center gap-2 rounded-full border border-[#c8d2c7] bg-white px-5 py-3 font-bold text-[#557068] hover:bg-[#fcf8f0]">
                   {t({ en: 'Back', ar: 'عودة' }, lang)}
                 </button>
-                <button onClick={handleExecute} disabled={executePlan.isPending} className="inline-flex items-center gap-2 rounded-full bg-[#16a7bc] px-6 py-3 font-bold text-[#fff4df] shadow-[0_4px_0_#0b6a79] hover:translate-y-px hover:shadow-[0_3px_0_#0b6a79] active:translate-y-1 active:shadow-none disabled:opacity-50">
-                  {executePlan.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : t({ en: 'Approve & Execute Plan', ar: 'الموافقة وتنفيذ الخطة' }, lang)}
+                <button onClick={handleExecute} disabled={approvePlan.isPending || executePlan.isPending} className="inline-flex items-center gap-2 rounded-full bg-[#16a7bc] px-6 py-3 font-bold text-[#fff4df] shadow-[0_4px_0_#0b6a79] hover:translate-y-px hover:shadow-[0_3px_0_#0b6a79] active:translate-y-1 active:shadow-none disabled:opacity-50">
+                  {approvePlan.isPending || executePlan.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : t({ en: 'Approve & Execute Plan', ar: 'الموافقة وتنفيذ الخطة' }, lang)}
                 </button>
               </div>
             </div>

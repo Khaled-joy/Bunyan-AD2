@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 from typing import Any
+import hmac
 import math
+import os
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 from scipy import stats
 
@@ -53,7 +55,13 @@ def healthz() -> dict[str, str]:
 
 
 @app.post("/execute")
-def execute(request: ExecuteRequest) -> dict[str, Any]:
+async def execute(http_request: Request) -> dict[str, Any]:
+    secret = os.environ.get("SESSION_SECRET")
+    signature = http_request.headers.get("x-analysis-signature", "")
+    body = await http_request.body()
+    if not secret or not hmac.compare_digest(signature, hmac.new(secret.encode(), body, "sha256").hexdigest()):
+        raise HTTPException(status_code=401, detail="Analysis service authentication failed.")
+    request = ExecuteRequest.model_validate_json(body)
     plan = request.plan
     outcome = str(plan.get("outcome", {}).get("id", "rt_median"))
     transform = str(plan.get("outcome", {}).get("transform", "none"))
@@ -72,7 +80,12 @@ def execute(request: ExecuteRequest) -> dict[str, Any]:
     if frame["player_id"].nunique() < 10:
         raise HTTPException(status_code=403, detail="Minimum cohort size is not met.")
 
-    groups = [(str(name), finite(group["_outcome"])) for name, group in frame.groupby("age_band")]
+    analysis_frame = frame
+    method_used = method
+    if method == "participant_aggregated_welch_t_test":
+        analysis_frame = frame.groupby(["player_id", "age_band"], as_index=False)["_outcome"].mean()
+        method_used = "participant-aggregated Welch t-test"
+    groups = [(str(name), finite(group["_outcome"])) for name, group in analysis_frame.groupby("age_band")]
     groups = [(name, group) for name, group in groups if len(group)]
     estimates = [
         {
@@ -83,11 +96,10 @@ def execute(request: ExecuteRequest) -> dict[str, Any]:
         }
         for name, group in groups
     ]
-    residual_skew = q(stats.skew(frame["_outcome"], bias=False)) if len(frame) > 2 else None
+    residual_skew = q(stats.skew(analysis_frame["_outcome"], bias=False)) if len(analysis_frame) > 2 else None
     warnings: list[str] = []
     p_value: float | None = None
     effect: dict[str, Any] = {"type": str(plan.get("effect_size", "not_available")), "value": None}
-    method_used = method
 
     if len(groups) >= 2:
         first, second = groups[0][1], groups[1][1]
@@ -99,25 +111,22 @@ def execute(request: ExecuteRequest) -> dict[str, Any]:
             result = stats.ttest_ind(first, second, equal_var=False)
             p_value = q(result.pvalue)
             effect = {"type": "hedges_g", "value": hedges_g(first, second)}
-            if method == "linear_mixed_model":
-                method_used = "linear_mixed_model (group contrast with repeated-measure clustering noted)"
-                warnings.append("The current executor reports a conservative group contrast; add a random-effects model after the cohort has enough within-player variation.")
     else:
         warnings.append("Only one age band is present, so no between-group contrast was computed.")
 
-    player_means = frame.groupby("player_id")["_outcome"].mean()
-    total_variance = float(frame["_outcome"].var(ddof=1)) if len(frame) > 1 else 0.0
+    player_means = analysis_frame.groupby("player_id")["_outcome"].mean()
+    total_variance = float(analysis_frame["_outcome"].var(ddof=1)) if len(analysis_frame) > 1 else 0.0
     between_variance = float(player_means.var(ddof=1)) if len(player_means) > 1 else 0.0
     icc = q(max(0.0, min(1.0, between_variance / total_variance))) if total_variance else 0.0
     checks = [
-        {"check": "minimum_cell_size", "value": int(frame["player_id"].nunique()), "passed": True, "note": "At least 10 distinct players are present."},
+        {"check": "minimum_cell_size", "value": int(analysis_frame["player_id"].nunique()), "passed": True, "note": "At least 10 distinct players are present."},
         {"check": "outcome_skewness", "value": residual_skew, "passed": residual_skew is None or abs(residual_skew) < 1, "note": "Log transform is applied to positive response-time outcomes." if transform == "log" else "No transformation was requested."},
         {"check": "icc", "value": icc, "passed": True, "note": "The intraclass correlation is reported so repeated observations are visible."},
     ]
     return {
         "plan_id": plan.get("plan_id"),
-        "n_players": int(frame["player_id"].nunique()),
-        "n_observations": int(len(frame)),
+        "n_players": int(analysis_frame["player_id"].nunique()),
+        "n_observations": int(len(analysis_frame)),
         "method_used": method_used,
         "estimates": estimates,
         "effect_sizes": [effect],
@@ -127,7 +136,7 @@ def execute(request: ExecuteRequest) -> dict[str, Any]:
         "plots": [{
             "kind": "effect_interval",
             "cohort_label": plan.get("cohort_label", "Saved cohort"),
-            "n_players": int(frame["player_id"].nunique()),
+            "n_players": int(analysis_frame["player_id"].nunique()),
             "series": estimates,
         }],
         "warnings": warnings,

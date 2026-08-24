@@ -44,12 +44,19 @@ export function useCreatePlan() {
 
 export function useExecutePlan() {
   return useMutation({
-    mutationFn: (data: { planId: string }) =>
+    mutationFn: (planId: string) =>
       fetcher('/api/executions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan_id: data.planId, approved: true }),
+        body: JSON.stringify({ plan_id: planId }),
       }),
+  });
+}
+
+export function useApprovePlan() {
+  return useMutation({
+    mutationFn: (planId: string) =>
+      fetcher(`/api/plans/${planId}/approve`, { method: 'POST' }),
   });
 }
 
