@@ -3,10 +3,10 @@ import { createHash, createHmac } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { analysisAuditLog, analysisCohorts, analysisExecutions, analysisPlans, db } from "@workspace/db";
 import { requireAdmin } from "../lib/admin-auth";
-import { advisorConfig, compactRowsForExecutor, dataShape, meetsOutputCellMinimum, parseCohortFilter, resolveCohortRows, xaiPlotConfig } from "../lib/analysis-workbench";
+import { aggregateComparison, aggregateGameCoverage, advisorConfig, compactRowsForExecutor, dataShape, isComparisonDimension, isComparisonMetric, meetsOutputCellMinimum, parseCohortFilter, resolveCohortRows, xaiPlotConfig } from "../lib/analysis-workbench";
 
 const router: IRouter = Router();
-router.use(["/cohorts", "/advisor", "/plans", "/executions", "/interpreter"], requireAdmin);
+router.use(["/cohorts", "/advisor", "/plans", "/executions", "/comparisons", "/interpreter"], requireAdmin);
 
 async function audit(action: string, detail: Record<string, unknown>, ids: { cohortId?: string; planId?: string; executionId?: string } = {}) {
   await db.insert(analysisAuditLog).values({ action, actorRole: "admin", detail, ...ids });
@@ -45,6 +45,57 @@ router.post("/cohorts/:id/probe", async (request, response): Promise<void> => {
     return;
   }
   response.json({ cohort_id: cohortId, cohort_label: cohort.label, suppressed: false, ...shape });
+});
+
+router.get("/cohorts/:id/game-coverage", async (request, response): Promise<void> => {
+  const cohortId = Array.isArray(request.params.id) ? request.params.id[0] : request.params.id;
+  const [cohort] = await db.select().from(analysisCohorts).where(eq(analysisCohorts.id, cohortId));
+  if (!cohort) {
+    response.status(404).json({ error: "Cohort not found." });
+    return;
+  }
+  const filters = parseCohortFilter(cohort.filters);
+  if (!filters) {
+    response.status(400).json({ error: "Cohort uses unsupported sensitive filters." });
+    return;
+  }
+  const minimum = cohort.sensitive ? advisorConfig.sensitive_minimum_cell_size : advisorConfig.minimum_cell_size;
+  const rows = aggregateGameCoverage(await resolveCohortRows(filters), minimum);
+  await audit("cohort.game_coverage_viewed", { groups: rows.length }, { cohortId });
+  response.json({ cohort_id: cohortId, rows, suppressed: rows.some((row) => row.suppressed), minimum_cell_size: minimum });
+});
+
+router.post("/comparisons", async (request, response): Promise<void> => {
+  const cohortId = typeof request.body?.cohort_id === "string" ? request.body.cohort_id : "";
+  const groupBy = request.body?.group_by;
+  const compareBy = request.body?.compare_by;
+  const metric = request.body?.metric;
+  if (!cohortId || !isComparisonDimension(groupBy) || !isComparisonDimension(compareBy) || !isComparisonMetric(metric)) {
+    response.status(400).json({ error: "Choose supported comparison dimensions and a metric." });
+    return;
+  }
+  const [cohort] = await db.select().from(analysisCohorts).where(eq(analysisCohorts.id, cohortId));
+  if (!cohort) {
+    response.status(404).json({ error: "Cohort not found." });
+    return;
+  }
+  const filters = parseCohortFilter(cohort.filters);
+  if (!filters) {
+    response.status(400).json({ error: "Cohort uses unsupported sensitive filters." });
+    return;
+  }
+  const minimum = cohort.sensitive ? advisorConfig.sensitive_minimum_cell_size : advisorConfig.minimum_cell_size;
+  const rows = aggregateComparison(await resolveCohortRows(filters), groupBy, compareBy, metric, minimum);
+  await audit("cohort.comparison_viewed", { group_by: groupBy, compare_by: compareBy, metric, cells: rows.length }, { cohortId });
+  response.json({
+    cohort_id: cohortId,
+    group_by: groupBy,
+    compare_by: compareBy,
+    metric,
+    rows,
+    suppressed: rows.some((row) => row.suppressed),
+    minimum_cell_size: minimum,
+  });
 });
 
 router.post("/advisor/plan", async (request, response): Promise<void> => {

@@ -1,10 +1,147 @@
-import { useState } from 'react';
-import { useApprovePlan, useCreateCohort, useProbeCohort, useCreatePlan, useExecutePlan, useGetExecution } from './workbench-hooks';
-import { ArrowLeft, ArrowRight, Check, AlertCircle, BarChart3, Database, FileText, Settings, ShieldAlert, Loader2, Play } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { useApprovePlan, useComparison, useCreateCohort, useGameCoverage, useProbeCohort, useCreatePlan, useExecutePlan, useGetExecution } from './workbench-hooks';
+import { ArrowLeft, ArrowRight, Check, AlertCircle, BarChart3, Database, Download, FileText, Settings, ShieldAlert, Loader2, Play, Upload } from 'lucide-react';
 import { Link } from 'wouter';
 import { t, type Lang } from './App';
+import * as XLSX from 'xlsx';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 type Step = 'define' | 'probe' | 'plan' | 'execute' | 'results';
+
+type CoverageRow = { game_id: string; players: number | null; suppressed: boolean };
+type ComparisonRow = { group: string; series: string; value: number | null; suppressed: boolean };
+type ImportedRow = Record<string, string | number | boolean | null>;
+
+const EXPORT_ALLOWED_FIELDS = new Set(['game_id', 'players', 'suppressed', 'group', 'series', 'value', 'metric', 'group_by', 'compare_by']);
+const FORBIDDEN_IMPORT_FIELDS = /(^|_)(player|session|child|learner)(_|$)|^(name|email|phone|address|birth|diagnos|gender|nationality|token)$/i;
+const SAFE_GAME_IDS = new Set(['eco-future', 'basket-challenge', 'heritage', 'color-focus', 'library-sort', 'word-journey', 'healthy-restaurant', 'innovation-lab', 'numeracy-check', 'bot-workshop', 'truth-lab', 'common-ground', 'spark-studio', 'other']);
+const SAFE_DIMENSION_VALUES: Record<string, Set<string>> = {
+  age_band: new Set(['cycle1', 'cycle2', 'cycle3', 'unknown']),
+  game_id: SAFE_GAME_IDS,
+  lang: new Set(['ar', 'en', 'unknown']),
+  device_class: new Set(['desktop', 'mobile', 'tablet', 'unknown']),
+};
+
+const dimensionOptions = [
+  { value: 'age_band', label: { en: 'Age band', ar: 'الفئة العمرية' } },
+  { value: 'game_id', label: { en: 'Game', ar: 'اللعبة' } },
+  { value: 'lang', label: { en: 'Language', ar: 'اللغة' } },
+  { value: 'device_class', label: { en: 'Device', ar: 'الجهاز' } },
+];
+const metricOptions = [
+  { value: 'rt_median', label: { en: 'Response time median', ar: 'وسيط زمن الاستجابة' } },
+  { value: 'accuracy', label: { en: 'Accuracy', ar: 'الدقة' } },
+  { value: 'persistence_index', label: { en: 'Persistence index', ar: 'مؤشر المثابرة' } },
+  { value: 'self_correction_rate', label: { en: 'Self-correction rate', ar: 'معدل التصحيح الذاتي' } },
+  { value: 'exploration_breadth', label: { en: 'Exploration breadth', ar: 'اتساع الاستكشاف' } },
+  { value: 'challenge_seeking', label: { en: 'Challenge seeking', ar: 'السعي للتحدي' } },
+];
+
+function toCsv(rows: ImportedRow[]) {
+  return XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(spreadsheetSafeRows(rows)));
+}
+
+function spreadsheetSafeRows(rows: ImportedRow[]) {
+  return rows.map((row) => Object.fromEntries(Object.entries(row).map(([key, value]) => [
+    key,
+    typeof value === 'string' && /^[=+\-@]/.test(value) ? `'${value}` : value,
+  ])));
+}
+
+function downloadFile(content: BlobPart, fileName: string, type: string) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function allowedValueForDimension(value: unknown, dimension: unknown) {
+  return typeof value === 'string' && typeof dimension === 'string' && SAFE_DIMENSION_VALUES[dimension]?.has(value);
+}
+
+function isSafeAggregateRow(row: unknown): row is ImportedRow {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) return false;
+  const record = row as Record<string, unknown>;
+  const fields = Object.keys(record);
+  if (!fields.length || fields.some((field) => !EXPORT_ALLOWED_FIELDS.has(field) || FORBIDDEN_IMPORT_FIELDS.test(field))) return false;
+  if (fields.some((field) => typeof record[field] === 'object' && record[field] !== null)) return false;
+  if (record.suppressed !== undefined && record.suppressed !== false) return false;
+  if ('game_id' in record) {
+    return fields.every((field) => ['game_id', 'players', 'suppressed'].includes(field))
+      && SAFE_GAME_IDS.has(String(record.game_id))
+      && typeof record.players === 'number'
+      && Number.isInteger(record.players)
+      && record.players >= 10;
+  }
+  const groupBy = record.group_by;
+  const compareBy = record.compare_by;
+  return fields.every((field) => ['group', 'series', 'value', 'metric', 'group_by', 'compare_by', 'suppressed'].includes(field))
+    && typeof record.value === 'number'
+    && Number.isFinite(record.value)
+    && record.value >= 0
+    && typeof record.metric === 'string'
+    && metricOptions.some((option) => option.value === record.metric)
+    && dimensionOptions.some((option) => option.value === groupBy)
+    && dimensionOptions.some((option) => option.value === compareBy)
+    && allowedValueForDimension(record.group, groupBy)
+    && allowedValueForDimension(record.series, compareBy);
+}
+
+function flattenImportPayload(value: unknown) {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== 'object') return null;
+  const payload = value as Record<string, unknown>;
+  const keys = Object.keys(payload);
+  if (!keys.length || keys.some((key) => !['game_coverage', 'comparison'].includes(key) || !Array.isArray(payload[key]))) return null;
+  return keys.flatMap((key) => payload[key] as unknown[]);
+}
+
+function readImportedRows(file: File): Promise<ImportedRow[]> {
+  return new Promise((resolve, reject) => {
+    const finish = (payload: unknown) => {
+      const flattened = flattenImportPayload(payload);
+      if (!flattened || flattened.length === 0 || flattened.length > 5000) {
+        reject(new Error('Import must contain between 1 and 5,000 aggregate rows.'));
+        return;
+      }
+      for (const entry of flattened) {
+        if (!isSafeAggregateRow(entry)) {
+          reject(new Error('Import rejected: rows must use the privacy-safe Bunayn aggregate schema, with valid dimensions and a minimum count of 10.'));
+          return;
+        }
+      }
+      resolve(flattened as ImportedRow[]);
+    };
+    if (file.name.toLowerCase().endsWith('.json')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result));
+          finish(parsed);
+        } catch {
+          reject(new Error('The JSON file could not be read.'));
+        }
+      };
+      reader.onerror = () => reject(new Error('The selected file could not be read.'));
+      reader.readAsText(file);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const workbook = XLSX.read(reader.result, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]!];
+        finish(XLSX.utils.sheet_to_json(firstSheet, { defval: null }));
+      } catch {
+        reject(new Error('The CSV or XLSX file could not be read.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('The selected file could not be read.'));
+    reader.readAsArrayBuffer(file);
+  });
+}
 
 export default function Workbench({ lang }: { lang: Lang }) {
   const [step, setStep] = useState<Step>('define');
@@ -13,6 +150,13 @@ export default function Workbench({ lang }: { lang: Lang }) {
   const [plan, setPlan] = useState<{ plan_id: string; method: string; design: string; power_estimate: { detectable_d: number }; assumptions_to_check: string[]; caveats: string[] } | null>(null);
   const [executionId, setExecutionId] = useState<string | null>(null);
   const [executionResult, setExecutionResult] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fileStatus, setFileStatus] = useState<string | null>(null);
+  const [importedRows, setImportedRows] = useState<ImportedRow[]>([]);
+  const [comparisonGroup, setComparisonGroup] = useState('age_band');
+  const [comparisonSeries, setComparisonSeries] = useState('game_id');
+  const [comparisonMetric, setComparisonMetric] = useState('rt_median');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createCohort = useCreateCohort();
   const probeCohort = useProbeCohort();
@@ -20,6 +164,22 @@ export default function Workbench({ lang }: { lang: Lang }) {
   const approvePlan = useApprovePlan();
   const executePlan = useExecutePlan();
   const executionQuery = useGetExecution(executionId);
+  const coverageQuery = useGameCoverage(cohortId, Boolean(probeResult && !probeResult.suppressed));
+  const comparisonQuery = useComparison(cohortId, { groupBy: comparisonGroup, compareBy: comparisonSeries, metric: comparisonMetric }, Boolean(probeResult && !probeResult.suppressed));
+
+  const coverageRows = (coverageQuery.data?.rows ?? []) as CoverageRow[];
+  const comparisonRows = (comparisonQuery.data?.rows ?? []) as ComparisonRow[];
+  const comparisonChartRows = useMemo(() => {
+    const byGroup = new Map<string, Record<string, string | number>>();
+    for (const row of comparisonRows) {
+      if (row.suppressed || row.value === null) continue;
+      const current = byGroup.get(row.group) ?? { group: row.group };
+      current[row.series] = row.value;
+      byGroup.set(row.group, current);
+    }
+    return [...byGroup.values()];
+  }, [comparisonRows]);
+  const comparisonSeriesNames = useMemo(() => [...new Set(comparisonRows.filter((row) => !row.suppressed).map((row) => row.series))], [comparisonRows]);
 
   // Form State
   const [label, setLabel] = useState('My Cohort');
@@ -33,6 +193,7 @@ export default function Workbench({ lang }: { lang: Lang }) {
 
   const handleDefine = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     setStep('probe');
     try {
       const cohort = await createCohort.mutateAsync({
@@ -54,24 +215,28 @@ export default function Workbench({ lang }: { lang: Lang }) {
       setProbeResult(probe);
     } catch (err) {
       console.error(err);
+      setErrorMessage(err instanceof Error ? err.message : 'The cohort could not be created.');
       setStep('define');
     }
   };
 
   const handleRequestPlan = async () => {
     if (!cohortId) return;
+    setErrorMessage(null);
     setStep('plan');
     try {
       const p = await createPlan.mutateAsync({ cohortId, question: 'How does response time vary across age bands in this cohort?' });
       setPlan(p);
     } catch (err) {
       console.error(err);
+      setErrorMessage(err instanceof Error ? err.message : 'The analysis plan could not be created.');
       setStep('probe');
     }
   };
 
   const handleExecute = async () => {
     if (!cohortId || !plan) return;
+    setErrorMessage(null);
     setStep('execute');
     try {
       await approvePlan.mutateAsync(plan.plan_id);
@@ -81,13 +246,63 @@ export default function Workbench({ lang }: { lang: Lang }) {
       setStep('results');
     } catch (err) {
       console.error(err);
+      setErrorMessage(err instanceof Error ? err.message : 'The analysis could not be executed.');
       setStep('plan');
+    }
+  };
+
+  const aggregateExport = useMemo(() => ({
+    game_coverage: coverageRows.filter((row) => !row.suppressed),
+    comparison: comparisonRows.filter((row) => !row.suppressed).map((row) => ({ ...row, metric: comparisonMetric, group_by: comparisonGroup, compare_by: comparisonSeries })),
+  }), [comparisonGroup, comparisonMetric, comparisonRows, comparisonSeries, coverageRows]);
+
+  const handleExport = (format: 'json' | 'csv' | 'xlsx') => {
+    const safeComparisonRows = comparisonRows.filter((row) => !row.suppressed).map((row) => ({ ...row, metric: comparisonMetric, group_by: comparisonGroup, compare_by: comparisonSeries }));
+    const safeCoverageRows = coverageRows.filter((row) => !row.suppressed);
+    const rows = safeComparisonRows.length
+      ? safeComparisonRows
+      : safeCoverageRows;
+    if (!rows.length) {
+      setFileStatus(t({ en: 'Run a cohort probe before exporting aggregate data.', ar: 'نفّذ فحص المجموعة قبل تصدير البيانات المجمعة.' }, lang));
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (format === 'json') downloadFile(JSON.stringify(aggregateExport, null, 2), `bunayn-analysis-${stamp}.json`, 'application/json');
+    if (format === 'csv') downloadFile(toCsv(rows as ImportedRow[]), `bunayn-analysis-${stamp}.csv`, 'text/csv;charset=utf-8');
+    if (format === 'xlsx') {
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(spreadsheetSafeRows(safeCoverageRows)), 'Game coverage');
+      if (safeComparisonRows.length) XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(spreadsheetSafeRows(safeComparisonRows)), 'Comparison');
+      const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      downloadFile(output, `bunayn-analysis-${stamp}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+    setFileStatus(t({ en: `Exported ${format.toUpperCase()} aggregate data.`, ar: `تم تصدير البيانات المجمعة بصيغة ${format.toUpperCase()}.` }, lang));
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const rows = await readImportedRows(file);
+      setImportedRows(rows);
+      setFileStatus(t({ en: `${rows.length} privacy-safe aggregate rows are ready for review.`, ar: `تم تجهيز ${rows.length} صفاً مجمعاً وآمناً للخصوصية للمراجعة.` }, lang));
+    } catch (err) {
+      setImportedRows([]);
+      setFileStatus(err instanceof Error ? err.message : 'The import could not be validated.');
     }
   };
 
   const isExecutionFailed = executePlan.isError;
   const allAgeBands = ['cycle1', 'cycle2', 'cycle3'];
   const allGames = ['eco-future', 'basket-challenge', 'heritage', 'color-focus', 'library-sort', 'word-journey', 'healthy-restaurant', 'innovation-lab', 'numeracy-check', 'bot-workshop', 'truth-lab', 'common-ground', 'spark-studio'];
+  const stageGuidance: Record<Step, { en: string; ar: string }> = {
+    define: { en: 'Choose a saved cohort. No learner-level rows are shown or exported.', ar: 'اختر مجموعة محفوظة. لا يتم عرض أو تصدير صفوف على مستوى المتعلم.' },
+    probe: { en: 'Counting distinct players and checking every output cell against the privacy minimum.', ar: 'يتم عد اللاعبين المميزين وفحص كل خلية ناتجة مقابل الحد الأدنى للخصوصية.' },
+    plan: { en: 'Turning the research question into a reviewable method before any computation runs.', ar: 'تحويل سؤال البحث إلى منهجية قابلة للمراجعة قبل تشغيل أي حساب.' },
+    execute: { en: 'Approving the saved plan, then sending only compact aggregate-safe rows to the signed statistics service.', ar: 'اعتماد الخطة المحفوظة ثم إرسال صفوف مختصرة وآمنة للتجميع إلى خدمة الإحصاء الموقعة.' },
+    results: { en: 'Reviewing aggregate estimates, checks, and limitations. Associations are not causal findings.', ar: 'مراجعة التقديرات المجمعة والفحوصات والقيود. الارتباطات ليست نتائج سببية.' },
+  };
 
   const toggleArray = (arr: string[], val: string) => arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
 
@@ -132,10 +347,49 @@ export default function Workbench({ lang }: { lang: Lang }) {
               })}
             </div>
           </div>
+
+          <div className="rounded-[24px] border border-[#d6e2e9] bg-white p-6 shadow-soft">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#eef2fc] text-[#2140a8]"><Database className="h-5 w-5" /></div>
+              <div>
+                <h3 className="font-bold text-[#174b44]">{t({ en: 'Safe data files', ar: 'ملفات البيانات الآمنة' }, lang)}</h3>
+                <p className="mt-1 text-xs leading-5 text-[#557068]">{t({ en: 'Aggregate rows only. Files stay in this browser until you export them.', ar: 'صفوف مجمعة فقط. تبقى الملفات في هذا المتصفح حتى تصديرها.' }, lang)}</p>
+              </div>
+            </div>
+            <input ref={fileInputRef} type="file" accept=".json,.csv,.xlsx,application/json,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleImport} className="hidden" />
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#c8d2c7] bg-[#fcf8f0] px-4 py-2.5 text-sm font-bold text-[#174b44] hover:border-[#2140a8] hover:text-[#2140a8]">
+              <Upload className="h-4 w-4" /> {t({ en: 'Import aggregate file', ar: 'استيراد ملف مجمع' }, lang)}
+            </button>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {(['json', 'csv', 'xlsx'] as const).map((format) => (
+                <button key={format} type="button" onClick={() => handleExport(format)} disabled={!coverageRows.length} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#c8d2c7] px-2 py-2 text-[11px] font-bold uppercase text-[#557068] hover:border-[#2140a8] hover:text-[#2140a8] disabled:cursor-not-allowed disabled:opacity-40">
+                  <Download className="h-3 w-3" /> {format}
+                </button>
+              ))}
+            </div>
+            {fileStatus && <p role="status" className="mt-3 text-xs font-semibold leading-5 text-[#557068]">{fileStatus}</p>}
+            {importedRows.length > 0 && (
+              <div className="mt-4 rounded-xl border border-[#33705f] bg-[#e6f1eb] p-3">
+                <p className="text-xs font-bold text-[#174b44]">{t({ en: 'Imported preview', ar: 'معاينة الاستيراد' }, lang)} · {importedRows.length}</p>
+                <div className="mt-2 max-h-28 overflow-auto text-[10px] text-[#557068]">
+                  {importedRows.slice(0, 4).map((row, index) => <pre key={index} className="mb-2 whitespace-pre-wrap">{JSON.stringify(row)}</pre>)}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Column: Active View */}
         <div className="rounded-[28px] border border-[#d6e2e9] bg-white p-6 shadow-float sm:p-10">
+          <div className="mb-8 rounded-2xl border border-[#d6e2e9] bg-[#f7fbfc] p-4" role="status">
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[#2140a8]">{t({ en: 'What is happening now', ar: 'ما الذي يحدث الآن' }, lang)}</p>
+            <p className="mt-1 text-sm font-semibold leading-6 text-[#174b44]">{t(stageGuidance[step], lang)}</p>
+          </div>
+          {errorMessage && (
+            <div role="alert" className="mb-6 flex items-start gap-3 rounded-2xl border border-[#e8755f] bg-[#fff0eb] p-4 text-sm font-semibold leading-6 text-[#a94d40]">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#d8232a]" /> <span>{errorMessage}</span>
+            </div>
+          )}
           
           {step === 'define' && (
             <form onSubmit={handleDefine}>
@@ -259,6 +513,84 @@ export default function Workbench({ lang }: { lang: Lang }) {
                           {createPlan.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : t({ en: 'Request Analysis Plan', ar: 'طلب خطة التحليل' }, lang)} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
                         </button>
                       </div>
+                    </div>
+                  )}
+
+                  {!probeResult.suppressed && (
+                    <div className="space-y-6 border-t border-[#dfd2bd] pt-7">
+                      <section aria-labelledby="game-coverage-heading" className="rounded-[24px] border border-[#d6e2e9] bg-[#f7fbfc] p-5">
+                        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                          <div>
+                            <h3 id="game-coverage-heading" className="font-display text-xl font-bold text-[#174b44]">{t({ en: 'Players by game', ar: 'اللاعبون حسب اللعبة' }, lang)}</h3>
+                            <p className="mt-1 text-sm text-[#557068]">{t({ en: 'Distinct players, not sessions. Small game groups are hidden.', ar: 'لاعبون مميزون، وليس جلسات. يتم إخفاء مجموعات الألعاب الصغيرة.' }, lang)}</p>
+                          </div>
+                          <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#2140a8]">{t({ en: 'Privacy-safe count', ar: 'عدد آمن للخصوصية' }, lang)}</span>
+                        </div>
+                        {coverageQuery.isPending ? (
+                          <div className="flex h-64 items-center justify-center gap-2 text-sm font-bold text-[#2140a8]"><Loader2 className="h-5 w-5 animate-spin" /> {t({ en: 'Preparing coverage chart…', ar: 'جارٍ تجهيز رسم التغطية…' }, lang)}</div>
+                        ) : coverageRows.some((row) => !row.suppressed) ? (
+                          <div className="mt-4 h-64" dir="ltr">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={coverageRows.filter((row) => !row.suppressed)} margin={{ top: 10, right: 12, left: -18, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#d6e2e9" vertical={false} />
+                                <XAxis dataKey="game_id" tick={{ fontSize: 11, fill: '#557068' }} interval={0} angle={-20} height={58} textAnchor="end" />
+                                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#557068' }} />
+                                <Tooltip contentStyle={{ borderRadius: 12, borderColor: '#d6e2e9' }} formatter={(value) => [value, t({ en: 'Players', ar: 'اللاعبون' }, lang)]} />
+                                <Bar dataKey="players" fill="#2140a8" radius={[8, 8, 0, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        ) : (
+                          <p className="mt-5 rounded-xl border border-dashed border-[#c8d2c7] bg-white p-6 text-center text-sm font-semibold text-[#557068]">{t({ en: 'No game count can be shown because every game group is below the privacy threshold.', ar: 'لا يمكن عرض عدد أي لعبة لأن كل مجموعات الألعاب أقل من حد الخصوصية.' }, lang)}</p>
+                        )}
+                        {coverageRows.some((row) => row.suppressed) && <p className="mt-3 text-xs font-semibold text-[#a94d40]">{t({ en: 'Some games are not shown because they do not meet the minimum cell size.', ar: 'لا يتم عرض بعض الألعاب لأنها لا تستوفي الحد الأدنى لحجم الخلية.' }, lang)}</p>}
+                      </section>
+
+                      <section aria-labelledby="comparison-heading" className="rounded-[24px] border border-[#d6e2e9] bg-white p-5">
+                        <div>
+                          <h3 id="comparison-heading" className="font-display text-xl font-bold text-[#174b44]">{t({ en: 'Configure a comparison', ar: 'إعداد مقارنة' }, lang)}</h3>
+                          <p className="mt-1 text-sm text-[#557068]">{t({ en: 'Compare an aggregate metric across the attributes you choose. Each chart cell must pass privacy checks.', ar: 'قارن مقياساً مجمعاً عبر الخصائص التي تختارها. يجب أن تتجاوز كل خلية في الرسم فحوصات الخصوصية.' }, lang)}</p>
+                        </div>
+                        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                          <label className="text-xs font-bold text-[#557068]">
+                            {t({ en: 'Group along', ar: 'التجميع حسب' }, lang)}
+                            <select value={comparisonGroup} onChange={(event) => setComparisonGroup(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#c8d2c7] bg-[#fcf8f0] px-3 py-2.5 text-sm font-semibold text-[#174b44] outline-none focus:border-[#2140a8]">
+                              {dimensionOptions.map((option) => <option key={option.value} value={option.value}>{t(option.label, lang)}</option>)}
+                            </select>
+                          </label>
+                          <label className="text-xs font-bold text-[#557068]">
+                            {t({ en: 'Compare', ar: 'المقارنة' }, lang)}
+                            <select value={comparisonSeries} onChange={(event) => setComparisonSeries(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#c8d2c7] bg-[#fcf8f0] px-3 py-2.5 text-sm font-semibold text-[#174b44] outline-none focus:border-[#2140a8]">
+                              {dimensionOptions.map((option) => <option key={option.value} value={option.value}>{t(option.label, lang)}</option>)}
+                            </select>
+                          </label>
+                          <label className="text-xs font-bold text-[#557068]">
+                            {t({ en: 'Metric', ar: 'المقياس' }, lang)}
+                            <select value={comparisonMetric} onChange={(event) => setComparisonMetric(event.target.value)} className="mt-1.5 w-full rounded-xl border border-[#c8d2c7] bg-[#fcf8f0] px-3 py-2.5 text-sm font-semibold text-[#174b44] outline-none focus:border-[#2140a8]">
+                              {metricOptions.map((option) => <option key={option.value} value={option.value}>{t(option.label, lang)}</option>)}
+                            </select>
+                          </label>
+                        </div>
+                        {comparisonQuery.isPending ? (
+                          <div className="flex h-64 items-center justify-center gap-2 text-sm font-bold text-[#2140a8]"><Loader2 className="h-5 w-5 animate-spin" /> {t({ en: 'Calculating privacy-safe comparison…', ar: 'جارٍ حساب المقارنة الآمنة للخصوصية…' }, lang)}</div>
+                        ) : comparisonChartRows.length && comparisonSeriesNames.length ? (
+                          <div className="mt-5 h-72" dir="ltr">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={comparisonChartRows} margin={{ top: 10, right: 12, left: -18, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#d6e2e9" vertical={false} />
+                                <XAxis dataKey="group" tick={{ fontSize: 11, fill: '#557068' }} />
+                                <YAxis tick={{ fontSize: 11, fill: '#557068' }} />
+                                <Tooltip contentStyle={{ borderRadius: 12, borderColor: '#d6e2e9' }} />
+                                <Legend wrapperStyle={{ fontSize: 11 }} />
+                                {comparisonSeriesNames.map((series, index) => <Bar key={series} dataKey={series} fill={['#2140a8', '#16a7bc', '#33705f', '#e8755f'][index % 4]} radius={[6, 6, 0, 0]} />)}
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        ) : (
+                          <p className="mt-5 rounded-xl border border-dashed border-[#c8d2c7] bg-[#fcf8f0] p-6 text-center text-sm font-semibold text-[#557068]">{t({ en: 'No comparison bars are available for this selection. Try a broader cohort or different attributes.', ar: 'لا تتوفر أعمدة مقارنة لهذا الاختيار. جرّب مجموعة أوسع أو خصائص مختلفة.' }, lang)}</p>
+                        )}
+                        {comparisonRows.some((row) => row.suppressed) && <p className="mt-3 text-xs font-semibold text-[#a94d40]">{t({ en: 'Suppressed comparison cells are excluded from the chart and export.', ar: 'يتم استبعاد خلايا المقارنة المحجوبة من الرسم والتصدير.' }, lang)}</p>}
+                      </section>
                     </div>
                   )}
                 </div>

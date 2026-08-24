@@ -31,6 +31,39 @@ export function useProbeCohort() {
   });
 }
 
+export function useGameCoverage(cohortId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['game-coverage', cohortId],
+    queryFn: () => fetcher(`/api/cohorts/${cohortId}/game-coverage`),
+    enabled: Boolean(cohortId && enabled),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useComparison(
+  cohortId: string | null,
+  options: { groupBy: string; compareBy: string; metric: string },
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: ['comparison', cohortId, options.groupBy, options.compareBy, options.metric],
+    queryFn: () => fetcher('/api/comparisons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cohort_id: cohortId,
+        group_by: options.groupBy,
+        compare_by: options.compareBy,
+        metric: options.metric,
+      }),
+    }),
+    enabled: Boolean(cohortId && enabled),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useCreatePlan() {
   return useMutation({
     mutationFn: (data: { cohortId: string; question: string }) =>

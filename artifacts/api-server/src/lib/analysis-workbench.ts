@@ -21,6 +21,8 @@ export type CohortRow = {
   player_id: string;
   session_id: string;
   age_band: string;
+  lang: string;
+  device_class: string;
   game_id: string;
   metrics: Record<string, number | null>;
   started_at: Date;
@@ -55,6 +57,8 @@ export async function resolveCohortRows(filter: CohortFilter): Promise<CohortRow
     playerId: telemetrySessions.playerId,
     sessionId: telemetrySessions.sessionId,
     ageBand: telemetrySessions.ageBand,
+    lang: telemetrySessions.lang,
+    deviceClass: telemetrySessions.deviceClass,
     gameId: telemetrySessions.gameId,
     metrics: sessionMetrics.metrics,
     startedAt: telemetrySessions.startedAt,
@@ -65,6 +69,8 @@ export async function resolveCohortRows(filter: CohortFilter): Promise<CohortRow
     player_id: row.playerId,
     session_id: row.sessionId,
     age_band: row.ageBand,
+    lang: row.lang,
+    device_class: row.deviceClass ?? "unknown",
     game_id: row.gameId,
     metrics: row.metrics,
     started_at: row.startedAt,
@@ -146,6 +152,61 @@ export function outputGroupSizes(rows: CohortRow[], outcome: string) {
 export function meetsOutputCellMinimum(rows: CohortRow[], outcome: string, minimum: number) {
   const groups = outputGroupSizes(rows, outcome);
   return Object.keys(groups).length >= 2 && Object.values(groups).every((size) => size >= minimum);
+}
+
+export const comparisonDimensions = ["age_band", "game_id", "lang", "device_class"] as const;
+export const comparisonMetrics = ["accuracy", "rt_median", "persistence_index", "self_correction_rate", "exploration_breadth", "challenge_seeking"] as const;
+const approvedGameIds = new Set(["eco-future", "basket-challenge", "heritage", "color-focus", "library-sort", "word-journey", "healthy-restaurant", "innovation-lab", "numeracy-check", "bot-workshop", "truth-lab", "common-ground", "spark-studio"]);
+export type ComparisonDimension = (typeof comparisonDimensions)[number];
+export type ComparisonMetric = (typeof comparisonMetrics)[number];
+
+export function isComparisonDimension(value: unknown): value is ComparisonDimension {
+  return typeof value === "string" && (comparisonDimensions as readonly string[]).includes(value);
+}
+
+export function isComparisonMetric(value: unknown): value is ComparisonMetric {
+  return typeof value === "string" && (comparisonMetrics as readonly string[]).includes(value);
+}
+
+function dimensionValue(row: CohortRow, dimension: ComparisonDimension) {
+  if (dimension === "game_id") return approvedGameIds.has(row.game_id) ? row.game_id : "other";
+  if (dimension === "age_band") return ["cycle1", "cycle2", "cycle3"].includes(row.age_band) ? row.age_band : "unknown";
+  if (dimension === "lang") return ["ar", "en"].includes(row.lang) ? row.lang : "unknown";
+  return ["desktop", "mobile", "tablet"].includes(row.device_class) ? row.device_class : "unknown";
+}
+
+export function aggregateGameCoverage(rows: CohortRow[], minimum: number) {
+  const groups = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const gameId = dimensionValue(row, "game_id");
+    groups.set(gameId, (groups.get(gameId) ?? new Set()).add(row.player_id));
+  }
+  return [...groups.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([game_id, players]) => ({
+    game_id,
+    players: players.size >= minimum ? players.size : null,
+    suppressed: players.size < minimum,
+  }));
+}
+
+export function aggregateComparison(rows: CohortRow[], groupBy: ComparisonDimension, compareBy: ComparisonDimension, metric: ComparisonMetric, minimum: number) {
+  const cells = new Map<string, { group: string; series: string; players: Set<string>; values: number[] }>();
+  for (const row of rows) {
+    const value = row.metrics[metric];
+    if (typeof value !== "number") continue;
+    const group = String(dimensionValue(row, groupBy) ?? "unknown");
+    const series = String(dimensionValue(row, compareBy) ?? "unknown");
+    const key = `${group}\u0000${series}`;
+    const cell = cells.get(key) ?? { group, series, players: new Set<string>(), values: [] };
+    cell.players.add(row.player_id);
+    cell.values.push(value);
+    cells.set(key, cell);
+  }
+  return [...cells.values()].sort((left, right) => left.group.localeCompare(right.group) || left.series.localeCompare(right.series)).map((cell) => ({
+    group: cell.group,
+    series: cell.series,
+    value: cell.players.size >= minimum ? Number((cell.values.reduce((sum, value) => sum + value, 0) / cell.values.length).toFixed(3)) : null,
+    suppressed: cell.players.size < minimum,
+  }));
 }
 
 export function compactRowsForExecutor(rows: CohortRow[], outcome: string) {
