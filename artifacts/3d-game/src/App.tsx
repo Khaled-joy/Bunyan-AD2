@@ -396,7 +396,7 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
               { label: { en: 'Social orientation', ar: 'التوجه الاجتماعي' }, desc: { en: 'How people cooperate and share.', ar: 'كيف يتعاون الناس ويتشاركون.' }, color: 'border-t-[#71a695]' },
             ].map((item) => <article key={item.label.en} className={`group rounded-[22px] border border-[#d6e2e9] border-t-4 ${item.color} bg-white p-6 shadow-soft transition hover:-translate-y-1`}><h3 className="font-display text-xl font-bold text-[#174b44]">{homeCopy(item.label)}</h3><p className="mt-2 text-sm leading-relaxed text-[#688079]">{homeCopy(item.desc)}</p></article>)}
           </div>
-          <p className="mx-auto mt-12 max-w-3xl text-center font-display text-xl font-bold leading-relaxed text-[#33705f] text-balance sm:text-2xl">{homeCopy({ en: 'Captured continuously — not at a single point in time, and free of language and cultural bias.', ar: 'نلتقطها باستمرار، لا في لحظة واحدة، وبعيداً عن تحيز اللغة والثقافة.' })}</p>
+          <p className="mx-auto mt-12 max-w-3xl text-center font-display text-xl font-bold leading-relaxed text-[#33705f] text-balance sm:text-2xl">{homeCopy({ en: 'Captured continuously — not at a single point in time, and free of language and cultural bias.', ar: 'نلتقطها باستمرار، لا في لحظة واحدة، وبعيداً عن التحيز.' })}</p>
         </div>
       </section>
 
