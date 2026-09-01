@@ -1,0 +1,263 @@
+# REPLIT AGENT BUILD PROMPT — Bunyan: Game Library, Progress & Store
+
+Build three pages for the Bunyan platform (بنيان أبوظبي). Everything must be bilingual EN/AR with full RTL/LTR switching, using the existing dark Emirati theme (#0B0F1A background, #F5F5F0 text, #C9A227 gold accent, brand red/yellow/teal/blue, Tajawal/Cairo fonts, Al Sadu geometric pattern accents). Use Tailwind logical properties (ms-/me-/ps-/pe-/text-start) — never left/right.
+
+All content lives in JSON. Adding a game, a skin, or an event must require **zero code changes**.
+
+---
+
+## PART 1 — GAME LIBRARY PAGE (`/library`)
+
+### Structure
+
+Two top-level categories rendered as tabs (or stacked sections on mobile):
+
+**1. Default Games — الألعاب الأساسية**
+Always available. Never expire. Playable by all cycles that match the game's cycle tags.
+
+**2. Event Games — ألعاب الفعاليات**
+Time-limited games built in collaboration with partner entities (Zayed University, MBZUAI, DMT, and others). Each event game has its own unique trophy and captures something no default game captures. When the event window closes the game becomes permanently locked and unplayable, but the page still shows it in an archived state with its trophy.
+
+### Game data file — `data/games.json`
+
+Every game object:
+
+```json
+{
+  "id": "turathuna",
+  "category": "default",
+  "status": "available",
+  "title": { "en": "Turathuna", "ar": "تراثنا" },
+  "tagline": { "en": "...", "ar": "..." },
+  "thumbnail": "/games/turathuna/cover.webp",
+  "accentColor": "#C9A227",
+  "cycles": [1, 2, 3],
+  "archetype": "RQ",
+  "components": ["cognitive", "social_cohesion"],
+  "brief": { "en": "What the game is, 2–3 sentences.", "ar": "..." },
+  "educates": {
+    "en": ["Skill 1", "Skill 2", "Skill 3"],
+    "ar": ["...", "...", "..."]
+  },
+  "challenges": {
+    "en": ["Challenge 1", "Challenge 2", "Challenge 3"],
+    "ar": ["...", "...", "..."]
+  },
+  "coinReward": { "completion": 20, "bonusMax": 15 },
+  "trophies": ["turathuna_gold"],
+  "partner": null,
+  "eventWindow": null,
+  "playable": true,
+  "route": "/play/turathuna"
+}
+```
+
+Event games add:
+
+```json
+{
+  "category": "event",
+  "status": "ended",
+  "partner": {
+    "name": { "en": "Department of Municipalities and Transport", "ar": "دائرة البلديات والنقل" },
+    "shortName": { "en": "DMT", "ar": "دائرة البلديات والنقل" },
+    "logo": "/partners/dmt.svg"
+  },
+  "eventWindow": { "start": "2026-03-01", "end": "2026-05-31" },
+  "uniqueCapture": {
+    "en": "What this event uniquely measures that no default game measures.",
+    "ar": "..."
+  },
+  "trophies": ["clean_env_champion"],
+  "playable": false
+}
+```
+
+### Games to seed
+
+**Default games** (all `category: "default"`, `status: "available"`, `playable: true`):
+Turathuna (تراثنا), Word Journey (رحلة الكلمات), Numeracy Marathon (ماراثون الأرقام), Balance Basket (سلة التوازن), Truth Lab (مختبر الحقيقة), Innovation Lab (مختبر الابتكار), Color Focus (تركيز الألوان).
+
+Write real `brief`, `educates` (3–4 items) and `challenges` (3–4 items) for each in both languages, matching the game's actual mechanic and its Masar components. Keep language child-appropriate and positive.
+
+**Event game** (seed exactly one):
+- `id`: `clean_environment_better_future`
+- Title EN: **Clean Environment and Better Future** — AR: **بيئة نظيفة ومستقبل أفضل**
+- `category: "event"`, `status: "ended"`, `playable: false`
+- Partner: DMT (دائرة البلديات والنقل)
+- Unique capture: sustainability decision-making under trade-offs — how a player balances short-term convenience against long-term environmental cost, which no default game measures.
+- Trophy: `clean_env_champion` — "Guardian of the Clean City" / "حارس المدينة النظيفة"
+
+### Card states
+
+| Status | Visual |
+|---|---|
+| `available` (default) | Full colour, **Play** button active |
+| `live` (event) | Gold pulsing border, partner logo chip, live countdown timer to `eventWindow.end`, **Play** button active |
+| `upcoming` (event) | Dimmed, "Starts in X days" chip, **Notify me** (no play) |
+| `ended` (event) | Desaturated card, gold ribbon "Event ended · انتهت الفعالية", padlock icon, **Play button removed entirely and disabled at the route level**, trophy shown as an archived badge |
+
+Never render a broken or misleading Play button on an ended event. Guard the route server-side too: hitting `/play/clean_environment_better_future` redirects to the library with an "This event has ended" toast.
+
+### Card contents (grid, responsive 1/2/3 columns)
+
+Thumbnail, title, cycle chips, component chips, one-line tagline, coin reward chip, and for event games the partner logo + status ribbon. Card opens a **detail view** (modal on desktop, full page on mobile) containing:
+
+- Hero thumbnail + title + partner lockup (event only)
+- **About this game** — the `brief`
+- **What you'll learn** — the `educates` list, each with an icon
+- **Challenges** — the `challenges` list
+- **Trophies** — trophy art, name, unlock condition; earned trophies show a gold check, unearned show "Not yet"
+- **Coins** — what a full run pays out
+- For event games: partner name, event dates, and the `uniqueCapture` paragraph under a heading "What makes this event different / ما يميز هذه الفعالية"
+- Play button (or the locked/ended state)
+
+### Filters & search
+
+Sticky filter bar: Category (All / Default / Event), Cycle (1 / 2 / 3), Masar component (six chips), Status (Available / Live / Ended). Free-text search across title and tagline in both languages. Filters combine, are URL-synced (`?category=event&cycle=2`), and show an empty state with a reset button when nothing matches.
+
+---
+
+## PART 2 — PROGRESS PAGE (`/progress`)
+
+Private to the signed-in player. No comparison to other children anywhere on this page — no rankings, no percentiles, no "you're behind" language. Use "Not yet / لم تكتمل بعد" for anything incomplete.
+
+### Section A — Summary strip
+Total coins, games played, trophies earned, current streak (days played). Four stat cards, gold accent.
+
+### Section B — Play history
+Reverse-chronological list of every session, paginated (20 per page), from the `sessions` table:
+
+| Column | Note |
+|---|---|
+| Game | thumbnail + title, links to library detail |
+| Date & time | localised, Arabic numerals in AR mode |
+| Duration | mm:ss |
+| Result | levels completed / total, plus an accuracy band label (Growing / Solid / Strong) — **never a raw percentage or a fail label** |
+| Coins earned | with coin icon |
+| Trophy | trophy icon if one was earned in that session |
+
+Filter by game and by date range. Empty state: "Your journey starts with your first game / رحلتك تبدأ بلعبتك الأولى" + link to library.
+
+### Section C — Per-game progress
+One row per game the player has access to:
+- Progress bar: levels completed / total
+- Best run label
+- Coins earned from this game to date
+- "Not yet started" state for untouched games with a Play link
+- Ended event games appear here too, frozen at whatever the player reached, with an "Archived" chip
+
+### Section D — Trophies & rewards
+Grid of all trophies. Earned = full colour + date earned. Unearned = silhouette + a single clear unlock line ("Complete Turathuna Gold three times"). Trophies from ended events stay permanently visible and permanently unobtainable if not earned — label them "Event closed" rather than anything discouraging.
+
+### Section E — Rewards tracker
+For each unlockable store item the player is close to: item art, price in coins, current balance, progress bar, and "X coins to go / باقي X عملة". Show the 3 nearest items only. Tapping one deep-links to that item in the store.
+
+### Section F — Masar profile (six components)
+Six radial progress rings: Core Life Skills, Cognitive, Practical, Personal Growth, Social Cohesion, Transformative.
+
+**Respect confidence gating.** If a component has not reached the two-game coverage threshold, do not display a value. Render the ring in a neutral outline with the label "Building your profile / جارٍ بناء ملفك" and a tooltip explaining that more games across different types are needed. Never show a low-confidence number to a child.
+
+---
+
+## PART 3 — COINS
+
+Single currency: **Coins — عملات**. If the codebase already uses Sparks/شرارات, rename it to Coins everywhere — do **not** introduce a second currency.
+
+### Award rules (server-authoritative)
+On session completion, the server computes and writes to a `coin_ledger` table:
+
+- **Completion award**: game's `coinReward.completion`
+- **Performance bonus**: 0 to `coinReward.bonusMax`, scaled by accuracy band
+- **First-play-of-day bonus**: +10, once per game per day
+- **Daily cap**: 150 coins per player per day. Once hit, further sessions award 0 and the results screen shows "Daily coins reached — come back tomorrow! / وصلت للحد اليومي — نراك غداً" with no negative framing
+- **No coins** are awarded for levels where a booster was active, and no coins for assessed levels
+
+Coins are **never computed on the client**. The client only displays what the ledger returns. The ledger is append-only: every row records `player_id`, `session_id`, `game_id`, `amount`, `reason`, `created_at`. Spending writes negative rows. Balance = `SUM(amount)`.
+
+### Results screen
+After every game, before returning to the library: animated coin counter counting up, a breakdown line for each award component, new trophy reveal if earned, updated total balance, and two buttons — **Play again** and **Back to library**.
+
+---
+
+## PART 4 — STORE (`/store`)
+
+Coins are the only way to buy. **No real money, no loot boxes, no randomised rewards, no timers pressuring purchase.**
+
+### Categories (tabs)
+Skins & Outfits · Vehicles & Trails · Style & Looks · Companions · My Majlis · Passport Frames · **Heritage**
+
+**Heritage tier items are not purchasable at any price.** They are winnable only through Our Heritage Gold completions. Render them with a gold lock and the line "Earned, not bought / تُكتسب ولا تُشترى". No coin price shown.
+
+### Item data file — `data/store-items.json`
+
+```json
+{
+  "id": "falcon_guardian",
+  "category": "skins",
+  "name": { "en": "Falcon Guardian", "ar": "حارس الصقر" },
+  "description": { "en": "...", "ar": "..." },
+  "art": "/store/skins/falcon_guardian.webp",
+  "previewAnimation": "/store/skins/falcon_guardian_idle.webp",
+  "price": 450,
+  "rarity": "epic",
+  "purchasable": true,
+  "tags": ["hero", "unisex"]
+}
+```
+
+### Seed these 8 skins
+
+Original characters — see the note at the end of this prompt. Write a one-line bilingual description for each.
+
+| # | EN | AR | Category | Price | Rarity |
+|---|---|---|---|---|---|
+| 1 | Falcon Guardian | حارس الصقر | Skins | 450 | Epic |
+| 2 | Nova Sentinel | حارسة النجوم | Skins | 450 | Epic |
+| 3 | Cyber Falconer | صقّار المستقبل | Skins | 600 | Legendary |
+| 4 | Sky Skater | متزلج السماء | Skins | 300 | Rare |
+| 5 | Dune Racer | سائق الكثبان | Vehicles & Trails | 500 | Epic |
+| 6 | Neon GT | نيون جي تي | Vehicles & Trails | 550 | Epic |
+| 7 | Glow Studio | استوديو التألق | Style & Looks | 250 | Rare |
+| 8 | Desert Rose Glam | وردة الصحراء | Style & Looks | 250 | Rare |
+
+Design direction: desert-futurism. Falcon Guardian is a masked hero in red and gold with a swooping cape silhouette. Nova Sentinel is a caped heroine in blue and silver with a star motif. Cyber Falconer wears a desert-futurist outfit with a robotic falcon companion perched on the shoulder. Sky Skater is a hoverboard look, unisex. Dune Racer is a desert rally buggy trail; Neon GT is a teal-and-violet sports car trail. Glow Studio is a face-paint and glitter styling set; Desert Rose Glam is a henna-pattern styling set. Style items must be gender-neutral in copy and equippable by any avatar — never label anything "for girls" or "for boys" in the UI.
+
+### Store UI
+- Grid of item cards: art, name, rarity border colour, price chip with coin icon
+- Three item states: **Buy** (affordable), **Not enough coins** (price shown in muted red, button disabled, "X coins to go"), **Owned** (checkmark, button becomes Equip / Equipped)
+- Tapping a card opens a preview panel showing the item on the player's current avatar, with Buy/Equip
+- Purchase flow: confirm dialog → server validates balance and ownership → writes negative ledger row + `inventory` row → optimistic UI with rollback on failure. Reject duplicate purchases server-side.
+- Balance pinned in the header on every store screen
+
+---
+
+## DATA MODEL (Postgres)
+
+```
+sessions        (id, player_id, game_id, started_at, ended_at, duration_ms,
+                 levels_completed, levels_total, accuracy_band, trophy_id)
+coin_ledger     (id, player_id, session_id, game_id, amount, reason, created_at)
+inventory       (id, player_id, item_id, acquired_at, source)   -- source: purchase | reward
+equipped        (player_id, slot, item_id)
+trophies_earned (id, player_id, trophy_id, game_id, earned_at)
+```
+
+All balance, purchase and award logic runs server-side. The client never sends a coin amount.
+
+---
+
+## ACCEPTANCE CHECKLIST
+
+- [ ] Library shows Default and Event categories; every game has brief, educates, challenges in EN and AR
+- [ ] Clean Environment and Better Future appears under Event Games, shows DMT partner, is marked ended, has no Play button, and its route is blocked server-side
+- [ ] Event games display their unique trophy and their unique-capture description
+- [ ] Filters and search work in both languages and survive page reload via URL params
+- [ ] Progress page shows full session history, per-game progress, trophies earned and locked, and a rewards tracker
+- [ ] Masar rings suppress values below the coverage threshold instead of showing low-confidence numbers
+- [ ] Coins are awarded server-side on every session end, respect the daily cap, and animate on the results screen
+- [ ] Store has 8 seeded skins across three categories, Owned/Equip states work, Heritage items show no price and cannot be bought
+- [ ] Zero code changes required to add a new game, event, trophy or store item
+- [ ] Full RTL correctness: layout mirrors, countdown timers and progress bars fill in the right direction, no hardcoded left/right
+- [ ] No failure language anywhere; "Not yet" everywhere
+- [ ] No child-to-child comparison, ranking or leaderboard on any of these pages

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import logoPath from '@assets/image_1787208364235-transparent.png';
+import logoPath from '@assets/image_1788238071314.png';
 import learningWorldPath from '@assets/generated_images/bunayn-learning-world.png';
 import hamdanPath from '@assets/Hamdan_logo_1787295278410.png';
 import hananPath from '@assets/hanan_logo_1787295278411.png';
@@ -18,6 +18,7 @@ import {
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useRoute } from 'wouter';
 import NotFound from '@/pages/not-found';
 import Workbench from './Workbench';
+import { LibraryPage, ProgressPage, StorePage, type PageSession, type PageStoreState } from './libraryPages';
 
 export type Lang = 'en' | 'ar';
 export type Copy = { en: string; ar: string };
@@ -40,7 +41,8 @@ type CharacterId = 'hanan' | 'hamdan';
 type PlayerProfile = { name: string; age: string; role: string; avatar: string; character?: CharacterId; grade?: string; school?: string };
 type PlayerRow = { name: string; initials: string; level: string; coins: number; progress: number; lastActive: string; tone: string };
 type StoreItem = { id: string; name: Copy; description: Copy; cost: number; icon: string; tone: string };
-type StoreState = { purchases: string[]; spentPoints: number };
+type StoreState = PageStoreState;
+type LocalSessionRecord = PageSession;
 const playerCharacters: { id: CharacterId; name: Copy; role: Copy; image: string; tone: string }[] = [
   { id: 'hanan', name: { en: 'Hanan', ar: 'حنان' }, role: { en: 'Female character', ar: 'الشخصية الأنثوية' }, image: hananPath, tone: 'coral' },
   { id: 'hamdan', name: { en: 'Hamdan', ar: 'حمدان' }, role: { en: 'Male character', ar: 'الشخصية الذكورية' }, image: hamdanPath, tone: 'sky' },
@@ -158,6 +160,7 @@ function usePlayerSummary() {
   const [commonGround] = useLocal<SignatureProgress>('bunayn-signature-progress-common-ground', { level: 0, score: 0, coins: 0, finished: false });
   const [sparkStudio] = useLocal<SignatureProgress>('bunayn-signature-progress-spark-studio', { level: 0, score: 0, coins: 0, finished: false });
   const [storeState, setStoreState] = useLocal<StoreState>('bunayn-store-state', { purchases: [], spentPoints: 0 });
+  const [sessionHistory] = useLocal<LocalSessionRecord[]>('bunayn-session-history', []);
 
   const worlds = [
     { id: 'eco-future', level: ecoRound, target: rounds.length, finished: ecoFinished, score: ecoScore, coins: ecoCoins },
@@ -192,6 +195,7 @@ function usePlayerSummary() {
     availablePoints: Math.max(0, earnedCoins - storeState.spentPoints),
     purchases: storeState.purchases,
     setStoreState,
+    sessionHistory,
   };
 }
 
@@ -244,6 +248,7 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
   })();
   const activeProfile = savedProfile || profile;
   const isAdmin = hasAdminSession();
+  const isDarkSurface = ['/library', '/store', '/progress', '/player'].some((path) => location.startsWith(path));
   const isActive = (path: string) => location === path;
   const initials = activeProfile?.avatar || activeProfile?.name?.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'GU';
   const activeCharacter = playerCharacters.find((character) => character.id === activeProfile?.character);
@@ -251,29 +256,29 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
     { href: '/', label: { en: 'Home', ar: 'الرئيسية' }, id: 'home' },
     { href: '/library', label: { en: 'Game Library', ar: 'مكتبة الألعاب' }, id: 'library' },
     { href: '/store', label: { en: 'Store', ar: 'المتجر' }, id: 'store' },
-    { href: '/player', label: { en: 'My Progress', ar: 'تقدمي' }, id: 'player' },
+    { href: '/progress', label: { en: 'My Progress', ar: 'تقدمي' }, id: 'progress' },
   ];
   if (isAdmin) nav.push({ href: '/admin', label: { en: 'Dashboard', ar: 'لوحة المتابعة' }, id: 'admin' });
-  return <div className="app-noise min-h-[100dvh] bg-[#e8f4fa]">
-    <header className="sticky top-0 z-40 border-b border-[#d6e2e9]/90 bg-[#e8f4fa]/95 backdrop-blur-md">
+  return <div className={`app-noise min-h-[100dvh] ${isDarkSurface ? 'bg-[#0b0f1a]' : 'bg-[#e8f4fa]'}`}>
+    <header className={`sticky top-0 z-40 border-b backdrop-blur-md ${isDarkSurface ? 'border-[#24334f]/90 bg-[#0b0f1a]/95' : 'border-[#d6e2e9]/90 bg-[#e8f4fa]/95'}`}>
       <div className="mx-auto flex h-[78px] max-w-[1440px] items-center justify-between px-5 lg:px-10">
         <Logo />
-        <nav className="hidden items-center gap-1 rounded-full border border-[#d6e2e9] bg-white/70 p-1 md:flex" aria-label="Main navigation">
-          {nav.map((item) => <Link key={item.href} href={item.href} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive(item.href) ? 'bg-[#2140a8] text-white shadow-sm' : 'text-[#5f737c] hover:bg-[#e7f8fb] hover:text-[#0b6a79]'}`} data-testid={`link-nav-${item.id}`}>{t(item.label, lang)}</Link>)}
+        <nav className={`hidden items-center gap-1 rounded-full border p-1 md:flex ${isDarkSurface ? 'border-[#293850] bg-[#111a2c]' : 'border-[#d6e2e9] bg-white/70'}`} aria-label="Main navigation">
+          {nav.map((item) => <Link key={item.href} href={item.href} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${isActive(item.href) ? (isDarkSurface ? 'bg-[#c9a227] text-[#0b0f1a]' : 'bg-[#2140a8] text-white shadow-sm') : (isDarkSurface ? 'text-[#b8c4d4] hover:bg-[#1a2740] hover:text-[#f6d66b]' : 'text-[#5f737c] hover:bg-[#e7f8fb] hover:text-[#0b6a79]')}`} data-testid={`link-nav-${item.id}`}>{t(item.label, lang)}</Link>)}
         </nav>
         <div className="flex items-center gap-2.5">
-          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="hidden items-center gap-2 rounded-full border border-[#d6e2e9] bg-white/80 px-3.5 py-2 text-xs font-bold text-[#0b6a79] transition hover:border-[#16a7bc] sm:flex" data-testid="button-language">
+          <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className={`hidden items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold transition sm:flex ${isDarkSurface ? 'border-[#293850] bg-[#111a2c] text-[#69d2bd] hover:border-[#16a7bc]' : 'border-[#d6e2e9] bg-white/80 text-[#0b6a79] hover:border-[#16a7bc]'}`} data-testid="button-language">
             <Globe2 className="h-4 w-4" /> {lang === 'en' ? 'العربية' : 'English'}
           </button>
-          <Link href={activeProfile ? '/' : '/login'} className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#f4b60b] bg-[#e7f8fb] font-display text-sm font-bold text-[#2140a8] shadow-sm" data-testid="link-player-profile" aria-label={activeProfile ? t({ en: `Open ${activeProfile.name}'s player profile`, ar: `افتح ملف اللاعب ${activeProfile.name}` }, lang) : t({ en: 'Open player login', ar: 'افتح دخول اللاعب' }, lang)}>
+          <Link href={activeProfile ? '/progress' : '/login'} className={`grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#f4b60b] font-display text-sm font-bold shadow-sm ${isDarkSurface ? 'bg-[#302a16] text-[#f6d66b]' : 'bg-[#e7f8fb] text-[#2140a8]'}`} data-testid="link-player-profile" aria-label={activeProfile ? t({ en: `Open ${activeProfile.name}'s player profile`, ar: `افتح ملف اللاعب ${activeProfile.name}` }, lang) : t({ en: 'Open player login', ar: 'افتح دخول اللاعب' }, lang)}>
             {activeCharacter ? <img src={activeCharacter.image} alt="" className="h-full w-full scale-[1.34] object-cover object-top" /> : initials}
           </Link>
-          <button onClick={() => setMenuOpen((open) => !open)} className="rounded-full p-2 text-[#2140a8] md:hidden" aria-label="Open menu" data-testid="button-menu"><Menu className="h-5 w-5" /></button>
+          <button onClick={() => setMenuOpen((open) => !open)} className={`rounded-full p-2 md:hidden ${isDarkSurface ? 'text-[#f6d66b]' : 'text-[#2140a8]'}`} aria-label="Open menu" data-testid="button-menu"><Menu className="h-5 w-5" /></button>
         </div>
       </div>
-      {menuOpen && <div className="border-t border-[#d6e2e9] bg-[#e8f4fa] px-5 py-4 md:hidden"><div className="flex flex-col gap-1">
-        {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-3 font-semibold text-[#2140a8]" data-testid={`link-mobile-${item.id}`}>{t(item.label, lang)}</Link>)}
-        <button onClick={() => { setLang(lang === 'en' ? 'ar' : 'en'); setMenuOpen(false); }} className="rounded-xl px-3 py-3 text-start font-semibold text-[#2140a8]" data-testid="button-mobile-language">{lang === 'en' ? 'العربية' : 'English'}</button>
+      {menuOpen && <div className={`border-t px-5 py-4 md:hidden ${isDarkSurface ? 'border-[#293850] bg-[#111a2c]' : 'border-[#d6e2e9] bg-[#e8f4fa]'}`}><div className="flex flex-col gap-1">
+        {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={`rounded-xl px-3 py-3 font-semibold ${isDarkSurface ? 'text-[#f6d66b]' : 'text-[#2140a8]'}`} data-testid={`link-mobile-${item.id}`}>{t(item.label, lang)}</Link>)}
+        <button onClick={() => { setLang(lang === 'en' ? 'ar' : 'en'); setMenuOpen(false); }} className={`rounded-xl px-3 py-3 text-start font-semibold ${isDarkSurface ? 'text-[#69d2bd]' : 'text-[#2140a8]'}`} data-testid="button-mobile-language">{lang === 'en' ? 'العربية' : 'English'}</button>
       </div></div>}
     </header>
     <main dir={lang === 'ar' ? 'rtl' : 'ltr'}>{children}</main>
@@ -417,7 +422,7 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
 
     <footer className="border-t-4 border-[#f4b60b] bg-[#2140a8] px-5 py-8 text-white sm:px-10">
       <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-start">
-        <img src={logoPath} alt={homeCopy({ en: 'Bunayn AD — a world of knowledge', ar: 'بنيان أبوظبي — عالم من المعرفة' })} className="h-10 w-[120px] object-contain brightness-0 invert" />
+        <img src={logoPath} alt={homeCopy({ en: 'Bunayn AD — a world of knowledge', ar: 'بنيان أبوظبي — عالم من المعرفة' })} className="h-10 w-[120px] object-contain" />
         <p className="text-sm font-semibold text-[#d7f0f5]">{homeCopy({ en: 'Bunayn AD · Abu Dhabi, UAE', ar: 'بنيان أبوظبي · أبوظبي، الإمارات' })}</p>
       </div>
     </footer>
@@ -1038,14 +1043,25 @@ function WorkbenchRoute({ lang }: { lang: Lang }) {
   return <AdminLogin lang={lang} />;
 }
 
+function EventEndedRedirect({ lang }: { lang: Lang }) {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    setLocation('/library?category=event&status=ended');
+  }, [setLocation]);
+  return <div className="grid min-h-[55vh] place-items-center bg-[#0b0f1a] px-5 text-center text-[#f5f5f0]"><div><LockKeyhole className="mx-auto h-10 w-10 text-[#f6d66b]" /><h1 className="mt-4 font-display text-3xl font-bold">{t({ en: 'This event has ended.', ar: 'انتهت هذه الفعالية.' }, lang)}</h1><p className="mt-2 text-[#b8c4d4]">{t({ en: 'Returning you to the event archive…', ar: 'نعيدك إلى أرشيف الفعاليات…' }, lang)}</p></div></div>;
+}
+
 function RouterContent({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void }) {
   const [location] = useLocation();
+  const [profile] = useLocal<PlayerProfile | null>('bunayn-player-profile', null);
+  const summary = usePlayerSummary();
+  const translator = (copy: Copy) => t(copy, lang);
 
   if (location === '/' || location === '/welcome') {
     return <Welcome lang={lang} setLang={setLang} />;
   }
 
-  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} setLang={setLang} />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoRoute lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/library" component={() => <Library lang={lang} />} /><Route path="/store" component={() => <Store lang={lang} />} /><Route path="/player" component={() => <PlayerProgress lang={lang} />} /><Route path="/admin/login" component={() => <AdminLogin lang={lang} />} /><Route path="/admin" component={() => <AdminRoute lang={lang} />} /><Route path="/admin/workbench" component={() => <WorkbenchRoute lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
+  return <Shell lang={lang} setLang={setLang}><Switch><Route path="/welcome" component={() => <Welcome lang={lang} setLang={setLang} />} /><Route path="/login" component={() => <Login lang={lang} setLang={setLang} />} /><Route path="/" component={() => <RootPage lang={lang} />} /><Route path="/eco-future" component={() => <EcoRoute lang={lang} />} /><Route path="/game/:id" component={() => <GameRoute lang={lang} />} /><Route path="/play/clean_environment_better_future" component={() => <EventEndedRedirect lang={lang} />} /><Route path="/library" component={() => <LibraryPage lang={lang} translator={translator} worlds={summary.worlds} />} /><Route path="/store" component={() => <StorePage lang={lang} translator={translator} profile={profile} summary={summary} />} /><Route path="/progress" component={() => <ProgressPage lang={lang} translator={translator} profile={profile} summary={summary} />} /><Route path="/player" component={() => <ProgressPage lang={lang} translator={translator} profile={profile} summary={summary} />} /><Route path="/admin/login" component={() => <AdminLogin lang={lang} />} /><Route path="/admin" component={() => <AdminRoute lang={lang} />} /><Route path="/admin/workbench" component={() => <WorkbenchRoute lang={lang} />} /><Route component={NotFound} /></Switch></Shell>;
 }
 
 function App() {
