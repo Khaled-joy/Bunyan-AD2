@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import logoPath from '@assets/image_1788238071314.png';
+import logoPath from '@assets/image_1787208364235-transparent.png';
 import learningWorldPath from '@assets/generated_images/bunayn-learning-world.png';
 import hamdanPath from '@assets/Hamdan_logo_1787295278410.png';
 import hananPath from '@assets/hanan_logo_1787295278411.png';
