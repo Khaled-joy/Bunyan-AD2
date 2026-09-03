@@ -305,7 +305,7 @@ function Shell({ children, lang, setLang }: { children: ReactNode; lang: Lang; s
       </div></div>}
     </header>
     <main dir={lang === 'ar' ? 'rtl' : 'ltr'}>{children}</main>
-    <footer className="border-t border-[#2140a8] bg-[#2140a8] px-5 py-10 text-white lg:px-10">
+    <footer className="border-t border-[#16a7bc] bg-[#0b6a79] px-5 py-10 text-white lg:px-10">
       <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-7 sm:flex-row sm:items-end">
         <div><Logo compact /><p className="mt-4 max-w-sm text-sm leading-relaxed text-[#d7f0f5]">{t({ en: 'A digital playground from Abu Dhabi for curious minds, thoughtful choices, and the people shaping tomorrow.', ar: 'ملعب رقمي من أبوظبي للعقول الفضولية والاختيارات الواعية والأشخاص الذين يصنعون الغد.' }, lang)}</p></div>
         <div className="text-sm text-[#cfe9f7]"><p>© 2026 Bunayn AD</p><p className="mt-1">Learning through play.</p></div>
@@ -376,7 +376,7 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
     <main className="relative z-10">
       <section className="mx-auto grid min-h-[calc(100dvh-81px)] max-w-[1440px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:py-20">
         <div className="reveal text-center lg:text-start">
-          <p className="mb-5 inline-flex rounded-full border border-[#b9d6c7] bg-[#e6f1eb] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#33705f]">{homeCopy({ en: 'ABU DHABI · A NEW WAY TO LEARN', ar: 'أبوظبي · طريقة جديدة للتعلّم' })}</p>
+          <p className="mb-5 inline-flex rounded-full border border-[#b9d6c7] bg-[#e6f1eb] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#33705f]">{homeCopy({ en: 'A NEW WAY TO LEARN', ar: 'طريقة جديدة للتعلّم' })}</p>
           <h1 className="home-hero-title max-w-3xl font-display text-[clamp(2.8rem,6.5vw,6.4rem)] font-bold leading-[.94] tracking-[-.055em] text-[#174b44] text-balance">{homeCopy({ en: 'Play. Discover. Learn. Start a Knowledge Quest.', ar: 'العب. اكتشف. تعلّم. ابدأ رحلة من المعرفة.' })}</h1>
           <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-[#557068] text-balance lg:mx-0 sm:text-xl">{homeCopy({ en: 'Play opens the door to discovery: each choice helps us collect meaningful data and begin a journey of knowledge.', ar: 'تعلّم و ابدأ رحلة من المعرفة: كل اختيار يفتح باباً جديداً للاكتشاف.' })}</p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
@@ -443,7 +443,7 @@ function Welcome({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void 
       </section>
     </main>
 
-    <footer className="border-t-4 border-[#f4b60b] bg-[#2140a8] px-5 py-8 text-white sm:px-10">
+    <footer className="border-t-4 border-[#16a7bc] bg-[#0b6a79] px-5 py-8 text-white sm:px-10">
       <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-start">
         <img src={logoPath} alt={homeCopy({ en: 'Bunayn AD — a world of knowledge', ar: 'بنيان أبوظبي — عالم من المعرفة' })} className="h-10 w-[120px] object-contain" />
         <p className="text-sm font-semibold text-[#d7f0f5]">{homeCopy({ en: 'Bunayn AD · Abu Dhabi, UAE', ar: 'بنيان أبوظبي · أبوظبي، الإمارات' })}</p>
@@ -463,12 +463,10 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
   const [age, setAge] = useState('');
   const [grade, setGrade] = useState('');
   const [school, setSchool] = useState('');
-  const [character, setCharacter] = useState<CharacterId | null>(null);
   const [error, setError] = useState('');
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!name.trim()) { setError(t({ en: 'Type your name to start.', ar: 'اكتب اسمك للبدء.' }, lang)); return; }
-    if (!character) { setError(t({ en: 'Choose Hanan or Hamdan to start.', ar: 'اختر حنان أو حمدان للبدء.' }, lang)); return; }
     if (!age) { setError(t({ en: 'Pick your age.', ar: 'اختر عمرك.' }, lang)); return; }
     if (!grade) { setError(t({ en: 'Pick your grade.', ar: 'اختر صفك.' }, lang)); return; }
     if (!school.trim()) { setError(t({ en: 'Type or choose your school.', ar: 'اكتب أو اختر مدرستك.' }, lang)); return; }
@@ -480,15 +478,14 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
       sessionStorage.removeItem('bunayn-player-profile');
       sessionStorage.removeItem('bunayn-admin-session');
     } catch { /* browser storage may be unavailable */ }
-    setProfile({ name: cleanName, age, grade, school: school.trim(), role: 'Player', avatar: cleanName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase(), character });
+    setProfile({ name: cleanName, age, grade, school: school.trim(), role: 'Player', avatar: cleanName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() });
     setLocation('/library');
   };
   const playAsGuest = () => {
-    if (!character) { setError(t({ en: 'Choose Hanan or Hamdan to start.', ar: 'اختر حنان أو حمدان للبدء.' }, lang)); return; }
     if (!age) { setError(t({ en: 'Pick your age first.', ar: 'اختر عمرك أولاً.' }, lang)); return; }
     try {
       sessionStorage.setItem('bunayn-guest-mode', 'true');
-      sessionStorage.setItem('bunayn-player-profile', JSON.stringify({ name: 'Guest Player', age, role: 'Guest', avatar: 'GP', character } satisfies PlayerProfile));
+      sessionStorage.setItem('bunayn-player-profile', JSON.stringify({ name: 'Guest Player', age, role: 'Guest', avatar: 'GP' } satisfies PlayerProfile));
       sessionStorage.removeItem('bunayn-admin-session');
     } catch { /* session storage may be unavailable */ }
     setLocation('/library');
@@ -511,17 +508,6 @@ function Login({ lang, setLang }: { lang: Lang; setLang: (lang: Lang) => void })
             <label htmlFor="player-name">{t({ en: 'Your name', ar: 'الاسم' }, lang)}</label>
             <input id="player-name" type="text" maxLength={24} autoComplete="given-name" autoFocus value={name} onChange={(event) => { setName(event.target.value); setError(''); }} placeholder={t({ en: 'Salem', ar: 'سالم' }, lang)} data-testid="input-player-name" />
           </div>
-          <fieldset className="login-field login-character-field">
-            <legend className="login-label">{t({ en: 'Choose your character', ar: 'اختر شخصيتك' }, lang)}</legend>
-            <p className="login-character-help">{t({ en: 'Pick the friend who will join you in every game.', ar: 'اختر الصديق الذي سينضم إليك في كل لعبة.' }, lang)}</p>
-            <div className="login-character-grid">
-              {playerCharacters.map((option) => <button key={option.id} type="button" onClick={() => { setCharacter(option.id); setError(''); }} className={`login-character-card ${character === option.id ? 'is-selected' : ''}`} aria-pressed={character === option.id} data-testid={`button-character-${option.id}`}>
-                <span className={`login-character-photo ${option.tone}`}><img src={option.image} alt="" /></span>
-                <span className="login-character-name">{t(option.name, lang)}</span>
-                <span className="login-character-role">{t(option.role, lang)}</span>
-              </button>)}
-            </div>
-          </fieldset>
           <fieldset className="login-field">
             <legend className="login-label">{t({ en: 'Your age', ar: 'العمر' }, lang)}</legend>
             <div className="login-pills" data-testid="group-player-age">{playerAges.map((value) => <label key={value} className={`login-pill ${age === value ? 'is-selected' : ''}`}><input type="radio" name="player-age" value={value} checked={age === value} onChange={() => { setAge(value); setError(''); }} data-testid={`button-age-${value}`} /><span>{value}</span></label>)}</div>
