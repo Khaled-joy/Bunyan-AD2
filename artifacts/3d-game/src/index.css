@@ -228,6 +228,45 @@
   .sci-grid { animation: none; }
 }
 
+.bunayn-home-page {
+  background: #e8f4fa;
+  color: #174b44;
+}
+.bunayn-home-page [class*="bg-[#0b0f1a]"] { background-color: #e8f4fa !important; }
+.bunayn-home-page [class*="bg-[#111a2c]"] { background-color: #fff !important; color: #174b44 !important; }
+.bunayn-home-page [class*="bg-[#0d1423]"] { background-color: #f5fbfd !important; }
+.bunayn-home-page [class*="bg-[#0f1728]"] { background-color: #e8f4fa !important; }
+.bunayn-home-page [class*="bg-[#17253b]"] { background-color: #e7f8fb !important; }
+.bunayn-home-page [class*="bg-[#16372f]"] { background-color: #e6f1eb !important; }
+.bunayn-home-page [class*="bg-[#302a16]"] { background-color: #fff3cc !important; }
+.bunayn-home-page [class*="bg-[#25334b]"] { background-color: #d6e2e9 !important; }
+.bunayn-home-page [class*="bg-[#12343d]"] { background-color: #e7f8fb !important; }
+.bunayn-home-page [class*="bg-[#050912]"] { background-color: rgba(23, 75, 68, .62) !important; }
+.bunayn-home-page [class*="text-[#f5f5f0]"] { color: #174b44 !important; }
+.bunayn-home-page [class*="text-[#d7e0eb]"],
+.bunayn-home-page [class*="text-[#cbd4df]"],
+.bunayn-home-page [class*="text-[#b8c4d4]"] { color: #557068 !important; }
+.bunayn-home-page [class*="text-[#93a2b5]"],
+.bunayn-home-page [class*="text-[#718097]"] { color: #688079 !important; }
+.bunayn-home-page [class*="text-[#f6d66b]"] { color: #c27a12 !important; }
+.bunayn-home-page [class*="text-[#69d2bd]"] { color: #33705f !important; }
+.bunayn-home-page [class*="text-[#7ce5ef]"] { color: #0b6a79 !important; }
+.bunayn-home-page [class*="text-[#0b0f1a]"] { color: #174b44 !important; }
+.bunayn-home-page [class*="border-[#24334f]"],
+.bunayn-home-page [class*="border-[#2d3b54]"],
+.bunayn-home-page [class*="border-[#293850]"],
+.bunayn-home-page [class*="border-[#35445f]"],
+.bunayn-home-page [class*="border-[#34435f]"],
+.bunayn-home-page [class*="border-[#33435e]"],
+.bunayn-home-page [class*="border-[#2b3a54]"] { border-color: #d6e2e9 !important; }
+.bunayn-home-page [class*="border-[#c9a227]"] { border-color: #f2c95c !important; }
+.bunayn-home-page [class*="border-[#69d2bd]"] { border-color: #b9d6c7 !important; }
+.bunayn-home-page [class*="bg-[#c9a227]"] { background-color: #f2c95c !important; }
+.bunayn-home-page [class*="bg-[#69d2bd]"] { background-color: #9fcac0 !important; }
+.bunayn-home-page [class*="bg-[#e8755f]"] { background-color: #e8755f !important; }
+.bunayn-home-page [class*="bg-[#302a16]"] { border-color: #d8c37b !important; }
+.bunayn-home-page input { color: #174b44 !important; }
+
 .home-orb { filter: blur(1px); opacity: .55; pointer-events: none; }
 .home-orb-yellow { background: radial-gradient(circle, rgba(244,182,11,.42) 0%, rgba(244,182,11,.08) 68%, transparent 72%); }
 .home-orb-coral { background: radial-gradient(circle, rgba(232,117,95,.3) 0%, rgba(232,117,95,.04) 68%, transparent 72%); }

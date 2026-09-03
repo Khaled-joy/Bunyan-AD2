@@ -8,6 +8,7 @@ import {
 import gamesData from './data/games.json';
 import storeItemsData from './data/store-items.json';
 import learningWorldPath from '@assets/generated_images/bunayn-learning-world.png';
+import { gameDomains } from './gamesFramework';
 
 export type PageLang = 'en' | 'ar';
 export type PageCopy = { en: string; ar: string };
@@ -48,6 +49,16 @@ const categoryLabels: Record<string, PageCopy> = {
   majlis: { en: 'My Majlis', ar: 'مجلسي' },
   passport: { en: 'Passport Frames', ar: 'إطارات جواز السفر' },
   heritage: { en: 'Heritage', ar: 'التراث' },
+};
+const gameDomainSlugs: Record<string, string[]> = {
+  turathuna: ['developmental-skills', 'social-relations'],
+  'word-journey': ['literacy', 'developmental-skills'],
+  'numeracy-marathon': ['literacy', 'developmental-skills'],
+  'balance-basket': ['activities', 'developmental-skills'],
+  'truth-lab': ['developmental-skills'],
+  'innovation-lab': ['environment', 'developmental-skills'],
+  'color-focus': ['developmental-skills'],
+  clean_environment_better_future: ['environment', 'activities', 'social-relations'],
 };
 const rarityColors: Record<string, string> = {
   rare: 'border-[#16a7bc] bg-[#e7f8fb] text-[#0b6a79]',
@@ -95,9 +106,8 @@ export function LibraryPage({ lang, translator, worlds }: { lang: PageLang; tran
   const [selected, setSelected] = useState<GameRecord | null>(null);
   const [search, setSearch] = useState(params.get('q') ?? '');
   const [category, setCategory] = useState(params.get('category') ?? 'all');
-  const [cycle, setCycle] = useState(params.get('cycle') ?? 'all');
+  const [domain, setDomain] = useState(params.get('domain') ?? 'all');
   const [status, setStatus] = useState(params.get('status') ?? 'all');
-  const [component, setComponent] = useState(params.get('component') ?? 'all');
   const update = (next: Record<string, string>) => {
     const nextParams = new URLSearchParams();
     Object.entries(next).forEach(([key, value]) => { if (value && value !== 'all') nextParams.set(key, value); });
@@ -105,9 +115,53 @@ export function LibraryPage({ lang, translator, worlds }: { lang: PageLang; tran
   };
   const filtered = gamesData.filter((game) => {
     const haystack = `${game.title.en} ${game.title.ar} ${game.tagline.en} ${game.tagline.ar}`.toLowerCase();
-    return (!search || haystack.includes(search.toLowerCase())) && (category === 'all' || game.category === category) && (cycle === 'all' || game.cycles.includes(Number(cycle))) && (status === 'all' || game.status === status) && (component === 'all' || game.components.includes(component));
+    return (!search || haystack.includes(search.toLowerCase())) && (category === 'all' || game.category === category) && (status === 'all' || game.status === status) && (domain === 'all' || gameDomainSlugs[game.id]?.includes(domain));
   });
-  return <div className="min-h-screen bg-[#0b0f1a] px-5 py-8 text-[#f5f5f0] lg:px-10 lg:py-12"><div className="mx-auto max-w-[1440px]"><section className="relative overflow-hidden rounded-[32px] border border-[#34435f] bg-[#111a2c] p-7 shadow-[0_25px_80px_rgba(4,8,20,.35)] sm:p-10"><div className="absolute -end-16 -top-24 h-72 w-72 rounded-full bg-[#c9a227]/20 blur-2xl" /><div className="relative max-w-3xl"><p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-[#f6d66b]"><BookOpen className="h-4 w-4" /> {tx(translator, { en: 'Bunayn game library', ar: 'مكتبة ألعاب بنيان' })}</p><h1 className="mt-4 font-display text-5xl font-black leading-[.95] tracking-[-.05em] sm:text-7xl">{tx(translator, { en: 'Choose your next knowledge quest.', ar: 'اختر رحلة المعرفة التالية.' })}</h1><p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#b8c4d4]">{tx(translator, { en: 'Always-on worlds build skills through play. Partner events add limited stories and unique trophies.', ar: 'تبني العوالم المتاحة دائماً المهارات من خلال اللعب. وتضيف فعاليات الشركاء قصصاً وكؤوساً فريدة.' })}</p></div></section><section className="sticky top-[78px] z-20 mt-6 space-y-3 rounded-2xl border border-[#293850] bg-[#0f1728]/95 p-3 backdrop-blur-md" aria-label={tx(translator, { en: 'Game filters', ar: 'مرشحات الألعاب' })}><div className="flex flex-col gap-3 lg:flex-row lg:items-center"><div className="flex flex-wrap gap-2">{(['all', 'default', 'event'] as const).map((value) => <button type="button" key={value} onClick={() => { setCategory(value); update({ category: value, cycle, status, component, q: search }); }} className={`rounded-full px-4 py-2 text-sm font-bold ${category === value ? 'bg-[#c9a227] text-[#0b0f1a]' : 'border border-[#35445f] text-[#cbd4df]'}`} data-testid={`button-library-category-${value}`}>{categoryLabels[value][lang]}</button>)}</div><label className="relative ms-auto block w-full lg:max-w-xs"><Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#93a2b5]" /><input value={search} onChange={(event) => { setSearch(event.target.value); update({ category, cycle, status, component, q: event.target.value }); }} placeholder={tx(translator, { en: 'Search title or tagline', ar: 'ابحث في العنوان أو الوصف' })} className="w-full rounded-full border border-[#35445f] bg-[#111a2c] py-2.5 pe-4 ps-9 text-sm text-[#f5f5f0] outline-none placeholder:text-[#718097] focus:border-[#c9a227]" data-testid="input-library-search" /></label></div><div className="flex flex-wrap items-center gap-2 text-xs"><Filter className="h-4 w-4 text-[#f6d66b]" /><span className="font-bold text-[#93a2b5]">{tx(translator, { en: 'Cycle', ar: 'الدورة' })}</span>{['all', '1', '2', '3'].map((value) => <button type="button" key={value} onClick={() => { setCycle(value); update({ category, cycle: value, status, component, q: search }); }} className={`rounded-full border px-3 py-1.5 font-bold ${cycle === value ? 'border-[#69d2bd] bg-[#16372f] text-[#69d2bd]' : 'border-[#35445f] text-[#b8c4d4]'}`}>{value === 'all' ? tx(translator, { en: 'Any', ar: 'الكل' }) : `C${value}`}</button>)}<span className="ms-2 font-bold text-[#93a2b5]">{tx(translator, { en: 'Status', ar: 'الحالة' })}</span>{['all', 'available', 'live', 'ended'].map((value) => <button type="button" key={value} onClick={() => { setStatus(value); update({ category, cycle, status: value, component, q: search }); }} className={`rounded-full border px-3 py-1.5 font-bold ${status === value ? 'border-[#c9a227] bg-[#302a16] text-[#f6d66b]' : 'border-[#35445f] text-[#b8c4d4]'}`}>{value === 'all' ? tx(translator, { en: 'Any', ar: 'الكل' }) : value === 'available' ? tx(translator, { en: 'Available', ar: 'متاحة' }) : value === 'ended' ? tx(translator, { en: 'Ended', ar: 'انتهت' }) : tx(translator, { en: 'Live', ar: 'مباشرة' })}</button>)}</div><div className="flex flex-wrap gap-2">{Object.entries(componentLabels).map(([value, label]) => <button type="button" key={value} onClick={() => { const next = component === value ? 'all' : value; setComponent(next); update({ category, cycle, status, component: next, q: search }); }} className={`rounded-full border px-3 py-1.5 text-xs font-bold ${component === value ? 'border-[#16a7bc] bg-[#12343d] text-[#7ce5ef]' : 'border-[#35445f] text-[#93a2b5]'}`}>{label[lang]}</button>)}</div></section><div className="mt-8 flex items-end justify-between gap-4"><div><p className="text-sm font-bold text-[#f6d66b]">{categoryLabels[category]?.[lang] ?? categoryLabels.all[lang]}</p><h2 className="mt-1 font-display text-3xl font-bold">{filtered.length} {tx(translator, { en: 'worlds ready', ar: 'عوالم جاهزة' })}</h2></div><span className="hidden text-sm text-[#93a2b5] sm:block">{tx(translator, { en: 'Content and rewards are defined in JSON.', ar: 'المحتوى والمكافآت معرفة في JSON.' })}</span></div>{filtered.length ? <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((game) => <LibraryGameCard key={game.id} game={game} lang={lang} translator={translator} worlds={worlds} onOpen={() => setSelected(game)} />)}</div> : <div className="mt-5 rounded-[26px] border border-dashed border-[#445570] bg-[#111a2c] p-12 text-center"><CircleHelp className="mx-auto h-10 w-10 text-[#f6d66b]" /><h2 className="mt-4 font-display text-2xl font-bold">{tx(translator, { en: 'No games match yet', ar: 'لا توجد ألعاب مطابقة بعد' })}</h2><button type="button" onClick={() => { setCategory('all'); setCycle('all'); setStatus('all'); setComponent('all'); setSearch(''); update({}); }} className="mt-5 rounded-full bg-[#c9a227] px-5 py-3 font-bold text-[#0b0f1a]">{tx(translator, { en: 'Reset filters', ar: 'إعادة المرشحات' })}</button></div>}<p className="mt-8 text-sm text-[#93a2b5]">{tx(translator, { en: 'Ended events remain visible with their trophy and story. Their play route is locked.', ar: 'تبقى الفعاليات المنتهية ظاهرة مع كأسها وقصتها. ويظل مسار اللعب مغلقاً.' })}</p></div>{selected && <LibraryDetail game={selected} lang={lang} translator={translator} onClose={() => setSelected(null)} />}</div>;
+  return <div className="min-h-screen bg-[#0b0f1a] px-5 py-8 text-[#f5f5f0] lg:px-10 lg:py-12">
+    <div className="mx-auto max-w-[1440px]">
+      <section className="relative overflow-hidden rounded-[32px] border border-[#34435f] bg-[#111a2c] p-7 shadow-[0_25px_80px_rgba(4,8,20,.35)] sm:p-10">
+        <div className="absolute -end-16 -top-24 h-72 w-72 rounded-full bg-[#c9a227]/20 blur-2xl" />
+        <div className="relative max-w-3xl">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-[#f6d66b]"><BookOpen className="h-4 w-4" /> {tx(translator, { en: 'Bunayn game library', ar: 'مكتبة ألعاب بنيان' })}</p>
+          <h1 className="mt-4 font-display text-5xl font-black leading-[.95] tracking-[-.05em] sm:text-7xl">{tx(translator, { en: 'Choose your next knowledge quest.', ar: 'اختر رحلة المعرفة التالية.' })}</h1>
+          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#b8c4d4]">{tx(translator, { en: 'Always-on worlds build skills through play. Partner events add limited stories and unique trophies.', ar: 'تبني العوالم المتاحة دائماً المهارات من خلال اللعب. وتضيف فعاليات الشركاء قصصاً وكؤوساً فريدة.' })}</p>
+        </div>
+      </section>
+      <section className="sticky top-[78px] z-20 mt-6 space-y-3 rounded-2xl border border-[#293850] bg-[#0f1728]/95 p-3 backdrop-blur-md" aria-label={tx(translator, { en: 'Game filters', ar: 'مرشحات الألعاب' })}>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <label className="block w-full lg:max-w-xs">
+            <span className="mb-1 block text-xs font-bold text-[#93a2b5]">{tx(translator, { en: 'Game category', ar: 'فئة اللعبة' })}</span>
+            <select value={category} onChange={(event) => { setCategory(event.target.value); update({ category: event.target.value, domain, status, q: search }); }} className="w-full rounded-full border border-[#35445f] bg-[#111a2c] px-4 py-2.5 text-sm font-bold text-[#f5f5f0] outline-none focus:border-[#c9a227]" data-testid="select-library-category">
+              {(['all', 'default', 'event'] as const).map((value) => <option key={value} value={value}>{categoryLabels[value][lang]}</option>)}
+            </select>
+          </label>
+          <label className="block w-full lg:max-w-xs">
+            <span className="mb-1 block text-xs font-bold text-[#93a2b5]">{tx(translator, { en: 'Domain', ar: 'المجال' })}</span>
+            <select value={domain} onChange={(event) => { setDomain(event.target.value); update({ category, domain: event.target.value, status, q: search }); }} className="w-full rounded-full border border-[#35445f] bg-[#111a2c] px-4 py-2.5 text-sm font-bold text-[#f5f5f0] outline-none focus:border-[#16a7bc]" data-testid="select-library-domain">
+              <option value="all">{tx(translator, { en: 'All domains', ar: 'كل المجالات' })}</option>
+              {gameDomains.map((item) => <option key={item.slug} value={item.slug}>{item.name[lang]}</option>)}
+            </select>
+          </label>
+          <label className="relative ms-auto block w-full lg:max-w-xs">
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#93a2b5]" />
+            <input value={search} onChange={(event) => { setSearch(event.target.value); update({ category, domain, status, q: event.target.value }); }} placeholder={tx(translator, { en: 'Search title or tagline', ar: 'ابحث في العنوان أو الوصف' })} className="w-full rounded-full border border-[#35445f] bg-[#111a2c] py-2.5 pe-4 ps-9 text-sm text-[#f5f5f0] outline-none placeholder:text-[#718097] focus:border-[#c9a227]" data-testid="input-library-search" />
+          </label>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <Filter className="h-4 w-4 text-[#f6d66b]" />
+          <span className="font-bold text-[#93a2b5]">{tx(translator, { en: 'Status', ar: 'الحالة' })}</span>
+          {['all', 'available', 'live', 'ended'].map((value) => <button type="button" key={value} onClick={() => { setStatus(value); update({ category, domain, status: value, q: search }); }} className={`rounded-full border px-3 py-1.5 font-bold ${status === value ? 'border-[#c9a227] bg-[#302a16] text-[#f6d66b]' : 'border-[#35445f] text-[#b8c4d4]'}`}>{value === 'all' ? tx(translator, { en: 'Any', ar: 'الكل' }) : value === 'available' ? tx(translator, { en: 'Available', ar: 'متاحة' }) : value === 'ended' ? tx(translator, { en: 'Ended', ar: 'انتهت' }) : tx(translator, { en: 'Live', ar: 'مباشرة' })}</button>)}
+        </div>
+      </section>
+      <div className="mt-8 flex items-end justify-between gap-4">
+        <div><p className="text-sm font-bold text-[#f6d66b]">{categoryLabels[category]?.[lang] ?? categoryLabels.all[lang]}</p><h2 className="mt-1 font-display text-3xl font-bold">{filtered.length} {tx(translator, { en: 'worlds ready', ar: 'عوالم جاهزة' })}</h2></div>
+        <span className="hidden text-sm text-[#93a2b5] sm:block">{tx(translator, { en: 'Content and rewards are defined in JSON.', ar: 'المحتوى والمكافآت معرفة في JSON.' })}</span>
+      </div>
+      {filtered.length ? <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((game) => <LibraryGameCard key={game.id} game={game} lang={lang} translator={translator} worlds={worlds} onOpen={() => setSelected(game)} />)}</div> : <div className="mt-5 rounded-[26px] border border-dashed border-[#445570] bg-[#111a2c] p-12 text-center"><CircleHelp className="mx-auto h-10 w-10 text-[#f6d66b]" /><h2 className="mt-4 font-display text-2xl font-bold">{tx(translator, { en: 'No games match yet', ar: 'لا توجد ألعاب مطابقة بعد' })}</h2><button type="button" onClick={() => { setCategory('all'); setDomain('all'); setStatus('all'); setSearch(''); update({}); }} className="mt-5 rounded-full bg-[#c9a227] px-5 py-3 font-bold text-[#0b0f1a]">{tx(translator, { en: 'Reset filters', ar: 'إعادة المرشحات' })}</button></div>}
+      <p className="mt-8 text-sm text-[#93a2b5]">{tx(translator, { en: 'Ended events remain visible with their trophy and story. Their play route is locked.', ar: 'تبقى الفعاليات المنتهية ظاهرة مع كأسها وقصتها. ويظل مسار اللعب مغلقاً.' })}</p>
+    </div>
+    {selected && <LibraryDetail game={selected} lang={lang} translator={translator} onClose={() => setSelected(null)} />}
+  </div>;
 }
 
 export function ProgressPage({ lang, translator, profile, summary }: { lang: PageLang; translator: Translator; profile: PageProfile | null; summary: PageSummary }) {
