@@ -1,0 +1,429 @@
+# Replit build prompt — "Games" tab
+
+**How to use this:** paste everything below the line into the Replit Agent. It is written as a single build instruction.
+
+Two things override everything else in this document. **First: the new pages must look like the rest of the site.** Nothing here introduces a new visual language — Section 2 tells the agent to read the existing theme and build inside it. **Second: the content in Sections 4 and 5 is final copy.** Use it verbatim; do not rewrite, shorten or paraphrase it.
+
+---
+
+## 1. What to build
+
+Add a new top-level tab called **Games** to the existing site. It contains **one main page** and a **sub-page for every item on it**, plus a request form.
+
+| Route | What it is |
+|---|---|
+| `/games` | **The main page.** Two sections on a single scrolling page: Section A, the seven game categories; Section B, the five domains and three indicator tiers. Each item is a card that links to its own sub-page. |
+| `/games/categories/:slug` | Sub-page for one of the seven categories |
+| `/games/domains/:slug` | Sub-page for one of the five domains |
+| `/games/tiers` | Sub-page for the three indicator tiers and the three merge operations |
+| `/games/request` | Request Game Development — a form that submits into a review workflow |
+
+Navigation:
+- Add **Games** to the main nav. Its sub-menu has two entries only: *Framework* (`/games`) and *Request a game* (`/games/request`). The category and domain sub-pages are reached by clicking cards on the main page, not from the nav.
+- The main page has a sticky in-page section switcher — *Game Categories* / *Domains & Indicators* — that scrolls to each section and reflects the current section as you scroll. On mobile it collapses into two full-width buttons at the top.
+- Every sub-page shows a breadcrumb: `Games / Game Categories / Role-based`, with a back link to the relevant section of `/games`.
+- Sub-pages carry previous/next links to the adjacent item in their set, so someone can read all seven categories without returning to the index each time.
+
+**On the main page, each card shows a summary only** — name, the one-line test or headline indicator, and one sentence. The full content in Sections 4 and 5 lives on the sub-pages. The main page should be scannable in under a minute.
+
+## 2. Theme — inherit, do not invent
+
+**These pages must be visually indistinguishable from the rest of the site.** A visitor should not be able to tell the Games tab was built separately. Before writing any markup:
+
+1. **Read the existing theme first.** Open the project's theme configuration — `tailwind.config`, the global stylesheet, the CSS custom properties on `:root`, or whatever the project uses — and list the tokens already defined for colour, spacing, radius, shadow, font family and font scale.
+2. **Find an existing page with a similar shape** — any page in the project with a card grid, a detail page and a form — and copy its layout structure, container widths, heading hierarchy and vertical rhythm.
+3. **Reuse existing components.** Buttons, cards, inputs, selects, radios, file uploads, breadcrumbs, tabs, badges, modals and toasts must come from the project's existing component library. Do not build new versions of components that already exist. If a needed component genuinely does not exist, build it in the style of the closest one that does.
+
+Then build these pages using **only** tokens and components that already exist.
+
+Hard rules:
+- **Do not add new colours, fonts, radii or shadows** to the theme. No new hex values anywhere in the new code — every colour reference is an existing token.
+- **Do not change any global or shared style.** All new CSS is scoped to the new pages.
+- Match the existing page header pattern, container width and section spacing exactly.
+- Dark mode, if the site has it, must work on the new pages.
+- Match the existing site's language and direction handling. If the site is bilingual or RTL, the new pages follow the same mechanism — use the existing i18n layer and add keys to it rather than hard-coding strings. If the site is currently English-only, keep the new copy in the same place the rest of the copy lives.
+
+**Distinguishing the seven categories and five domains.** These need to be told apart at a glance, but not by importing a new palette. In order of preference:
+1. If the theme already has a set of accent or category colours, use those.
+2. If it has one accent colour, differentiate by **icon plus label** and use tints of the existing neutral scale for the cards.
+3. Only if neither works, derive a small set from the theme's existing primary by varying hue within the same saturation and lightness family, add them to the theme as named tokens, and flag them for review rather than scattering hex values through components.
+
+Whichever route is taken, **the icon is the primary identifier and colour is secondary** — one icon per category and per domain, used consistently everywhere that item appears. Never rely on colour alone to distinguish items.
+
+## 3. Stack and accessibility
+
+Match whatever the project already uses for routing, data fetching, state and forms — do not introduce a new library where one is already in place. If the project has no form validation library, use Zod with a schema shared between client and server.
+
+Accessibility, matching the standard the rest of the site already meets or exceeding it: keyboard navigable throughout, visible focus states from the existing theme, labelled form controls, errors linked to their inputs with `aria-describedby`, and WCAG AA contrast on every new surface.
+
+---
+
+## 4. Main page, Section A — Game Categories
+
+**Section heading:** Game Categories
+**Section intro:** "Every game we build belongs to one of seven categories. The category is decided by the game's core mechanic, and it determines what kind of evidence the game can produce. Overlaps are recorded as secondary tags, not second categories."
+
+**On `/games`:** a grid of seven cards. Each card shows the icon, the category name, its *test* question, and the first sentence of "How it works". The whole card is a link to `/games/categories/:slug`.
+
+**On each sub-page `/games/categories/:slug`:** breadcrumb, icon and name, the test question, the sub-types as small labels, then four sections in this order — **How it works**, **What the player gains**, **What data is collected**, and a footer with previous/next links to the adjacent categories.
+
+Slugs: `role-based`, `scenario-based`, `simulation-strategy`, `puzzle`, `mini-games`, `creative`, `exploration`.
+
+Use this content exactly.
+
+---
+
+### 1. Role-based — icon: theatre masks
+**The test:** Is the player someone else?
+**Sub-types:** Historical figure · Professional role · Perspective-switching
+
+**How it works:** The player is handed a character and a brief — a merchant in a historical port, an engineer on a build site — and sees the world only through that person's eyes and knowledge. A session runs 10 to 15 minutes: read the situation, speak with two or three characters, make the calls the role requires, then watch the consequences play out and learn how the real person acted.
+
+**What the player gains:** Perspective-taking and empathy. An understanding that decisions are shaped by the information available at the time, not by hindsight. Practice at reasoning inside constraints that are not their own.
+
+**What data is collected:** Decisions made from a fixed viewpoint rather than the player's own · tone and word choice when speaking as the character · whether the role's constraints are respected or hindsight leaks in · handling of authority, subordinates and disagreement · value consistency when the role changes.
+
+---
+
+### 2. Scenario-based — icon: branching path
+**The test:** Is the choice set closed?
+**Sub-types:** Limited-choice dilemma · Card-based decision · Timed crisis
+
+**How it works:** A situation opens with a short setup and three or four options — never more, and never a free-text answer. The player picks, the story moves, and the option not taken is gone for good. A session is eight to twelve of these strung together, closing with a summary of the path taken next to the paths that were available.
+
+**What the player gains:** Judgement under constraint. A concrete sense that choices carry consequences and cannot be undone. Practice at weighing competing pressures when no option is fully satisfying.
+
+**What data is collected:** Which branch, out of exactly which alternatives · time to first move and time to commit · consistency across matched dilemmas planted far apart in the session · whether information is gathered before deciding · reasoning under competing pressures.
+
+---
+
+### 3. Simulation / Strategy — icon: chess knight
+**The test:** Is a system managed over time?
+**Sub-types:** Resource allocation · Turn-based · Tower defense · Tycoon
+
+**How it works:** The player is given a system to run — a farm, a city block, a small budget — and a fixed number of turns. Each turn they allocate what they have, press next, and watch the system respond. Nothing resets, so turn nine is shaped by turn two. Sessions are longer, 20 to 30 minutes, and end in a state rather than a score.
+
+**What the player gains:** Systems thinking. An understanding of trade-offs, delayed consequences and cause and effect across time. Planning further ahead than the next move.
+
+**What data is collected:** Trade-offs made and what gets sacrificed first · short-term versus long-term weighting · risk appetite as the system state worsens · recovery behaviour after a bad position · shortcuts taken when a score is the visible metric.
+
+---
+
+### 4. Puzzle — icon: puzzle piece
+**The test:** Is there one correct answer?
+**Sub-types:** Logic puzzle · Escape room · Mystery / detective · Spatial
+
+**How it works:** One screen, one correct answer, and everything needed to reach it already visible. The player manipulates, tests and retries as often as they like; hints exist but have to be asked for. A session is a ladder of five to eight puzzles that get harder, tuned so that almost every player stalls at least once before the end.
+
+**What the player gains:** Structured problem solving and persistence. The experience of being stuck and working through it, which is where most of the learning in this category sits.
+
+**What data is collected:** Time to solve, number of attempts and hint usage · solution path, systematic testing versus brute force · persistence after repeated failure · hypothesis formation and revision from evidence · confidence versus correctness at the moment of committing.
+
+---
+
+### 5. Mini games — icon: stopwatch
+**The test:** Short, scored, repeatable?
+**Sub-types:** Quiz · Word · Matching · Sorting · Sequencing · Spot-the-difference · Arcade
+
+**How it works:** Sixty seconds each: answer as many as you can, match the pairs, put the steps in order, tap what changed. Score and personal best appear the moment the timer stops, and replay is one tap away. These sit between the longer activities to break the rhythm, and one is placed at the very start of a session to establish a baseline for that player.
+
+**What the player gains:** Fluency and recall through low-stakes repetition. Confidence, because failure costs seconds rather than progress.
+
+**What data is collected:** Knowledge retention and topic-level gaps · speed-accuracy trade-off and where the player sits on it · working memory span and recall after a delay · which items get grouped or ordered wrongly, the misconception map · reaction time, fatigue curve and rate of improvement.
+
+**Note for the page:** flag that this category also carries the calibration task — the short first-login exercise from which touch accuracy and simple reaction time are estimated, so that every later timing-based measure is read against that player's own baseline rather than confounded with device and motor competence.
+
+---
+
+### 6. Creative — icon: paintbrush
+**The test:** Does the player produce something?
+**Sub-types:** Sandbox / building · Storytelling · Design & customisation
+
+**How it works:** The player gets a canvas and a set of parts, a loose brief, and no correct answer. They build, rearrange, undo and save at their own pace. Sessions are open-ended and end when the player decides they are finished. Saved pieces can be reopened in a later session, and shown to others if the player chooses to share them.
+
+**What the player gains:** Self-expression and ownership. Design thinking: setting a goal, trying something, and revising it. Pride in an artefact that is theirs.
+
+**What data is collected:** Originality and willingness to depart from the template · goals the player sets when none are given · iteration behaviour — refine, restart or abandon · themes and values projected into what they author · time invested with no external reward on offer.
+
+---
+
+### 7. Exploration — icon: compass
+**The test:** Does the player find something?
+**Sub-types:** Adventure / quest with map · Scavenger & treasure hunt
+
+**How it works:** A map holds far more places than any one session needs. The player chooses where to go and what to open, and some content only becomes reachable once something else has been found. Nothing is compulsory and nothing is ever marked as missed, so the route through the map belongs entirely to the player.
+
+**What the player gains:** Curiosity and self-directed learning. Search and clue-interpretation skills. The experience of discovery being earned rather than handed over.
+
+**What data is collected:** Route efficiency — explore widely or head straight for the objective · completionism and how much optional content is opened · clue interpretation and search strategy · doors not opened and documents not read, absence as data · real-world movement and collaboration where the game is physical or AR-based.
+
+---
+
+**Closing note to render at the bottom of the page:** "No single category produces evidence across every dimension. A finished game usually layers several: one category as the core loop, a second as the framing, and short mini games between beats to give a baseline. The category recorded against a game is the core loop."
+
+---
+
+## 5. Main page, Section B — Domains & Indicators
+
+**Section heading:** Domains and Indicators
+**Section intro:** "Games produce evidence. Evidence becomes an indicator only when it is organised into a domain and built to a defined tier of evidential strength. This section sets out the five domains we work across, the three tiers of indicator production, and the three operations by which multiple sources are combined."
+
+### B1 — The five domains
+
+**On `/games`:** five cards. Each shows the icon, the domain name, and its headline indicator. The whole card links to `/games/domains/:slug`.
+
+**On each sub-page `/games/domains/:slug`:** breadcrumb, icon and name, then — **What it covers**, **Headline indicator**, **Primary game evidence**, **Sources required beyond games**, any constraint noted below, and previous/next links.
+
+Slugs: `literacy`, `activities`, `environment`, `developmental-skills`, `social-relations`.
+
+Use this content exactly.
+
+**1. Literacy**
+Covers decoding, fluency, comprehension and numeracy in both Arabic and English. Arabic requires its own item design rather than translation, because reading acquisition in Arabic is shaped by diglossia and by an orthography in which letters change shape by position and short vowels are frequently omitted. Arabic and English decoding are modelled as separate correlated constructs, not one literacy score.
+*Headline indicator:* proficiency rate — the proportion of learners at or above a benchmark.
+*Primary game evidence:* accuracy, fluency, error profile, response latency, hint use.
+*Beyond games:* teacher rating; student anxiety and enjoyment; parent report on home literacy context.
+
+**2. Activities**
+Covers movement, sport, active transport, hobbies and sedentary behaviour. This is the domain where game telemetry alone is least adequate, because the behaviour of interest happens off screen. Self-report overestimates activity substantially and the effect worsens with younger children, so the posture is combination rather than substitution: questionnaires establish activity type and weekly distribution, objective measurement quantifies volume.
+*Headline indicator:* guideline adherence rate, corrected for reporting bias.
+*Primary game evidence:* in-game logging and challenge completion only.
+*Beyond games:* sensor or accelerometer data; student recall; parent enrolment and access data.
+
+**3. Environment**
+Covers food consumption, waste and recycling, water and energy use, climate awareness and pro-environmental behaviour. Reported as three named subscales — knowledge, disposition and behaviour — rather than one number, because an environmentally aware child is not thereby environmentally literate.
+*Headline indicator:* environmental literacy composite. The most decision-relevant derived indicator is the knowledge–action gap: the standardised difference between the knowledge and behaviour subscales, identifying where instruction has succeeded and behaviour has not followed.
+*Primary game evidence:* sorting accuracy, choice under trade-off, hesitation.
+*Beyond games:* student attitudes; parent household practice; entity infrastructure records.
+
+**4. Developmental skills**
+Covers problem solving, persistence, critical thinking, creativity, self-regulation, collaboration and digital literacy. This is the domain where process data from game logs is the primary evidence source rather than a supplement, because these constructs live in how a task is approached rather than in whether it is answered correctly.
+*Headline indicator:* skills composite.
+*Primary game evidence:* vary-one-thing-at-a-time strategy rate, planning latency before first action, redundant-action rate, persistence after first failure, failure recovery rate, and creativity decomposed into fluency, flexibility and statistical originality.
+*Beyond games:* teacher ratings that are behaviourally anchored rather than adjectival; student self-regulation scale.
+
+**5. Social relations**
+Covers peer acceptance, friendship, cooperation, bullying involvement, prosocial behaviour and social cognition. Carries the highest evidential density and the highest ethical risk in the architecture.
+*Headline indicator:* social connectedness rate.
+*Primary game evidence:* emotion recognition, prosocial choice, cooperation.
+*Beyond games:* peer nomination; student loneliness; teacher and counsellor observation.
+*Constraint to display prominently on this card:* outputs in this domain are reported as referral rates requiring professional review, never as diagnoses or labels.
+
+Render a closing line under the five: "The domains are containers, not a closed list. A new construct is added inside the domain whose evidence needs it matches, and inherits the same integration machinery — which is what keeps indicators from different projects comparable."
+
+### B2 — The three tiers of indicator production
+
+**On `/games`:** a compact three-band summary showing tier name, sources and what each is appropriate for, with a "Read more" link to `/games/tiers`.
+
+**On `/games/tiers`:** the full content below — the comparison table, the supporting copy for each tier, the operating-rule callout, and the three merge operations from B3.
+
+Render the tiers as three stacked bands, visibly increasing in strength, with a note that **the tiers are cumulative** — each includes the sources of the tier below and adds one class of evidence.
+
+| | Tier 1 | Tier 2 | Tier 3 |
+|---|---|---|---|
+| **Name** | Game-only | Game + self-report | Full multi-source integration |
+| **Sources** | Game telemetry | Game telemetry; student self-report | Game telemetry; self-report; proxy report; administrative data |
+| **Indicator class** | Capability and process | Explained capability; first discrepancy indicators | Verified, opportunity-adjusted, cross-context indicators |
+| **Appropriate for** | Adaptive difficulty; population monitoring; screening candidates for further assessment | Programme design; identifying motivational barriers; class-level review | Individual case review; equity analysis; policy indicators; referral |
+| **Not appropriate for** | Any decision about an identified child | Safeguarding flags; individual clinical referral | Autonomous action without human review |
+
+Supporting copy for each tier:
+
+- **Tier 1** establishes what a child can do, with an objectivity and continuity no survey achieves, and can be recomputed after every session at negligible cost. Its limitation is interpretive: it establishes a level without establishing a cause, and remains exposed to the risk that the measure reflects game proficiency or device familiarity rather than the intended construct. Two internal controls are mandatory at this tier — a short calibration task at first login, and disengagement filtering that identifies and down-weights rapid guessing.
+- **Tier 2** adds student self-report delivered inside the game frame as two or three in-narrative check-ins per session, never as an interrupting questionnaire. Telemetry establishes capability; self-report supplies the motivational and attitudinal layer that explains it. A child with low literacy proficiency and high reported anxiety presents a different problem from a child with the same proficiency and no anxiety, and only the second source separates them.
+- **Tier 3** adds proxy report from adults who observe the child where the game cannot reach — teachers, parents, counsellors, programme managers — and administrative data already held by the collaborating entity. Administrative data is distinctive because it imposes no new burden, is often longitudinal, and records *opportunity* rather than behaviour: a low pro-environmental behaviour score in a school with no recycling infrastructure measures the school, not the child. Tier 3 is the only tier at which cross-context verification is possible, and is therefore required for any indicator bearing consequences for an identified child.
+
+**Operating rule to render as a highlighted callout:** No indicator with consequences for an identified child escalates on a single source. Convergence of at least two independent sources is required before an indicator is forwarded for professional action, and a qualified professional reviews it before any action is taken.
+
+### B3 — The three merge operations
+
+Lives on `/games/tiers`, below the tiers. Three cards. "Every multi-source indicator we produce is an instance of one of these three."
+
+| Operation | Definition | Representative indicator |
+|---|---|---|
+| **Composite** | Weighted mean of sources standardised within cohort, weights set by reliability rather than convenience | Environmental literacy composite; developmental skills composite |
+| **Adjustment** | Residual of the indicator regressed on a confound measured by another source | Anxiety-adjusted literacy ability; opportunity-adjusted environmental behaviour; corrected activity volume |
+| **Discrepancy** | Standardised difference between two sources, interpreted as a construct in its own right | Knowledge–action gap; self-insight index; performance discrepancy between game ability and teacher rating |
+
+Add a short explanatory line: "Disagreement between sources is modelled rather than averaged away. Informants agree only weakly about the same child, and that disagreement carries systematic information about the contexts in which behaviour occurs — the most actionable finding is frequently in the space between two sources rather than in either one."
+
+---
+
+## 6. Page — `/games/request`
+
+**Heading:** Request Game Development
+**Intro:** "Submit a request and it enters review. You will be notified at each stage. Fields marked required must be completed before the request can be submitted."
+
+### Form fields
+
+**Section 1 — Requester**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| Full name | text | yes | |
+| Email | email | yes | validate format |
+| Entity / department | text | yes | |
+| Phone | tel | no | |
+
+**Section 2 — The game**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| Game name | text | yes | max 120 chars |
+| Game description | textarea | yes | min 100 chars, max 2000, live character counter. Placeholder: "What happens in the game, who plays it, and what a session looks like from start to finish." |
+| Game category | single-select | yes | The seven from Section A. Show the category's "test" question as helper text under the selection, and a link to that category's sub-page. |
+| Secondary category tags | multi-select | no | Same seven list, excluding the one chosen as primary |
+| Target age group | select | yes | 4–6, 7–9, 10–12, 13–15, 16–18 |
+| Language | multi-select | yes | Arabic, English |
+| Sample or reference | URL field + file upload | no | Accept a link and/or a file (PDF, PNG, JPG, PPTX, MP4, max 25MB). Helper text: "A link or file showing something close to what you have in mind — an existing game, a sketch, a screenshot, a deck." |
+
+**Section 3 — What it must measure**
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| Domain | single-select | yes | The five from Section B. Selecting one shows that domain's headline indicator as helper text, and links to that domain's sub-page. |
+| Indicator needed | textarea | yes | min 50 chars. Helper text: "What do you need to be able to say at the end? Name the indicator if you have one, or describe the decision it has to support." |
+| Existing indicator or new | radio | yes | "Existing indicator in this domain" / "New construct to be defined" |
+
+**Section 4 — Data collection tier**
+Single-select, required. Present as three selectable cards, not a dropdown. Each card shows tier name, sources included, and what it is appropriate for. Display the cumulative note: "Tiers are cumulative — Tier 3 includes everything in Tiers 1 and 2."
+
+- Tier 1 — Game-only
+- Tier 2 — Game + student self-report
+- Tier 3 — Full multi-source (game, self-report, proxy report, administrative data)
+
+**Conditional notices — show inline when triggered, do not block submission:**
+- If Tier 3 is selected: "Tier 3 requires a data-sharing agreement with your entity covering each source class to be linked, and consent that is specific to linkage rather than to collection alone. Review will confirm this is in place."
+- If domain = Social relations: "Indicators in this domain are reported as referral rates requiring professional review, never as diagnoses. Any indicator that could trigger a safeguarding response requires Tier 3 and convergence of at least two independent sources."
+- If Tier 1 is selected together with an indicator described as being about individual children: "Tier 1 indicators are not appropriate for decisions about an identified child. Consider Tier 2 or Tier 3, or confirm this indicator is for population monitoring only."
+
+**Section 5 — Scope**
+Single-select, required, presented as two cards:
+- **Data collection only** — "We build the game and deliver the validated event stream and calculated features. Your team performs the analysis."
+- **Data collection and analysis** — "We build the game, run the analytics pipeline, produce the indicator against your specification, and deliver it with documentation of its derivation and limitations."
+
+**Section 6 — Timing**
+| Field | Type | Required |
+|---|---|---|
+| Target delivery date | date | no |
+| Notes for the review team | textarea | no |
+
+### Form behaviour
+- Validate on blur and again on submit. Show all errors at once on failed submit and scroll to the first one.
+- **Save as draft** button — persists without validation, returns the user to a list of their drafts.
+- Prevent double submission; disable the submit button while the request is in flight.
+- On success: show a confirmation screen with the generated reference number, a summary of what was submitted, and a link to track the request. Send a confirmation email to the requester and a notification to the review team.
+- Requests are visible to their requester at `/games/request/:reference` with current status and a timeline of what has happened.
+
+---
+
+## 7. Data model
+
+```
+game_requests
+  id                  uuid pk
+  reference           text unique          -- e.g. BUN-GR-2026-0142
+  status              enum                 -- see Section 8
+  requester_name      text
+  requester_email     text
+  requester_entity    text
+  requester_phone     text nullable
+  game_name           text
+  game_description    text
+  category            enum                 -- role_based | scenario_based | simulation_strategy |
+                                           -- puzzle | mini_games | creative | exploration
+  secondary_tags      enum[]
+  age_group           enum
+  languages           enum[]               -- ar | en
+  sample_url          text nullable
+  sample_file_path    text nullable
+  domain              enum                 -- literacy | activities | environment |
+                                           -- developmental_skills | social_relations
+  indicator_needed    text
+  indicator_is_new    boolean
+  tier                enum                 -- tier_1 | tier_2 | tier_3
+  scope               enum                 -- collection_only | collection_and_analysis
+  target_date         date nullable
+  notes               text nullable
+  created_at          timestamptz
+  updated_at          timestamptz
+  submitted_at        timestamptz nullable
+
+game_request_events
+  id             uuid pk
+  request_id     uuid fk
+  from_status    enum nullable
+  to_status      enum
+  actor_id       uuid nullable
+  comment        text nullable
+  created_at     timestamptz
+```
+
+Every status change writes a row to `game_request_events`. The timeline shown to the requester is built from that table.
+
+## 8. Workflow
+
+Statuses, in order:
+
+```
+draft → submitted → under_review → ┬→ approved → in_development → delivered
+                                   ├→ info_requested → (back to under_review)
+                                   └→ declined
+```
+
+- **draft** — saved but not submitted. Editable by the requester. Not visible to reviewers.
+- **submitted** — locked for editing. Reference number generated. Review team notified.
+- **under_review** — a reviewer has picked it up. Reviewer checks: is the category right for the mechanic described, does the tier match the consequence attached to the indicator, is the indicator specified precisely enough that gameplay behaviour would be valid evidence for it, and for Tier 3, is a data agreement in place.
+- **info_requested** — reviewer needs something. The requester can edit and resubmit; a comment is required from the reviewer and shown in the timeline.
+- **approved** — moves into the development queue. Requester notified.
+- **declined** — a reason is required and shown to the requester.
+- **in_development** / **delivered** — status updated manually by the team.
+
+Notifications by email on: submitted (to reviewers and requester), info_requested, approved, declined, delivered.
+
+## 9. Admin / reviewer view
+
+Route `/admin/game-requests`, behind existing auth and restricted to a reviewer role.
+
+- Table of all requests: reference, game name, requester entity, domain, category, tier, scope, status, submitted date. Sortable, and filterable by status, domain, category and tier.
+- Detail view showing the full submission, the sample link or file, and the event timeline.
+- Actions: change status, add a comment, assign a reviewer. Every action writes a `game_request_events` row.
+- Summary counts by status at the top.
+
+## 10. Acceptance checklist
+
+**Theme (check these first)**
+- [ ] No new hex values, font families, radii or shadows appear anywhere in the new code
+- [ ] No global or shared style was modified
+- [ ] Buttons, inputs, selects, radios, cards and breadcrumbs are the project's existing components, not new ones
+- [ ] Placed next to an existing page, the new pages are visually indistinguishable in header, container width, type scale and spacing
+- [ ] Dark mode works, if the site has it
+- [ ] Language and direction handling matches the rest of the site
+
+**Structure**
+- [ ] Games appears in main nav with two entries: Framework and Request a game
+- [ ] `/games` renders both sections on one page with a working sticky section switcher
+- [ ] Cards on `/games` show summaries only; full content lives on sub-pages
+- [ ] Seven category sub-pages and five domain sub-pages resolve at their slugs
+- [ ] `/games/tiers` renders the tier comparison and the three merge operations
+- [ ] Breadcrumbs and previous/next links work on every sub-page
+
+**Content**
+- [ ] All seven categories render with the exact copy in Section 4
+- [ ] All five domains and all three tiers render with the exact copy in Section 5
+- [ ] Each category and each domain has its own icon, used consistently on the main page, the sub-page and anywhere else it appears
+- [ ] No item is distinguished by colour alone
+
+**Request form**
+- [ ] Validates, saves drafts, and submits
+- [ ] Conditional notices fire correctly for Tier 3, social domain, and Tier 1
+- [ ] A reference number is generated and shown on submission
+- [ ] Status changes write to the events table and appear on the requester's timeline
+- [ ] Admin list filters by status, domain, category and tier
+
+**General**
+- [ ] Every page works at 375px width and passes WCAG AA contrast
+- [ ] Keyboard navigable throughout with visible focus states
+
+## Two things to confirm before building
+
+1. **Category-to-domain mapping.** The form lets a requester pick any category with any domain, which is correct — most categories can serve most domains. But if you want the form to *suggest* categories once a domain is chosen, a reasonable starting mapping would be: literacy → puzzle, mini games; activities → scenario-based, exploration, simulation; environment → simulation, scenario-based, mini games; developmental skills → puzzle, simulation, creative; social relations → role-based, scenario-based. This is a starting point for discussion, not something the study specifies — confirm it before wiring it in.
+
+2. **Whether the tier field should be single or multi select.** It is specified as single-select above because the tiers are cumulative in the study — choosing Tier 3 already means Tiers 1 and 2 are included. If you would rather requesters tick the individual source classes they want, that is a small change to the field and the enum.
