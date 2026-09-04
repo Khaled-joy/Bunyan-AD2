@@ -112,7 +112,7 @@ export const gameDomains: GameDomain[] = [
     beyond: c('teacher rating; student anxiety and enjoyment; parent report on home literacy context.', 'تقييم المعلم؛ قلق الطالب واستمتاعه؛ تقرير الوالد عن سياق القراءة والكتابة في المنزل.'),
   },
   {
-    slug: 'activities', icon: Activity, name: c('Activities', 'الأنشطة'),
+    slug: 'activities', icon: Activity, name: c('Health', 'الصحة'),
     covers: c('Covers movement, sport, active transport, hobbies and sedentary behaviour. This is the domain where game telemetry alone is least adequate, because the behaviour of interest happens off screen. Self-report overestimates activity substantially and the effect worsens with younger children, so the posture is combination rather than substitution: questionnaires establish activity type and weekly distribution, objective measurement quantifies volume.', 'تشمل الحركة والرياضة والتنقل النشط والهوايات والسلوك الخامل. هذا هو المجال الذي تكون فيه بيانات اللعبة وحدها أقل كفاية، لأن السلوك المعني يحدث خارج الشاشة. يبالغ التقرير الذاتي في تقدير النشاط بدرجة كبيرة ويزداد ذلك لدى الأطفال الأصغر، لذلك يكون النهج هو الجمع لا الاستبدال: تحدد الاستبيانات نوع النشاط وتوزيعه الأسبوعي، ويقيس القياس الموضوعي حجمه.'),
     headline: c('guideline adherence rate, corrected for reporting bias.', 'معدل الالتزام بالإرشادات، مصححاً لتحيز الإبلاغ.'),
     evidence: c('in-game logging and challenge completion only.', 'التسجيل داخل اللعبة وإكمال التحديات فقط.'),
