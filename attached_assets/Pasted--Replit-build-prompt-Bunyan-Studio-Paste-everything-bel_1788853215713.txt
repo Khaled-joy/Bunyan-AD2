@@ -1,0 +1,207 @@
+# Replit build prompt — Bunyan Studio
+
+Paste everything below the line into Replit Agent. Replace the two bracketed items first: your real brand hex values, and your logo file.
+
+---
+
+Build a web app called **Bunyan Studio**. It is the game-authoring tool for Bunyan Abu Dhabi, a behavioural analytics platform for children aged 6 to 17 in the UAE. Bunyan Abu Dhabi commissions games; Bunyan Studio is where those games get built.
+
+## The one idea the whole app exists to enforce
+
+A creator chooses the world, the characters, the objects, and how everything looks — including the size and colour of every piece. A creator can **never** change what a piece records about a child's behaviour. Every piece has a sealed list of events with fixed field names, types and units.
+
+If you find yourself building a way for a creator to define a custom event, a custom field, or a free-text rule name, stop. That breaks the product.
+
+## Stack
+
+- Next.js (App Router) with TypeScript
+- Tailwind CSS
+- Zustand for editor state
+- `@dnd-kit/core` for drag and drop, working with both mouse and touch
+- SQLite via Prisma for games, briefs and orders
+- No auth in this build; stub a single studio user
+
+## Brand tokens
+
+Put every colour, font and radius in one `tokens.css` file as CSS custom properties so the whole app re-skins from one place.
+
+```
+--ink:#10243A;  --ink-soft:#4A5D72;  --ink-faint:#8A99AA;
+--paper:#E9EEF2; --surface:#FFFFFF; --line:#CBD6E0; --line-soft:#E2E9EF;
+--blue:#2D6BD4; --amber:#E9A320; --coral:#DE5B45; --teal:#1D9E85; --violet:#6B5BC4;
+--locked:#1B3350; --ok:#1D9E85; --warn:#C9741A;
+```
+
+[REPLACE WITH REAL BUNYAN AD HEX VALUES]
+
+Fonts: Bricolage Grotesque for headings, IBM Plex Sans for interface text, IBM Plex Mono **only** for the event console.
+
+Visual language: pale drafting-paper ground, deep navy ink, and pieces drawn as building blocks with a small stud on the top edge via a `::before` pseudo-element. Anything sealed is solid navy with no hover state. Anything editable is coloured. Do not decorate beyond that.
+
+Logo: [ATTACH BUNYAN AD LOGO]
+
+## Domains
+
+Games are categorised by domain. Seed these eight and make them editable in an admin table later:
+
+Civic life · Health and wellbeing · Safety · Digital citizenship · Heritage and culture · Science and discovery · Money and resources · Teamwork
+
+## Behaviours
+
+Five, fixed: Responsibility, Respect, Participation, Courage, Problem solving.
+
+## Screen 1 — Home
+
+In this order, top to bottom.
+
+**Hero.** Headline, one paragraph, and two buttons: "Create a game" and "See your games". No carousel, no stats counter.
+
+**How a game gets built.** A six-stage strip:
+1. Request arrives — Bunyan Abu Dhabi sends the topic, age group and behaviours it wants evidence of.
+2. Write the brief — pick the domain, describe the game, set build and art durations.
+3. Assemble the world — drag in a map, characters and objects; size and colour them.
+4. Say what each action must tell you — assign behaviours to individual pieces.
+5. Run a session — play it through and read the recording line by line.
+6. Send for review — Bunyan checks the recording covers the request, then publishes.
+
+**What you decide, and what you don't.** Two panels side by side. Left, white: the map, the characters, the objects, size and colour of every piece, names and instructions in Arabic or English, how many / how hard / how long, and which behaviour each action must evidence. Right, navy, mono font: the full fixed event list — `session.start`, `session.end`, `movement.sample`, `object.pick`, `object.place`, `object.use`, `prompt.presented`, `decision.made`, `zone.enter`, `zone.exit`, `npc.approach`, `npc.interact`, `rule.violation`, `self.correction`, `turn.wait`, `turn.skip`, `hint.request`, `task.complete`, `task.fail`.
+
+**Requests from Bunyan Abu Dhabi.** Cards for incoming orders, each with an amber left border, the requesting body, the title, domain, age group, the behaviours wanted, the due date, and an "Open brief" button that prefills the brief form and scrolls to it. Seed three orders across different domains.
+
+**Start a new game.** The brief form. Fields, all required unless noted:
+- Game name
+- Domain (select from the eight)
+- What happens in the game (textarea, minimum 20 characters, with a helper line asking for two or three sentences)
+- Age group: 6 to 8 / 9 to 12 / 13 to 17
+- Language: Arabic and English / Arabic only / English only
+- Behaviours this game must give evidence of (multi-select chips, at least one)
+- Build time in weeks (number, 1–26)
+- Art and audio time in weeks (number, 1–26)
+- What this game needs produced (multi-select chips: character art, map art, object art, voice-over, music and sound, Arabic copy, English copy, motion and animation, accessibility pass)
+
+Validation errors appear inline in `--warn` under the form, naming the specific field. On submit, save the game and go straight into the studio.
+
+**Your games.** Cards for every saved game showing name, domain pill, age group, the behaviours, the piece count, the start date and a status pill (Draft / Building / In review). Clicking a card opens it in the studio.
+
+There is no theme selector anywhere in the app. Do not build one.
+
+## Screen 2 — Studio
+
+Header bar with the game name, and a meta line reading `domain · ages X · language · build Nw, art Nw`. Two buttons: "Show brief" which toggles a panel with the description, the behaviours required and what is still to be produced; and "Save game".
+
+Three panes below it.
+
+**Left — Pieces.** Grouped and scrollable. Every entry is draggable and also clickable to add, so it works on touch.
+
+- *Maps*: Classroom, School yard, City street, Home, Market, Sports hall
+- *Characters*: Player child, Adult guide, Friend, Crowd
+- *Objects*: Carryable item, Container, Tool, Sign
+- *Actions*: Choice point, Rule, Queue, Hint button, Goal
+
+**Centre — Grid.** A 26px snap grid. Dropped pieces are absolutely positioned, selectable on click, removable on double-click or Delete key, draggable to reposition. Any piece that requires a behaviour assignment and has none gets a small amber dot badge on its top-right corner. Empty state: "Nothing here yet. Start with a map, then add your characters."
+
+**Right — This piece.** Four sections, in this order:
+
+1. **How it looks** — name on the grid (text), size (range slider 70–170%, applied live to the block's width, padding and font size), colour (six swatches).
+2. **Its numbers** — bounded numeric fields and registry dropdowns for that piece type. Out-of-range values revert on blur and show the allowed range in `--warn`. Registry fields are dropdowns only, never free text, with the note "Chosen from the Bunyan list".
+3. **What this must tell you** — checkboxes for all five behaviours. Behaviours that appear in this game's brief carry an "in brief" pill. Below them, a one-line "Why this piece shows it" field for the reviewer. Helper text: "A piece with nothing ticked is decoration."
+4. **Sealed** — navy panel listing the events this piece always records, read-only, with the note "Not editable. Size, colour and name do not change this list."
+
+## The sealed types
+
+Palette entries map onto sealed behaviour types. Several entries share one type — all six maps are the same `map` type with different names and art.
+
+| Type | Always records | Bounded | Registry | Needs behaviour assignment |
+|---|---|---|---|---|
+| `map` | `zone.enter`, `zone.exit` | — | Area role | no |
+| `player` | `session.start`, `movement.sample`, `session.end` | Move speed 2–6 | — | no |
+| `npc` | `npc.approach`, `npc.interact` | — | Character role | yes |
+| `carryable` | `object.pick`, `object.drop` | Copies on screen 4–16 | True category | yes |
+| `container` | `object.place` | — | Accepted category | yes |
+| `tool` | `object.use` | Uses allowed 1–10 | — | yes |
+| `sign` | `prompt.presented` | Visible for 3–20 s | — | yes |
+| `choice` | `prompt.presented`, `decision.made` | Time allowed 8–25 s | — | yes |
+| `rule` | `rule.violation`, `self.correction` | Fix-it window 3–15 s | Rule id | yes |
+| `queue` | `turn.wait`, `turn.skip` | Others waiting 2–6 | — | yes |
+| `hint` | `hint.request` | Cooldown 10–45 s | — | yes |
+| `goal` | `task.complete`, `task.fail` | Target score 4–12 | — | yes |
+
+Event field shapes:
+
+```
+session.start   { session_id, pseudonym_id, age_segment, game_id, game_version, bes_version, device }
+zone.enter      { zone_id }
+zone.exit       { zone_id, dwell_ms }
+npc.approach    { npc_id }
+npc.interact    { npc_id, latency_ms }
+object.pick     { object_id, pick_latency_ms, from_zone }
+object.place    { container_id, object_id, correct, latency_ms, attempt_index }
+object.use      { tool_id, latency_ms }
+prompt.presented{ stimulus_id, presented_at, modality }
+decision.made   { choice_id, options_shown, latency_ms, changed_mind_count }
+rule.violation  { rule_id, severity }
+self.correction { rule_id, corrected_within_ms }
+turn.wait       { wait_ms, position_in_queue }
+turn.skip       { position_in_queue }
+hint.request    { elapsed_ms, attempt_index }
+movement.sample { x, y, heading, speed, dt }
+task.complete   { duration_ms, accuracy, optimal_path_ratio }
+task.fail       { duration_ms, attempt_index }
+session.end     { duration_ms, event_count }
+```
+
+Every event also carries `t` in milliseconds from session start, and `bes_version`.
+
+## Readiness check
+
+Shown live in the run bar, in this priority order:
+
+1. Missing structure — needs a map, a player child, and a goal. Blocks running.
+2. Unassigned pieces — "3 pieces have no behaviour assigned. Open it and tick what it must tell you." Warns but does not block.
+3. Uncovered brief behaviours — "The brief asks for Respect, and no piece is covering that yet." Warns but does not block.
+4. Ready — "N pieces, M recorded event types, every behaviour in the brief covered."
+
+No override button. Do not add one.
+
+## Session output
+
+Below the panes, two columns.
+
+Left: an event console, mono font, navy background, streaming the simulated session line by line at about 52ms per line, auto-scrolling, showing the millisecond stamp, the verb and the fields.
+
+Right: one bar per behaviour **in this game's brief** — not all five. Each shows the score out of 100 and a "From:" line naming which of the creator's pieces are assigned to it. If a brief behaviour has no piece assigned, replace the bar with "No piece assigned yet. Open a piece and tick this behaviour." in `--warn`. This is the most important teaching moment in the app.
+
+Keep the scoring functions in a separate `scoring.ts` with a version constant `SCORING_VERSION = '1.0'`, deriving scores only from the generated events, never from piece settings. Scores must persist across grid edits until the next run.
+
+## Bilingual
+
+Full Arabic and English. Every string comes from a locale file; no hardcoded text in components. A header toggle switches language and sets `dir="rtl"`. Use IBM Plex Sans Arabic for Arabic. Panes, palette, inspector and console must all lay out correctly in RTL. Arabic is a first-class requirement, not a final translation pass.
+
+## Persistence and export
+
+Autosave the game, its brief and its pieces to SQLite on change. Export produces a JSON project plus a `manifest.json` listing every event type the game will emit and which behaviour each piece is assigned to — that manifest is what a real Bunyan pipeline validates against.
+
+## Constraints that are not negotiable
+
+- No free-text entry for any registry field.
+- No UI anywhere that adds, renames, removes or reconfigures an event.
+- Behaviour scores never stored on event objects. Raw events and derived scores stay in separate structures.
+- No real child data, no personal identifiers, no login. Simulated events use a pseudonymous `pseudonym_id`.
+- No third-party analytics, trackers or ad SDKs in this app.
+
+## Quality floor
+
+Responsive to 375px with the three panes stacking. Visible keyboard focus rings. `prefers-reduced-motion` respected. Every control keyboard reachable. Colour never the only carrier of meaning — the unassigned-piece badge needs a shape and a tooltip, not just amber.
+
+## Definition of done
+
+1. Opening a request from Bunyan Abu Dhabi prefills the brief and scrolls to it.
+2. Submitting the brief with a missing description shows a named inline error.
+3. A saved game appears in "Your games" with the right domain, age group, piece count and status.
+4. I can drag maps, characters, objects and actions onto the grid and reposition them.
+5. Changing a piece's size and colour updates it live and does not alter its sealed event list.
+6. A piece with no behaviour ticked shows an amber badge and the run bar counts it.
+7. Removing the only piece assigned to Respect changes that bar to the "no piece assigned" message.
+8. Running a session streams events and fills only the bars for behaviours in the brief.
+9. Switching to Arabic flips the whole layout to RTL with no broken panes.
+10. Export produces a JSON project and an event manifest.
