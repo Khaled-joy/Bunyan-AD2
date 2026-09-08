@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
-import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core';
+import { PieceVisual } from '@/components/studio/piece-visual';
 
 import { StudioShell } from '@/components/studio/shell';
 import { Palette } from '@/components/studio/palette';
@@ -40,6 +41,8 @@ export default function BuilderPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [score, setScore] = useState<ScoreState>(initialScore);
   const [showBrief, setShowBrief] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeData, setActiveData] = useState<any>(null);
   const queryClient = useQueryClient();
   
   const simulationRef = useRef<number | null>(null);
@@ -78,25 +81,50 @@ export default function BuilderPage() {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+    setActiveData(event.active.data.current);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    setActiveData(null);
     const { active, delta, over } = event;
     if (!over) return;
     
+    const { zoom } = useStudioStore.getState();
+    
     if (active.data.current?.type === 'palette') {
       const item = active.data.current.item;
-      const x = Math.round((event.active.rect.current.translated?.left || 0) / 26) * 26;
-      const y = Math.round((event.active.rect.current.translated?.top || 0) / 26) * 26;
+      const gridRect = over.rect;
       
-      const adjustedX = Math.max(0, x - 256);
+      const dropX = event.active.rect.current.translated?.left || 0;
+      const dropY = event.active.rect.current.translated?.top || 0;
       
-      addPiece(item.id, item.sealedType, adjustedX, Math.max(0, y), locale === 'ar' ? item.nameAr : item.name);
+      const container = document.getElementById('grid-container');
+      const scrollLeft = container?.scrollLeft || 0;
+      const scrollTop = container?.scrollTop || 0;
+      
+      const rawX = (dropX - gridRect.left) + scrollLeft;
+      const rawY = (dropY - gridRect.top) + scrollTop;
+      
+      const snap = 20;
+      const logicalX = Math.max(0, Math.round((rawX / zoom) / snap) * snap);
+      const logicalY = Math.max(0, Math.round((rawY / zoom) / snap) * snap);
+      
+      addPiece(item.id, item.sealedType, logicalX, logicalY, locale === 'ar' ? item.nameAr : item.name);
     } else if (active.data.current?.type === 'piece') {
       const pid = active.data.current.id;
       const piece = pieces.find(p => p.id === pid);
       if (piece) {
-        const x = Math.max(0, Math.round((piece.x + delta.x) / 26) * 26);
-        const y = Math.max(0, Math.round((piece.y + delta.y) / 26) * 26);
-        updatePiece(pid, { x, y });
+        const snap = 20;
+        const logicalDeltaX = delta.x / zoom;
+        const logicalDeltaY = delta.y / zoom;
+        
+        const newX = Math.max(0, Math.round((piece.x + logicalDeltaX) / snap) * snap);
+        const newY = Math.max(0, Math.round((piece.y + logicalDeltaY) / snap) * snap);
+        
+        updatePiece(pid, { x: newX, y: newY });
       }
     }
   };
@@ -352,12 +380,25 @@ export default function BuilderPage() {
         </div>
 
         {/* Workspace */}
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <div className="flex min-h-0 flex-1 flex-col overflow-visible lg:flex-row lg:overflow-hidden">
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <div className="flex min-h-0 flex-1 flex-col overflow-visible lg:flex-row lg:overflow-hidden relative">
             <Palette />
             <Grid />
             <Inspector />
           </div>
+          
+          <DragOverlay zIndex={1000} dropAnimation={null}>
+            {activeId && activeData?.type === 'palette' ? (
+              <div className="opacity-90 drop-shadow-2xl">
+                <PieceVisual 
+                  paletteId={activeData.item.id} 
+                  colorValue="var(--ink)" 
+                  sizePercent={100 * useStudioStore.getState().zoom} 
+                  view="drag" 
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
         
         {/* Output */}

@@ -111,12 +111,18 @@
   text-align: right;
 }
 
-.grid-bg {
-  background-size: 26px 26px;
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+.grid-bg-pattern {
+  background-size: var(--bg-size, 40px) var(--bg-size, 40px);
   background-image:
     linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
     linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
-  background-position: center center;
+  background-position: top left;
 }
 
 .piece-block {

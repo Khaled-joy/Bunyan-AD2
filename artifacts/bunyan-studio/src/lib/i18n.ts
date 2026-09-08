@@ -113,6 +113,9 @@ export const dictionaries = {
       created: "Created"
     },
     builder: {
+      zoomOut: "Zoom out",
+      zoomIn: "Zoom in",
+      resetZoom: "Reset world scale",
       palette: "Pieces",
       inspector: "This piece",
       emptyState: "Nothing here yet. Start with a map, then add your characters.",
@@ -273,6 +276,9 @@ export const dictionaries = {
       created: "تاريخ الإنشاء"
     },
     builder: {
+      zoomOut: "تصغير",
+      zoomIn: "تكبير",
+      resetZoom: "إعادة ضبط مقياس العالم",
       palette: "القطع",
       inspector: "هذه القطعة",
       emptyState: "لا شيء هنا بعد. ابدأ بخريطة، ثم أضف شخصياتك.",

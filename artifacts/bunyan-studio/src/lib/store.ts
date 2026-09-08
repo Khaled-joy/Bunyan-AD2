@@ -18,6 +18,7 @@ interface StudioState {
   locale: 'en' | 'ar';
   pieces: PlacedPiece[];
   selectedPieceId: string | null;
+  zoom: number;
 
   setLocale: (locale: 'en' | 'ar') => void;
   addPiece: (paletteId: string, sealedType: string, x: number, y: number, name: string) => void;
@@ -26,12 +27,14 @@ interface StudioState {
   setSelectedPiece: (id: string | null) => void;
   clearGrid: () => void;
   loadProject: (pieces: PlacedPiece[]) => void;
+  setZoom: (zoom: number) => void;
 }
 
 export const useStudioStore = create<StudioState>((set) => ({
   locale: 'en',
   pieces: [],
   selectedPieceId: null,
+  zoom: 1,
 
   setLocale: (locale) => set({ locale }),
 
@@ -64,5 +67,6 @@ export const useStudioStore = create<StudioState>((set) => ({
 
   setSelectedPiece: (id) => set({ selectedPieceId: id }),
   clearGrid: () => set({ pieces: [], selectedPieceId: null }),
-  loadProject: (pieces) => set({ pieces, selectedPieceId: null })
+  loadProject: (pieces) => set({ pieces, selectedPieceId: null }),
+  setZoom: (zoom) => set({ zoom })
 }));

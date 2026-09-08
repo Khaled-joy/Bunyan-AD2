@@ -2,20 +2,38 @@ import { useStudioStore } from '@/lib/store';
 import { useDraggable } from '@dnd-kit/core';
 import { t } from '@/lib/i18n';
 import { PALETTE, PieceGroup } from '@/lib/constants';
+import { PieceVisual } from './piece-visual';
 
 function DraggablePaletteItem({ item }: { item: any }) {
-  const { locale, addPiece } = useStudioStore();
+  const { locale, addPiece, zoom } = useStudioStore();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette-${item.id}`,
     data: { type: 'palette', key: item.id, item }
   });
 
+  const name = locale === 'ar' ? item.nameAr : item.name;
+  const previewColor = item.group === 'Maps'
+    ? 'var(--blue)'
+    : item.group === 'Characters'
+      ? 'var(--coral)'
+      : item.group === 'Objects'
+        ? 'var(--amber)'
+        : 'var(--teal)';
+
   const handleClick = () => {
     // Fallback for touch users who tap instead of drag
-    addPiece(item.id, item.sealedType, 20, 20, item.name);
+    const container = document.getElementById('grid-container');
+    const scrollLeft = container?.scrollLeft || 0;
+    const scrollTop = container?.scrollTop || 0;
+    
+    const rawX = scrollLeft + 100;
+    const rawY = scrollTop + 100;
+    
+    const logicalX = Math.max(0, Math.round(rawX / zoom));
+    const logicalY = Math.max(0, Math.round(rawY / zoom));
+    
+    addPiece(item.id, item.sealedType, logicalX, logicalY, name);
   };
-
-  const name = locale === 'ar' ? item.nameAr : item.name;
 
   return (
     <button
@@ -23,13 +41,10 @@ function DraggablePaletteItem({ item }: { item: any }) {
       {...listeners}
       {...attributes}
       onClick={handleClick}
-      className={`piece-block w-full p-2 mb-2 text-left rtl:text-right text-sm font-medium bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--paper)] transition-colors flex items-center justify-between ${isDragging ? 'opacity-50' : ''}`}
-      style={{
-        '--background-color': 'var(--ink)' // Preview color
-      } as React.CSSProperties}
+      className={`relative w-full p-2 mb-2 text-left rtl:text-right text-sm font-medium bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--paper)] rounded-xl border-2 border-transparent hover:border-[var(--line)] transition-all flex items-center gap-3 shadow-sm ${isDragging ? 'opacity-30 scale-95' : ''}`}
     >
-      <span>{name}</span>
-      <div className="w-3 h-3 rounded-full bg-[var(--ink)]" />
+      <PieceVisual paletteId={item.id} colorValue={previewColor} view="palette" />
+      <span className="flex-1 truncate">{name}</span>
     </button>
   );
 }
