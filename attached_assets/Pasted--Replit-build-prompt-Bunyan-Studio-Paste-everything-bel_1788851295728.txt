@@ -1,0 +1,151 @@
+# Replit build prompt — Bunyan Studio
+
+Paste everything below the line into Replit Agent. Replace the two bracketed items first: your real brand hex values, and your logo file.
+
+---
+
+Build a web app called **Bunyan Studio**. It is the game-authoring tool for Bunyan Abu Dhabi, a behavioural analytics platform for children aged 6 to 17 in the UAE. This build is a working prototype of the authoring experience — not a game engine, and not the production analytics backend.
+
+## The one idea the whole app exists to enforce
+
+A creator can change how a game looks, what it is about, and what language it speaks. A creator can **never** change what the game records about a child's behaviour. Every draggable piece has a sealed list of events it emits, with fixed field names, types and units. Changing the theme from waste sorting to Arabic letters must produce a byte-identical event vocabulary.
+
+If you find yourself adding a way for a creator to define a custom event, a custom field, or a custom rule name, you have broken the product. Do not add it.
+
+## Stack
+
+- Next.js (App Router) with TypeScript
+- Tailwind CSS
+- Zustand for editor state
+- `@dnd-kit/core` for drag and drop (must work with both mouse and touch)
+- SQLite via Prisma for saved projects
+- No auth in this build; stub a single user
+
+## Brand tokens
+
+Put every colour, font and radius in one `tokens.css` file as CSS custom properties so the whole app re-skins from one place. Use these until I replace them:
+
+```
+--ink:#10243A;  --ink-soft:#4A5D72;  --ink-faint:#8A99AA;
+--paper:#E9EEF2; --surface:#FFFFFF; --line:#CBD6E0; --line-soft:#E2E9EF;
+--block-blue:#2D6BD4; --block-amber:#E9A320; --block-coral:#DE5B45;
+--block-teal:#1D9E85; --block-violet:#6B5BC4;
+--locked:#1B3350; --ok:#1D9E85; --warn:#C9741A;
+```
+
+[REPLACE WITH REAL BUNYAN AD HEX VALUES]
+
+Fonts: Bricolage Grotesque for headings, IBM Plex Sans for interface text, IBM Plex Mono **only** for the event console. Do not use mono anywhere else.
+
+Visual language: pale drafting-paper ground, deep navy ink, and pieces drawn as building blocks — each block gets a small stud shape on its top edge via a `::before` pseudo-element. Sealed things are solid navy with no hover state. Editable things are coloured. That contrast is the main visual idea; do not decorate beyond it.
+
+Logo: [ATTACH BUNYAN AD LOGO]
+
+## The piece library
+
+Define this as a single typed constant, `PIECES`, that the rest of the app reads from. It is the source of truth.
+
+| Piece key | Colour | Always emits | Free settings | Bounded settings | Registry settings |
+|---|---|---|---|---|---|
+| `agent` | blue | `session.start`, `movement.sample`, `session.end` | Avatar art | Move speed 2.0–6.0 u/s | — |
+| `carryable` | teal | `object.pick`, `object.drop` | Sprite | Copies on screen 4–16 | True category |
+| `bin` | amber | `object.place` | Label AR/EN | — | Accepted category |
+| `choice` | violet | `prompt.presented`, `decision.made` | Question text, option art | Time allowed 8–25 s | — |
+| `zone` | teal | `zone.enter`, `zone.exit` | Overlay colour | — | Zone role |
+| `rule` | coral | `rule.violation`, `self.correction` | Warning art | Fix-it window 3–15 s | Rule id |
+| `queue` | amber | `turn.wait`, `turn.skip` | Queue art | Others waiting 2–6 | — |
+| `hint` | violet | `hint.request` | Icon | Cooldown 10–45 s | — |
+| `goal` | blue | `task.complete`, `task.fail` | Win animation | Target score 4–12 | — |
+
+Event field shapes:
+
+```
+session.start   { session_id, pseudonym_id, age_segment, game_id, game_version, bes_version, device }
+object.pick     { object_id, pick_latency_ms, from_zone }
+object.place    { bin_id, object_id, correct, latency_ms, attempt_index }
+prompt.presented{ stimulus_id, presented_at, modality }
+decision.made   { choice_id, options_shown, latency_ms, changed_mind_count }
+zone.enter      { zone_id }
+zone.exit       { zone_id, dwell_ms }
+rule.violation  { rule_id, severity }
+self.correction { rule_id, corrected_within_ms }
+turn.wait       { wait_ms, position_in_queue }
+turn.skip       { position_in_queue }
+hint.request    { elapsed_ms, attempt_index }
+movement.sample { x, y, heading, speed, dt }
+task.complete   { duration_ms, accuracy, optimal_path_ratio }
+task.fail       { duration_ms, attempt_index }
+session.end     { duration_ms, event_count }
+```
+
+Every event also carries `t` (milliseconds from session start) and `bes_version`.
+
+## The three kinds of setting
+
+The inspector must group settings under three headings, and treat them differently:
+
+1. **Free** — text and asset fields. No validation beyond required/not-required.
+2. **Bounded** — numeric fields with a min and max from the table above. Show the allowed range under the input. Reject out-of-range values at edit time with an inline error in `--warn`, not on save.
+3. **Registry** — dropdowns only, populated from a fixed list. Never a free-text input. Add a small note: "Need a value that isn't here? Request it from Bunyan."
+
+Below those three, show a fourth section headed **Sealed**: a dark navy panel listing the events this piece always emits, read-only, with the note "Not editable. Changing the theme does not change this list."
+
+## Themes
+
+Three built-in themes: `waste` (Clean city), `water` (Water saver), `letters` (Arabic letters). A theme supplies a display label for every piece key, a canvas background colour, and a `bin_id` string. Switching the theme must relabel and recolour every placed piece instantly and must not alter a single entry in any piece's emit list. Add a small confirmation line when the theme changes: "Theme changed. Recording unchanged."
+
+## Screens
+
+**1. Landing page.** Casual, plain-language explanation of the studio for schools and government entities. Sections: hero with headline and a live tile that cycles the three themes while one fixed event line stays constant beneath it; what the studio is; what you change versus what stays put (the five-layer stack, top three editable, bottom two navy and sealed); a table mapping the five behaviours to the pieces that record them; and a six-step "how a game gets made" sequence. Write in short sentences and active voice. Do not use all-caps labels or arrows appended to button text.
+
+**2. The builder.** Three panes.
+
+- Left: piece palette. Draggable, and also clickable to add for touch devices.
+- Centre: canvas with a 26px snap grid. Dropped pieces are absolutely positioned, selectable on click, removable on double-click or Delete key, and draggable to reposition. Show an empty state that invites the first action.
+- Right: inspector, as specified above.
+
+Above the panes: theme switcher and a "Load a sample game" button. Below them: a run bar with **Run session**, **Clear grid**, and a live conformance line.
+
+**3. Output, below the builder.** Two columns.
+
+- Left: an event console styled like a terminal, mono font, navy background. Streaming the simulated session line by line at roughly 55ms intervals, auto-scrolling, with the millisecond timestamp, the verb, and the field values.
+- Right: the five behavioural indicators — Responsibility, Respect, Participation, Courage, Problem solving — each as a labelled bar. When the grid lacks the piece that measures a dimension, replace the bar with "Add a queue piece to measure this" in `--warn`. This is the most important teaching moment in the app: it shows the creator exactly which piece produces which indicator.
+
+## Conformance check
+
+A game is runnable only if the grid contains an `agent`, a `goal`, and at least one of `carryable`, `bin`, `choice`, `zone`, `rule`, `queue`. When it fails, state plainly what is missing. When it passes, show the piece count and the number of distinct event types. There is no override button and no force-run. Do not add one.
+
+## Session simulator
+
+`Run session` generates a plausible synthetic play session from the pieces on the grid: five to seven rounds, realistic latencies between 400 and 3800 ms, occasional wrong placements, occasional rule violations with a chance of self-correction, occasional optional-zone visits. Derive the five indicator scores from those generated events only — never from the piece settings directly. Keep the scoring functions in a separate `scoring.ts` module with a version constant `SCORING_VERSION = '1.0'`, because the scoring model must be replaceable without touching the event contract.
+
+## Bilingual
+
+Full Arabic and English. Every interface string comes from a locale file; no hardcoded text in components. A toggle in the header switches language and flips the document to `dir="rtl"` for Arabic. Use IBM Plex Sans Arabic for Arabic text. The canvas, palette, inspector and console must all lay out correctly in RTL. Arabic is a first-class requirement, not a translation pass at the end.
+
+## Persistence
+
+Save and load projects: a project is the theme, the list of placed pieces with positions, and their settings. Autosave to SQLite on change. Add an export button that downloads the project as JSON plus a `manifest.json` listing every event type the game will emit — that manifest is what a real Bunyan pipeline would validate against.
+
+## Constraints that are not negotiable
+
+- No free-text entry for any registry field.
+- No UI anywhere that lets a creator add, rename, remove or reconfigure an event.
+- No analytics scores stored on the event objects. Raw events and derived scores stay in separate structures.
+- No real child data, no personal identifiers, no login. Use a pseudonymous `pseudonym_id` string in the simulated events to model the real system.
+- No third-party analytics, trackers, ad SDKs or external telemetry of any kind in this app.
+
+## Quality floor
+
+Responsive down to 375px wide, with the three panes stacking vertically on small screens. Visible keyboard focus rings. `prefers-reduced-motion` respected — the hero theme cycle stops. All interactive elements reachable by keyboard. Colour is never the only way information is conveyed.
+
+## Definition of done
+
+1. I can drag nine different pieces onto the grid and reposition them.
+2. Selecting a piece shows its settings split into free, bounded, registry and sealed.
+3. Typing an out-of-range bounded value shows an inline error.
+4. Switching themes relabels everything and provably does not change any emit list.
+5. Running a session streams events into the console and fills the five indicator bars.
+6. Removing the queue piece makes the Respect bar change to a "add a queue piece" message.
+7. Switching to Arabic flips the whole layout to RTL with no broken panes.
+8. Exporting produces a JSON project and an event manifest.
