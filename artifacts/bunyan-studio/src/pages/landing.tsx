@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -10,25 +10,71 @@ import { useStudioStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { DOMAINS, BEHAVIOURS, PRODUCTION_NEEDS } from '@/lib/constants';
 import { Trash2 } from 'lucide-react';
+
+import { NEW_CATEGORIES, NEW_DOMAINS, TIERS } from '@/lib/constants';
+import { AlertTriangle, Send } from 'lucide-react';
+
 import { useListStudioProjects, useListStudioOrders, useCreateStudioProject, useDeleteStudioProject } from '@workspace/api-client-react';
 
+
 const briefSchema = (locale: 'en' | 'ar') => z.object({
-  name: z.string().min(1, t('home.form.valNameReq', locale)),
-  domain: z.string().min(1, t('home.form.valDomainReq', locale)),
-  description: z.string().min(20, t('home.form.valDescMin', locale)),
-  ageGroup: z.enum(['6-8', '9-12', '13-17'], { errorMap: () => ({ message: t('home.form.valAgeReq', locale) }) }),
-  language: z.enum(['both', 'ar', 'en'], { errorMap: () => ({ message: t('home.form.valLangReq', locale) }) }),
-  behaviours: z.array(z.string()).min(1, t('home.form.valBehReq', locale)),
-  buildWeeks: z.coerce.number().min(1).max(26),
-  artWeeks: z.coerce.number().min(1).max(26),
-  productionNeeds: z.array(z.string()).min(1, t('home.form.valProdReq', locale)),
+  fullName: z.string().min(1, t('home.form.valNameReq', locale) as string),
+  email: z.string().email(t('home.form.valEmailReq', locale) as string),
+  entity: z.string().min(1, t('home.form.valEntityReq', locale) as string),
+  phone: z.string().optional(),
+  gameName: z.string().min(1, t('home.form.valGameNameReq', locale) as string),
+  description: z.string().min(100, t('home.form.valDescMin', locale) as string).max(2000, t('home.form.valDescMax', locale) as string),
+  categories: z.array(z.string()).min(1, t('home.form.valCatReq', locale) as string),
+  ageGroups: z.array(z.string()).min(1, t('home.form.valAgeReq', locale) as string),
+  languages: z.array(z.string()).min(1, t('home.form.valLangReq', locale) as string),
+  referenceUrl: z.string().optional(),
+  domain: z.string().min(1, t('home.form.valDomainReq', locale) as string),
+  indicator: z.string().min(50, t('home.form.valIndReq', locale) as string),
+  indicatorType: z.enum(['existing', 'new'], { errorMap: () => ({ message: t('home.form.valIndTypeReq', locale) as string }) }),
+  tier: z.string().min(1, t('home.form.valTierReq', locale) as string),
+  scope: z.string().min(1, t('home.form.valScopeReq', locale) as string),
+  deliveryDate: z.string().optional(),
+  notes: z.string().optional(),
 });
+
+function deriveAgeGroup(ages: string[]) {
+  if (ages.includes('16–18') || ages.includes('13–15')) return '13-17';
+  if (ages.includes('10–12') || ages.includes('7–9')) return '9-12';
+  return '6-8';
+}
+
+function deriveLanguage(langs: string[]) {
+  if (langs.includes('ar') && langs.includes('en')) return 'both';
+  if (langs.includes('ar')) return 'ar';
+  return 'en';
+}
+
+function deriveBehaviours(domain: string) {
+  if (['literacy', 'developmental-skills'].includes(domain)) return ['problemSolving'];
+  if (['activities', 'environment'].includes(domain)) return ['responsibility'];
+  if (domain === 'social-relations') return ['respect', 'participation'];
+  return ['problemSolving'];
+}
+
+const RequestSection = ({ number, title, children }: { number: number, title: string, children: React.ReactNode }) => (
+  <div className="mb-10">
+    <div className="flex items-center gap-3 mb-6">
+      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--blue)]/10 text-[var(--blue)] font-bold font-display">{number}</span>
+      <h3 className="text-xl font-bold font-display text-[var(--ink)]">{title}</h3>
+    </div>
+    <div className="ps-11">
+      {children}
+    </div>
+  </div>
+);
+
 
 type BriefFormData = z.infer<ReturnType<typeof briefSchema>>;
 
 export default function LandingPage() {
   const { locale } = useStudioStore();
   const [, navigate] = useLocation();
+  const [draftMessage, setDraftMessage] = useState('');
 
   const { data: projects, refetch: refetchProjects } = useListStudioProjects();
   const { data: orders } = useListStudioOrders();
@@ -38,37 +84,89 @@ export default function LandingPage() {
   const form = useForm<BriefFormData>({
     resolver: zodResolver(briefSchema(locale)),
     defaultValues: {
-      name: '',
-      domain: '',
+      fullName: '',
+      email: '',
+      entity: '',
+      phone: '',
+      gameName: '',
       description: '',
-      ageGroup: '9-12',
-      language: 'both',
-      behaviours: [],
-      buildWeeks: 4,
-      artWeeks: 4,
-      productionNeeds: [],
+      categories: [],
+      ageGroups: [],
+      languages: [],
+      referenceUrl: '',
+      domain: '',
+      indicator: '',
+      indicatorType: 'existing',
+      tier: '',
+      scope: '',
+      deliveryDate: '',
+      notes: ''
     }
   });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bunyan-studio-game-request-draft');
+      if (saved) form.reset({ ...form.getValues(), ...JSON.parse(saved) });
+    } catch {
+      localStorage.removeItem('bunyan-studio-game-request-draft');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash === '#brief-form') {
+      const timer = window.setTimeout(() => {
+        document.getElementById('brief-form')?.scrollIntoView({ block: 'start' });
+      }, 250);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, []);
+
+  const saveDraft = () => {
+    localStorage.setItem('bunyan-studio-game-request-draft', JSON.stringify(form.getValues()));
+    setDraftMessage(t('home.form.draftSaved', locale) as string);
+  };
 
   const onSubmit = (data: BriefFormData) => {
     createProject.mutate({
       data: {
-        name: data.name,
+        name: data.gameName,
         domain: data.domain,
-        ageGroup: data.ageGroup as any,
-        language: data.language as any,
-        behaviours: data.behaviours as any,
+        ageGroup: deriveAgeGroup(data.ageGroups) as any,
+        language: deriveLanguage(data.languages) as any,
+        behaviours: deriveBehaviours(data.domain) as any,
         status: 'draft',
         config: {
           description: data.description,
-          buildWeeks: data.buildWeeks,
-          artWeeks: data.artWeeks,
-          productionNeeds: data.productionNeeds,
-          pieces: []
+          buildWeeks: 4,
+          artWeeks: 4,
+          productionNeeds: [],
+          pieces: [],
+          requestBrief: {
+            fullName: data.fullName,
+            email: data.email,
+            entity: data.entity,
+            phone: data.phone,
+            gameName: data.gameName,
+            description: data.description,
+            categories: data.categories,
+            ageGroups: data.ageGroups,
+            languages: data.languages,
+            referenceUrl: data.referenceUrl,
+            domain: data.domain,
+            indicator: data.indicator,
+            indicatorType: data.indicatorType,
+            tier: data.tier,
+            scope: data.scope,
+            deliveryDate: data.deliveryDate,
+            notes: data.notes
+          }
         }
       }
     }, {
       onSuccess: (project) => {
+        localStorage.removeItem('bunyan-studio-game-request-draft');
         navigate(`/builder/${project.id}`);
       }
     });
@@ -76,15 +174,23 @@ export default function LandingPage() {
 
   const handleOpenOrder = (order: any) => {
     form.reset({
-      name: order.title,
-      domain: order.domain,
+      fullName: '',
+      email: '',
+      entity: order.requestingBody || '',
+      phone: '',
+      gameName: order.title,
       description: order.description,
-      ageGroup: order.ageGroup,
-      language: order.language,
-      behaviours: order.behaviours,
-      buildWeeks: order.buildWeeks,
-      artWeeks: order.artWeeks,
-      productionNeeds: order.productionNeeds,
+      categories: [],
+      ageGroups: order.ageGroup === '13-17' ? ['13–15', '16–18'] : order.ageGroup === '9-12' ? ['10–12', '7–9'] : ['4–6', '7–9'],
+      languages: order.language === 'both' ? ['ar', 'en'] : [order.language],
+      referenceUrl: '',
+      domain: ['literacy', 'activities', 'environment', 'developmental-skills', 'social-relations'].includes(order.domain) ? order.domain : 'developmental-skills',
+      indicator: '',
+      indicatorType: 'existing',
+      tier: '1',
+      scope: 'collection',
+      deliveryDate: order.dueDate ? new Date(order.dueDate).toISOString().split('T')[0] : '',
+      notes: '',
     });
     
     // Slight delay to ensure DOM updates before scrolling
@@ -168,7 +274,7 @@ export default function LandingPage() {
             <h2 className="text-2xl font-display font-bold text-[var(--ink)] mb-6">{t('home.incomingOrders', locale)}</h2>
             <div className="grid gap-4">
               {orders.map((order) => {
-                const domainLabel = DOMAINS.find(d => d.id === order.domain)?.[locale === 'ar' ? 'labelAr' : 'label'] || order.domain;
+                const domainObj = NEW_DOMAINS.find(d => d.id === order.domain) || DOMAINS.find(d => d.id === order.domain); const domainLabel = domainObj?.[locale === 'ar' ? 'labelAr' : 'label'] || order.domain;
                 
                 return (
                   <div key={order.id} className="bg-[var(--surface)] p-6 rounded-xl border border-[var(--line)] border-l-4 border-l-[var(--amber)] shadow-sm flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
@@ -191,93 +297,237 @@ export default function LandingPage() {
         <section id="brief-form" className="bg-[var(--surface)] py-20 border-t border-[var(--line)]">
           <div className="max-w-3xl mx-auto px-4">
             <h2 className="text-3xl font-display font-bold text-[var(--ink)] mb-8">{t('home.startNewGame', locale)}</h2>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
-              <div>
-                <label className="block text-sm font-medium text-[var(--ink)] mb-1">{t('home.form.gameName', locale)}</label>
-                <input {...form.register('name')} className="w-full rounded-md border border-[var(--line)] p-2 bg-transparent" />
-                {form.formState.errors.name && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.name.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--ink)] mb-1">{t('home.form.domain', locale)}</label>
-                <select {...form.register('domain')} className="w-full rounded-md border border-[var(--line)] p-2 bg-transparent">
-                  <option value="">{t('home.form.domainSelect', locale)}</option>
-                  {DOMAINS.map(d => <option key={d.id} value={d.id}>{locale === 'ar' ? d.labelAr : d.label}</option>)}
-                </select>
-                {form.formState.errors.domain && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.domain.message}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[var(--ink)] mb-1">{t('home.form.desc', locale)}</label>
-                <textarea {...form.register('description')} rows={4} className="w-full rounded-md border border-[var(--line)] p-2 bg-transparent" placeholder={t('home.form.descHelper', locale) as string} />
-                {form.formState.errors.description && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.description.message}</p>}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--ink)] mb-1">{t('home.form.ageGroup', locale)}</label>
-                  <select {...form.register('ageGroup')} className="w-full rounded-md border border-[var(--line)] p-2 bg-transparent">
-                    <option value="6-8">{t('home.form.ageOptions.6-8', locale)}</option>
-                    <option value="9-12">{t('home.form.ageOptions.9-12', locale)}</option>
-                    <option value="13-17">{t('home.form.ageOptions.13-17', locale)}</option>
-                  </select>
-                  {form.formState.errors.ageGroup && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.ageGroup.message}</p>}
+            
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mt-7">
+              <RequestSection number={1} title={t('home.form.section1', locale) as string}>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <label className="font-bold text-[var(--ink)]">
+                    {t('home.form.fullName', locale) as string}
+                    <input required {...form.register('fullName')} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                    {form.formState.errors.fullName && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.fullName.message}</p>}
+                  </label>
+                  <label className="font-bold text-[var(--ink)]">
+                    {t('home.form.email', locale) as string}
+                    <input required type="email" {...form.register('email')} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                    {form.formState.errors.email && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.email.message}</p>}
+                  </label>
+                  <label className="font-bold text-[var(--ink)]">
+                    {t('home.form.entity', locale) as string}
+                    <input required {...form.register('entity')} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                    {form.formState.errors.entity && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.entity.message}</p>}
+                  </label>
+                  <label className="font-bold text-[var(--ink)]">
+                    {t('home.form.phone', locale) as string}
+                    <input type="tel" {...form.register('phone')} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                  </label>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--ink)] mb-1">{t('home.form.language', locale)}</label>
-                  <select {...form.register('language')} className="w-full rounded-md border border-[var(--line)] p-2 bg-transparent">
-                    <option value="both">{t('home.form.langOptions.both', locale)}</option>
-                    <option value="ar">{t('home.form.langOptions.ar', locale)}</option>
-                    <option value="en">{t('home.form.langOptions.en', locale)}</option>
-                  </select>
-                  {form.formState.errors.language && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.language.message}</p>}
-                </div>
-              </div>
+              </RequestSection>
 
-              <div>
-                <label className="block text-sm font-medium text-[var(--ink)] mb-2">{t('home.form.behaviours', locale)}</label>
-                <div className="flex flex-wrap gap-2">
-                  {BEHAVIOURS.map(b => (
-                    <label key={b.id} className="flex items-center gap-2 px-3 py-1.5 border border-[var(--line)] rounded-full cursor-pointer bg-[var(--paper)] hover:bg-[var(--line-soft)]">
-                      <input type="checkbox" value={b.id} {...form.register('behaviours')} className="rounded text-[var(--blue)] focus:ring-[var(--blue)]" />
-                      <span className="text-sm text-[var(--ink)]">{locale === 'ar' ? b.labelAr : b.label}</span>
-                    </label>
-                  ))}
-                </div>
-                {form.formState.errors.behaviours && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.behaviours.message}</p>}
-              </div>
+              <RequestSection number={2} title={t('home.form.section2', locale) as string}>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <label className="font-bold text-[var(--ink)] sm:col-span-2">
+                    {t('home.form.gameName', locale) as string}
+                    <input required maxLength={120} {...form.register('gameName')} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                    {form.formState.errors.gameName && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.gameName.message}</p>}
+                  </label>
+                  
+                  <label className="font-bold text-[var(--ink)] sm:col-span-2">
+                    {t('home.form.desc', locale) as string}
+                    <textarea required minLength={100} maxLength={2000} rows={6} {...form.register('description')} placeholder={t('home.form.descHelper', locale) as string} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                    <span className="mt-1 block text-end text-xs font-semibold text-[var(--ink-soft)]">{form.watch('description')?.length || 0} / 2000</span>
+                    {form.formState.errors.description && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.description.message}</p>}
+                  </label>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--ink)] mb-1">{t('home.form.buildWeeks', locale)}</label>
-                  <input type="number" {...form.register('buildWeeks')} className="w-full rounded-md border border-[var(--line)] p-2 bg-transparent" min={1} max={26} />
-                  {form.formState.errors.buildWeeks && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.buildWeeks.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--ink)] mb-1">{t('home.form.artWeeks', locale)}</label>
-                  <input type="number" {...form.register('artWeeks')} className="w-full rounded-md border border-[var(--line)] p-2 bg-transparent" min={1} max={26} />
-                  {form.formState.errors.artWeeks && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.artWeeks.message}</p>}
-                </div>
-              </div>
+                  <fieldset className="sm:col-span-2">
+                    <legend className="font-bold text-[var(--ink)]">{t('home.form.categoriesTitle', locale) as string}</legend>
+                    <p className="mt-1 text-sm font-normal text-[var(--ink-soft)]">{t('home.form.categoriesHelper', locale) as string}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {NEW_CATEGORIES.map(cat => {
+                        const isChecked = form.watch('categories')?.includes(cat.id);
+                        return (
+                          <label key={cat.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 font-semibold ${isChecked ? 'border-[var(--blue)] bg-[var(--blue)]/5 text-[var(--blue)]' : 'border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft)]'}`}>
+                            <input type="checkbox" value={cat.id} {...form.register('categories')} className="mt-1" />
+                            <span>
+                              <span className="block">{locale === 'ar' ? cat.labelAr : cat.label}</span>
+                              <span className="mt-1 block text-xs font-normal leading-relaxed text-[var(--ink-faint)]">
+                                {locale === 'ar' ? cat.testAr : cat.test}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {form.formState.errors.categories && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.categories.message}</p>}
+                  </fieldset>
 
-              <div>
-                <label className="block text-sm font-medium text-[var(--ink)] mb-2">{t('home.form.productionNeeds', locale)}</label>
-                <div className="flex flex-wrap gap-2">
-                  {PRODUCTION_NEEDS.map(need => (
-                    <label key={need.id} className="flex items-center gap-2 px-3 py-1.5 border border-[var(--line)] rounded-full cursor-pointer bg-[var(--paper)] hover:bg-[var(--line-soft)]">
-                      <input type="checkbox" value={need.id} {...form.register('productionNeeds')} className="rounded text-[var(--blue)] focus:ring-[var(--blue)]" />
-                      <span className="text-sm text-[var(--ink)]">{locale === 'ar' ? need.labelAr : need.label}</span>
-                    </label>
-                  ))}
-                </div>
-                {form.formState.errors.productionNeeds && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.productionNeeds.message}</p>}
-              </div>
+                  <fieldset className="sm:col-span-2">
+                    <legend className="font-bold text-[var(--ink)]">{t('home.form.ageGroupTitle', locale) as string}</legend>
+                    <p className="mt-1 text-sm font-normal text-[var(--ink-soft)]">{t('home.form.ageGroupHelper', locale) as string}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {['4–6', '7–9', '10–12', '13–15', '16–18'].map(age => {
+                        const isChecked = form.watch('ageGroups')?.includes(age);
+                        return (
+                          <label key={age} className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-bold ${isChecked ? 'border-[var(--blue)] bg-[var(--blue)]/5 text-[var(--blue)]' : 'border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft)]'}`}>
+                            <input type="checkbox" value={age} {...form.register('ageGroups')} className="sr-only" />
+                            {age}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {form.formState.errors.ageGroups && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.ageGroups.message}</p>}
+                  </fieldset>
 
-              <Button type="submit" size="lg" className="w-full bg-[var(--blue)] hover:bg-[var(--blue)]/90 text-white text-lg rounded-xl mt-4" disabled={createProject.isPending}>
-                {t('home.form.submit', locale)}
-              </Button>
+                  <fieldset>
+                    <legend className="font-bold text-[var(--ink)]">{t('home.form.languageTitle', locale) as string}</legend>
+                    <div className="mt-3 flex gap-2">
+                      {[{ id: 'ar', label: t('home.form.langAr', locale) as string }, { id: 'en', label: t('home.form.langEn', locale) as string }].map(lang => {
+                        const isChecked = form.watch('languages')?.includes(lang.id);
+                        return (
+                          <label key={lang.id} className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-bold ${isChecked ? 'border-[var(--teal)] bg-[var(--teal)]/10 text-[var(--teal)]' : 'border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft)]'}`}>
+                            <input type="checkbox" value={lang.id} {...form.register('languages')} className="sr-only" />
+                            {lang.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {form.formState.errors.languages && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.languages.message}</p>}
+                  </fieldset>
+
+                  <label className="font-bold text-[var(--ink)]">
+                    {t('home.form.refUrl', locale) as string}
+                    <input type="url" {...form.register('referenceUrl')} placeholder="https://" className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                  </label>
+
+                  <label className="font-bold text-[var(--ink)] sm:col-span-2">
+                    {t('home.form.refFile', locale) as string}
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.pptx,.mp4" className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent file:me-3 file:rounded-full file:border-0 file:bg-[var(--blue)]/10 file:px-3 file:py-2 file:font-bold file:text-[var(--blue)]" />
+                    <span className="mt-2 block text-xs leading-relaxed text-[var(--ink-soft)]">{t('home.form.refFileHelper', locale) as string}</span>
+                  </label>
+                </div>
+              </RequestSection>
+
+              <RequestSection number={3} title={t('home.form.section3', locale) as string}>
+                <div className="grid gap-5">
+                  <label className="font-bold text-[var(--ink)]">
+                    {t('home.form.domain', locale) as string}
+                    <select required {...form.register('domain')} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-[var(--surface)]">
+                      <option value="">{t('home.form.domainSelect', locale) as string}</option>
+                      {NEW_DOMAINS.map(d => <option key={d.id} value={d.id}>{locale === 'ar' ? d.labelAr : d.label}</option>)}
+                    </select>
+                    {(() => {
+                      const d = form.watch('domain');
+                      const domainObj = NEW_DOMAINS.find(x => x.id === d);
+                      if (!domainObj) return null;
+                      return (
+                        <span className="mt-2 block text-xs leading-relaxed text-[var(--ink-soft)]">
+                          {locale === 'ar' ? domainObj.headlineAr : domainObj.headline}
+                        </span>
+                      );
+                    })()}
+                    {form.formState.errors.domain && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.domain.message}</p>}
+                  </label>
+
+                  <label className="font-bold text-[var(--ink)]">
+                    {t('home.form.indicatorNeeded', locale) as string}
+                    <textarea required minLength={50} rows={4} {...form.register('indicator')} placeholder={t('home.form.indicatorHelper', locale) as string} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                    {form.formState.errors.indicator && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.indicator.message}</p>}
+                  </label>
+
+                  <fieldset>
+                    <legend className="font-bold text-[var(--ink)]">{t('home.form.indicatorTypeTitle', locale) as string}</legend>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {[{ id: 'existing', label: t('home.form.indExisting', locale) as string }, { id: 'new', label: t('home.form.indNew', locale) as string }].map(opt => (
+                        <label key={opt.id} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 font-semibold text-[var(--ink-soft)]">
+                          <input required type="radio" value={opt.id} {...form.register('indicatorType')} />
+                          {opt.label}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                </div>
+              </RequestSection>
+
+              <RequestSection number={4} title={t('home.form.section4', locale) as string}>
+                <p className="mb-4 text-sm font-semibold text-[var(--ink-soft)]">{t('home.form.tierHelper', locale) as string}</p>
+                <div className="grid gap-3 lg:grid-cols-3">
+                  {TIERS.map(tier => {
+                    const isChecked = form.watch('tier') === tier.id;
+                    return (
+                      <label key={tier.id} className={`cursor-pointer rounded-2xl border p-5 ${isChecked ? 'border-[var(--blue)] bg-[var(--blue)]/5 ring-4 ring-[var(--blue)]/10' : 'border-[var(--line)] bg-[var(--surface)]'}`}>
+                        <input required type="radio" value={tier.id} {...form.register('tier')} />
+                        <span className="ms-2 font-display text-lg font-bold text-[var(--ink)]">{locale === 'ar' ? tier.nameAr : tier.name}</span>
+                        <span className="mt-3 block text-sm leading-relaxed text-[var(--ink-soft)]">{locale === 'ar' ? tier.sourcesAr : tier.sources}</span>
+                        <span className="mt-3 block text-xs font-bold text-[var(--ink-faint)]">{locale === 'ar' ? tier.appropriateAr : tier.appropriate}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {form.formState.errors.tier && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.tier.message}</p>}
+
+                {form.watch('tier') === '3' && (
+                  <div className="mt-4 flex gap-3 rounded-2xl border border-[var(--amber)] bg-[var(--amber)]/10 p-4 text-sm leading-relaxed text-[var(--ink-soft)]">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--warn)]" />
+                    {t('home.form.tier3Warn', locale) as string}
+                  </div>
+                )}
+                {form.watch('domain') === 'social-relations' && (
+                  <div className="mt-4 flex gap-3 rounded-2xl border border-[var(--coral)] bg-[var(--coral)]/10 p-4 text-sm leading-relaxed text-[var(--coral)]">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                    {t('home.form.tierSocWarn', locale) as string}
+                  </div>
+                )}
+                {form.watch('tier') === '1' && form.watch('indicator') && /child|student|individual|طفل|طالب|فرد/i.test(form.watch('indicator')) && (
+                  <div className="mt-4 flex gap-3 rounded-2xl border border-[var(--amber)] bg-[var(--amber)]/10 p-4 text-sm leading-relaxed text-[var(--ink-soft)]">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--warn)]" />
+                    {t('home.form.tier1Warn', locale) as string}
+                  </div>
+                )}
+              </RequestSection>
+
+              <RequestSection number={5} title={t('home.form.section5', locale) as string}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    { id: 'collection', label: t('home.form.scopeCollection', locale) as string, desc: t('home.form.scopeCollectionDesc', locale) as string },
+                    { id: 'analysis', label: t('home.form.scopeAnalysis', locale) as string, desc: t('home.form.scopeAnalysisDesc', locale) as string }
+                  ].map(scope => {
+                    const isChecked = form.watch('scope') === scope.id;
+                    return (
+                      <label key={scope.id} className={`cursor-pointer rounded-2xl border p-5 ${isChecked ? 'border-[var(--teal)] bg-[var(--teal)]/10' : 'border-[var(--line)] bg-[var(--surface)]'}`}>
+                        <input required type="radio" value={scope.id} {...form.register('scope')} />
+                        <span className="ms-2 font-display text-lg font-bold text-[var(--ink)]">{scope.label}</span>
+                        <span className="mt-3 block text-sm leading-relaxed text-[var(--ink-soft)]">{scope.desc}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {form.formState.errors.scope && <p className="text-[var(--warn)] text-sm mt-1">{form.formState.errors.scope.message}</p>}
+              </RequestSection>
+
+              <RequestSection number={6} title={t('home.form.section6', locale) as string}>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <label className="font-bold text-[var(--ink)]">
+                    {t('home.form.deliveryDate', locale) as string}
+                    <input type="date" {...form.register('deliveryDate')} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                  </label>
+                  <label className="font-bold text-[var(--ink)] sm:col-span-2">
+                    {t('home.form.notes', locale) as string}
+                    <textarea rows={4} {...form.register('notes')} className="w-full mt-1 rounded-md border border-[var(--line)] p-2 bg-transparent" />
+                  </label>
+                </div>
+              </RequestSection>
+
+              <div className="flex flex-col-reverse gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 sm:flex-row sm:items-center sm:justify-end">
+                {draftMessage && <p role="status" className="me-auto text-sm font-semibold text-[var(--ok)]">{draftMessage}</p>}
+                <Button type="button" variant="outline" className="gap-2 rounded-full font-bold" onClick={saveDraft}>
+                  {t('home.form.saveDraft', locale) as string}
+                </Button>
+                <Button type="submit" className="gap-2 rounded-full bg-[var(--blue)] font-bold text-white shadow-sm transition hover:-translate-y-0.5" disabled={createProject.isPending}>
+                  <Send className="h-4 w-4" />
+                  {t('home.form.submit', locale) as string}
+                </Button>
+              </div>
             </form>
+
           </div>
         </section>
 
@@ -291,7 +541,7 @@ export default function LandingPage() {
               {projects.map((project) => {
                 const config = project.config as any;
                 const piecesCount = Array.isArray(config.pieces) ? config.pieces.length : 0;
-                const domainLabel = DOMAINS.find(d => d.id === project.domain)?.[locale === 'ar' ? 'labelAr' : 'label'] || project.domain;
+                const domainObj = NEW_DOMAINS.find(d => d.id === project.domain) || DOMAINS.find(d => d.id === project.domain); const domainLabel = domainObj?.[locale === 'ar' ? 'labelAr' : 'label'] || project.domain;
                 const statusStr = project.status === 'draft' ? t('home.statusDraft', locale) : 
                                   project.status === 'building' ? t('home.statusBuilding', locale) : 
                                   t('home.statusReview', locale);

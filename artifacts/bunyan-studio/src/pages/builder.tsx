@@ -17,7 +17,7 @@ import { useStudioStore, PlacedPiece } from '@/lib/store';
 import { t } from '@/lib/i18n';
 import { generateSessionEvents } from '@/lib/simulator';
 import { initialScore, updateScores, ScoreState } from '@/lib/scoring';
-import { BEHAVIOURS, SEALED_TYPES, EVENT_CONTRACTS, PRODUCTION_NEEDS, DOMAINS } from '@/lib/constants';
+import { BEHAVIOURS, SEALED_TYPES, EVENT_CONTRACTS, PRODUCTION_NEEDS, DOMAINS, NEW_DOMAINS } from '@/lib/constants';
 import {
   getGetStudioProjectQueryKey,
   useGetStudioProject,
@@ -265,7 +265,7 @@ export default function BuilderPage() {
   if (!project) return <StudioShell><div className="p-8 font-sans">Project not found</div></StudioShell>;
 
   const config = (project.config || {}) as any;
-  const domain = DOMAINS.find(item => item.id === project.domain);
+  const domain = NEW_DOMAINS.find(item => item.id === project.domain) || DOMAINS.find(item => item.id === project.domain);
   const domainLabel = domain ? (locale === 'ar' ? domain.labelAr : domain.label) : project.domain;
   const languageLabel = t(`home.form.langOptions.${project.language}`, locale);
 
