@@ -5,14 +5,20 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { StudioProjectAgeGroup } from './studioProjectAgeGroup';
+import type { StudioProjectBehavioursItem } from './studioProjectBehavioursItem';
 import type { StudioProjectConfig } from './studioProjectConfig';
-import type { StudioProjectLocale } from './studioProjectLocale';
+import type { StudioProjectLanguage } from './studioProjectLanguage';
+import type { StudioProjectStatus } from './studioProjectStatus';
 
 export interface StudioProject {
   id: string;
   name: string;
-  theme: string;
-  locale: StudioProjectLocale;
+  domain: string;
+  ageGroup: StudioProjectAgeGroup;
+  language: StudioProjectLanguage;
+  behaviours: StudioProjectBehavioursItem[];
+  status: StudioProjectStatus;
   config: StudioProjectConfig;
   createdAt: Date;
   updatedAt: Date;

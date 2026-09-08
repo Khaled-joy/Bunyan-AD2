@@ -1,94 +1,79 @@
 import { PlacedPiece } from './store';
-import { PIECES } from './constants';
-import { SCORING_VERSION } from './scoring';
+import { SEALED_TYPES, EVENT_CONTRACTS } from './constants';
 
-function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function randId() {
+  return Math.random().toString(36).substring(2, 9);
 }
 
-export function generateSessionEvents(placedPieces: PlacedPiece[]) {
+export function generateSessionEvents(pieces: PlacedPiece[], ageGroup: string, gameId: string) {
   const events: any[] = [];
   let t = 0;
-  
-  // Base details
-  const sessionId = crypto.randomUUID();
-  const besVersion = SCORING_VERSION;
-  
+
+  const sessionId = 'sess_' + randId();
+  const pseudonymId = 'p_' + randId();
+  const common = { bes_version: '1.0' };
+
   events.push({
+    ...common,
     t,
-    type: 'session.start',
-    payload: { session_id: sessionId, pseudonym_id: 'child_42', age_segment: '8-10', game_id: 'sim_1', game_version: '1.0', bes_version: besVersion, device: 'tablet' }
+    verb: 'session.start',
+    fields: { session_id: sessionId, pseudonym_id: pseudonymId, age_segment: ageGroup, game_id: gameId, game_version: '1', bes_version: '1.0', device: 'web' }
   });
-  
-  const rounds = randomInt(5, 7);
-  
-  for (let r = 0; r < rounds; r++) {
-    t += randomInt(400, 2000);
+
+  for (let i = 0; i < 20; i++) {
+    t += Math.floor(Math.random() * 2000) + 500;
     
-    // Agent move
-    if (placedPieces.some(p => p.key === 'agent')) {
-      events.push({
-        t, type: 'movement.sample',
-        payload: { x: randomInt(10, 90), y: randomInt(10, 90), heading: randomInt(0, 359), speed: 4.5, dt: 100 }
-      });
-    }
+    if (pieces.length === 0) break;
+    const piece = pieces[Math.floor(Math.random() * pieces.length)];
+    const typeDef = SEALED_TYPES[piece.sealedType];
+    
+    if (!typeDef || typeDef.alwaysRecords.length === 0) continue;
+    
+    const verb = typeDef.alwaysRecords[Math.floor(Math.random() * typeDef.alwaysRecords.length)];
+    
+    let fields: any = {};
+    if (verb === 'zone.enter') fields = { zone_id: piece.id };
+    else if (verb === 'zone.exit') fields = { zone_id: piece.id, dwell_ms: 5000 };
+    else if (verb === 'npc.approach') fields = { npc_id: piece.id };
+    else if (verb === 'npc.interact') fields = { npc_id: piece.id, latency_ms: 1200 };
+    else if (verb === 'object.pick') fields = { object_id: piece.id, pick_latency_ms: 800, from_zone: 'z1' };
+    else if (verb === 'object.drop') fields = { object_id: piece.id, to_zone: 'z1' };
+    else if (verb === 'object.place') fields = { container_id: piece.id, object_id: 'obj1', correct: Math.random() > 0.3, latency_ms: 1500, attempt_index: 1 };
+    else if (verb === 'object.use') fields = { tool_id: piece.id, latency_ms: 900 };
+    else if (verb === 'prompt.presented') fields = { stimulus_id: piece.id, presented_at: t, modality: 'visual' };
+    else if (verb === 'decision.made') fields = { choice_id: piece.id, options_shown: 3, latency_ms: 2500, changed_mind_count: 0 };
+    else if (verb === 'rule.violation') fields = { rule_id: piece.id, severity: 2 };
+    else if (verb === 'self.correction') fields = { rule_id: piece.id, corrected_within_ms: 4000 };
+    else if (verb === 'turn.wait') fields = { wait_ms: 8000, position_in_queue: 2 };
+    else if (verb === 'turn.skip') fields = { position_in_queue: 1 };
+    else if (verb === 'hint.request') fields = { elapsed_ms: 12000, attempt_index: 2 };
+    else if (verb === 'movement.sample') fields = { x: 10, y: 20, heading: 90, speed: 4.5, dt: 100 };
+    else if (verb === 'task.complete') fields = { duration_ms: 45000, accuracy: 0.9, optimal_path_ratio: 0.8 };
+    else if (verb === 'task.fail') fields = { duration_ms: 15000, attempt_index: 1 };
 
-    t += randomInt(200, 1500);
-
-    // Pick and Place
-    if (placedPieces.some(p => p.key === 'carryable') && placedPieces.some(p => p.key === 'bin')) {
-      events.push({ t, type: 'object.pick', payload: { object_id: 'obj_1', pick_latency_ms: randomInt(400, 1500), from_zone: 'zone_a' } });
-      t += randomInt(1000, 3800);
-      events.push({ t, type: 'object.place', payload: { bin_id: 'bin_1', object_id: 'obj_1', correct: Math.random() > 0.2, latency_ms: randomInt(800, 2500), attempt_index: 1 } });
-    }
-
-    t += randomInt(500, 1500);
-
-    // Queue wait
-    if (placedPieces.some(p => p.key === 'queue')) {
-      events.push({ t, type: 'turn.wait', payload: { wait_ms: randomInt(2000, 8000), position_in_queue: randomInt(1, 4) } });
-    }
-
-    // Rules
-    if (placedPieces.some(p => p.key === 'rule') && Math.random() > 0.6) {
-      events.push({ t, type: 'rule.violation', payload: { rule_id: 'keep_clean', severity: 'low' } });
-      if (Math.random() > 0.5) {
-        t += randomInt(1000, 3000);
-        events.push({ t, type: 'self.correction', payload: { rule_id: 'keep_clean', corrected_within_ms: randomInt(1000, 2500) } });
+    // Fill missing required fields with defaults to ensure we never emit empty payloads
+    const contract = EVENT_CONTRACTS[verb];
+    contract.forEach((key: string) => {
+      if (fields[key] === undefined) {
+        fields[key] = typeof key === 'string' && key.endsWith('_ms') ? 1000 : 'default';
       }
-    }
+    });
 
-    t += randomInt(500, 1500);
-
-    // Zone
-    if (placedPieces.some(p => p.key === 'zone')) {
-      events.push({ t, type: 'zone.enter', payload: { zone_id: 'zone_opt' } });
-      t += randomInt(800, 4000);
-      events.push({ t, type: 'zone.exit', payload: { zone_id: 'zone_opt', dwell_ms: randomInt(800, 4000) } });
-    }
-
-    t += randomInt(400, 1200);
-
-    // Choice
-    if (placedPieces.some(p => p.key === 'choice')) {
-      events.push({ t, type: 'prompt.presented', payload: { stimulus_id: 'q_1', presented_at: t, modality: 'visual' } });
-      t += randomInt(1500, 3800);
-      events.push({ t, type: 'decision.made', payload: { choice_id: 'opt_A', options_shown: 3, latency_ms: randomInt(1500, 3800), changed_mind_count: randomInt(0, 2) } });
-    }
-
-    // Hint
-    if (placedPieces.some(p => p.key === 'hint') && Math.random() > 0.7) {
-      events.push({ t, type: 'hint.request', payload: { elapsed_ms: t, attempt_index: 1 } });
-    }
+    events.push({
+      ...common,
+      t,
+      verb,
+      fields
+    });
   }
 
-  t += randomInt(1000, 3000);
-  
-  if (placedPieces.some(p => p.key === 'goal')) {
-    events.push({ t, type: 'task.complete', payload: { duration_ms: t, accuracy: 0.85, optimal_path_ratio: 0.9 } });
-  }
-  
-  events.push({ t, type: 'session.end', payload: { duration_ms: t, event_count: events.length } });
+  t += 1000;
+  events.push({
+    ...common,
+    t,
+    verb: 'session.end',
+    fields: { duration_ms: t, event_count: events.length + 1 }
+  });
 
   return events;
 }

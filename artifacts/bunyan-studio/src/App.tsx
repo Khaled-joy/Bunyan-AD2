@@ -20,7 +20,13 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={LandingPage} />
-        <Route path="/builder" component={BuilderPage} />
+        <Route path="/builder/:id" component={BuilderPage} />
+        <Route path="/builder" component={() => {
+          // Compatibility redirect to home since we require an ID now
+          const [, navigate] = useLocation();
+          navigate('/');
+          return null;
+        }} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>

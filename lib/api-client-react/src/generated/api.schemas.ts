@@ -9,12 +9,42 @@ export interface HealthStatus {
   status: string;
 }
 
-export type StudioProjectLocale = typeof StudioProjectLocale[keyof typeof StudioProjectLocale];
+export type StudioProjectAgeGroup = typeof StudioProjectAgeGroup[keyof typeof StudioProjectAgeGroup];
 
 
-export const StudioProjectLocale = {
-  en: 'en',
+export const StudioProjectAgeGroup = {
+  '6-8': '6-8',
+  '9-12': '9-12',
+  '13-17': '13-17',
+} as const;
+
+export type StudioProjectLanguage = typeof StudioProjectLanguage[keyof typeof StudioProjectLanguage];
+
+
+export const StudioProjectLanguage = {
+  both: 'both',
   ar: 'ar',
+  en: 'en',
+} as const;
+
+export type StudioProjectBehavioursItem = typeof StudioProjectBehavioursItem[keyof typeof StudioProjectBehavioursItem];
+
+
+export const StudioProjectBehavioursItem = {
+  responsibility: 'responsibility',
+  respect: 'respect',
+  participation: 'participation',
+  courage: 'courage',
+  problemSolving: 'problemSolving',
+} as const;
+
+export type StudioProjectStatus = typeof StudioProjectStatus[keyof typeof StudioProjectStatus];
+
+
+export const StudioProjectStatus = {
+  draft: 'draft',
+  building: 'building',
+  inReview: 'inReview',
 } as const;
 
 export type StudioProjectConfig = { [key: string]: unknown };
@@ -22,19 +52,52 @@ export type StudioProjectConfig = { [key: string]: unknown };
 export interface StudioProject {
   id: string;
   name: string;
-  theme: string;
-  locale: StudioProjectLocale;
+  domain: string;
+  ageGroup: StudioProjectAgeGroup;
+  language: StudioProjectLanguage;
+  behaviours: StudioProjectBehavioursItem[];
+  status: StudioProjectStatus;
   config: StudioProjectConfig;
   createdAt: string;
   updatedAt: string;
 }
 
-export type StudioProjectInputLocale = typeof StudioProjectInputLocale[keyof typeof StudioProjectInputLocale];
+export type StudioProjectInputAgeGroup = typeof StudioProjectInputAgeGroup[keyof typeof StudioProjectInputAgeGroup];
 
 
-export const StudioProjectInputLocale = {
-  en: 'en',
+export const StudioProjectInputAgeGroup = {
+  '6-8': '6-8',
+  '9-12': '9-12',
+  '13-17': '13-17',
+} as const;
+
+export type StudioProjectInputLanguage = typeof StudioProjectInputLanguage[keyof typeof StudioProjectInputLanguage];
+
+
+export const StudioProjectInputLanguage = {
+  both: 'both',
   ar: 'ar',
+  en: 'en',
+} as const;
+
+export type StudioProjectInputBehavioursItem = typeof StudioProjectInputBehavioursItem[keyof typeof StudioProjectInputBehavioursItem];
+
+
+export const StudioProjectInputBehavioursItem = {
+  responsibility: 'responsibility',
+  respect: 'respect',
+  participation: 'participation',
+  courage: 'courage',
+  problemSolving: 'problemSolving',
+} as const;
+
+export type StudioProjectInputStatus = typeof StudioProjectInputStatus[keyof typeof StudioProjectInputStatus];
+
+
+export const StudioProjectInputStatus = {
+  draft: 'draft',
+  building: 'building',
+  inReview: 'inReview',
 } as const;
 
 export type StudioProjectInputConfig = { [key: string]: unknown };
@@ -49,8 +112,56 @@ export interface StudioProjectInput {
      * @minLength 1
      * @maxLength 80
      */
-  theme: string;
-  locale: StudioProjectInputLocale;
+  domain: string;
+  ageGroup: StudioProjectInputAgeGroup;
+  language: StudioProjectInputLanguage;
+  /** @minItems 1 */
+  behaviours: StudioProjectInputBehavioursItem[];
+  status: StudioProjectInputStatus;
   config: StudioProjectInputConfig;
+}
+
+export type StudioOrderAgeGroup = typeof StudioOrderAgeGroup[keyof typeof StudioOrderAgeGroup];
+
+
+export const StudioOrderAgeGroup = {
+  '6-8': '6-8',
+  '9-12': '9-12',
+  '13-17': '13-17',
+} as const;
+
+export type StudioOrderBehavioursItem = typeof StudioOrderBehavioursItem[keyof typeof StudioOrderBehavioursItem];
+
+
+export const StudioOrderBehavioursItem = {
+  responsibility: 'responsibility',
+  respect: 'respect',
+  participation: 'participation',
+  courage: 'courage',
+  problemSolving: 'problemSolving',
+} as const;
+
+export type StudioOrderLanguage = typeof StudioOrderLanguage[keyof typeof StudioOrderLanguage];
+
+
+export const StudioOrderLanguage = {
+  both: 'both',
+  ar: 'ar',
+  en: 'en',
+} as const;
+
+export interface StudioOrder {
+  id: string;
+  requestingBody: string;
+  title: string;
+  domain: string;
+  ageGroup: StudioOrderAgeGroup;
+  behaviours: StudioOrderBehavioursItem[];
+  dueDate: string;
+  description: string;
+  language: StudioOrderLanguage;
+  buildWeeks: number;
+  artWeeks: number;
+  productionNeeds: string[];
 }
 

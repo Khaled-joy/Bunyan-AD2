@@ -13,11 +13,13 @@
   --color-surface: var(--surface);
   --color-line: var(--line);
   --color-line-soft: var(--line-soft);
-  --color-block-blue: var(--block-blue);
-  --color-block-amber: var(--block-amber);
-  --color-block-coral: var(--block-coral);
-  --color-block-teal: var(--block-teal);
-  --color-block-violet: var(--block-violet);
+  
+  --color-blue: var(--blue);
+  --color-amber: var(--amber);
+  --color-coral: var(--coral);
+  --color-teal: var(--teal);
+  --color-violet: var(--violet);
+  
   --color-locked: var(--locked);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
@@ -40,16 +42,17 @@
   --surface: #FFFFFF;
   --line: #CBD6E0;
   --line-soft: #E2E9EF;
-  --block-blue: #2D6BD4;
-  --block-amber: #E9A320;
-  --block-coral: #DE5B45;
-  --block-teal: #1D9E85;
-  --block-violet: #6B5BC4;
+  
+  --blue: #2D6BD4;
+  --amber: #E9A320;
+  --coral: #DE5B45;
+  --teal: #1D9E85;
+  --violet: #6B5BC4;
+  
   --locked: #1B3350;
   --ok: #1D9E85;
   --warn: #C9741A;
 
-  /* shadcn mappings - Mapping to Bunyan palette where applicable */
   --background: var(--paper);
   --foreground: var(--ink);
   
@@ -99,15 +102,11 @@
   }
 }
 
-.font-display {
-  font-family: var(--app-font-display);
-}
+.font-display { font-family: var(--app-font-display); }
+.font-mono { font-family: var(--app-font-mono); }
+.font-sans { font-family: var(--app-font-sans); }
+.font-arabic { font-family: 'IBM Plex Sans Arabic', 'IBM Plex Sans', sans-serif; }
 
-.font-mono {
-  font-family: var(--app-font-mono);
-}
-
-/* RTL Layout utilities */
 [dir="rtl"] {
   text-align: right;
 }

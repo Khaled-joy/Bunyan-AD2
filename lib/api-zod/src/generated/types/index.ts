@@ -7,9 +7,19 @@
  */
 
 export * from './healthStatus';
+export * from './studioOrder';
+export * from './studioOrderAgeGroup';
+export * from './studioOrderBehavioursItem';
+export * from './studioOrderLanguage';
 export * from './studioProject';
+export * from './studioProjectAgeGroup';
+export * from './studioProjectBehavioursItem';
 export * from './studioProjectConfig';
 export * from './studioProjectInput';
+export * from './studioProjectInputAgeGroup';
+export * from './studioProjectInputBehavioursItem';
 export * from './studioProjectInputConfig';
-export * from './studioProjectInputLocale';
-export * from './studioProjectLocale';
+export * from './studioProjectInputLanguage';
+export * from './studioProjectInputStatus';
+export * from './studioProjectLanguage';
+export * from './studioProjectStatus';

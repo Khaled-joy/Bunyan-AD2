@@ -5,8 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { StudioProjectInputAgeGroup } from './studioProjectInputAgeGroup';
+import type { StudioProjectInputBehavioursItem } from './studioProjectInputBehavioursItem';
 import type { StudioProjectInputConfig } from './studioProjectInputConfig';
-import type { StudioProjectInputLocale } from './studioProjectInputLocale';
+import type { StudioProjectInputLanguage } from './studioProjectInputLanguage';
+import type { StudioProjectInputStatus } from './studioProjectInputStatus';
 
 export interface StudioProjectInput {
   /**
@@ -18,7 +21,11 @@ export interface StudioProjectInput {
      * @minLength 1
      * @maxLength 80
      */
-  theme: string;
-  locale: StudioProjectInputLocale;
+  domain: string;
+  ageGroup: StudioProjectInputAgeGroup;
+  language: StudioProjectInputLanguage;
+  /** @minItems 1 */
+  behaviours: StudioProjectInputBehavioursItem[];
+  status: StudioProjectInputStatus;
   config: StudioProjectInputConfig;
 }

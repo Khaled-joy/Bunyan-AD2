@@ -1,69 +1,68 @@
 import { create } from 'zustand';
-import { DEFAULT_PIECE_SETTINGS } from './constants';
 
 export interface PlacedPiece {
   id: string; // uuid
-  key: string; // Piece key
+  paletteId: string;
+  sealedType: string;
   x: number;
   y: number;
-  settings: Record<string, any>;
+  editableLabel: string;
+  size: number; // 70 - 170
+  color: string; // SWATCHES id
+  settings: Record<string, string | number>; // bounded/registry values
+  assignedBehaviours: string[];
+  reviewerWhy: string;
 }
 
 interface StudioState {
-  theme: string;
+  locale: 'en' | 'ar';
   pieces: PlacedPiece[];
   selectedPieceId: string | null;
-  locale: 'en' | 'ar';
-  
-  setTheme: (theme: string) => void;
+
   setLocale: (locale: 'en' | 'ar') => void;
-  addPiece: (key: string, x: number, y: number) => void;
-  updatePiecePosition: (id: string, x: number, y: number) => void;
-  updatePieceSetting: (id: string, settingId: string, value: any) => void;
+  addPiece: (paletteId: string, sealedType: string, x: number, y: number, name: string) => void;
+  updatePiece: (id: string, updates: Partial<PlacedPiece>) => void;
   removePiece: (id: string) => void;
   setSelectedPiece: (id: string | null) => void;
   clearGrid: () => void;
-  loadProject: (theme: string, pieces: PlacedPiece[]) => void;
+  loadProject: (pieces: PlacedPiece[]) => void;
 }
 
 export const useStudioStore = create<StudioState>((set) => ({
-  theme: 'waste',
+  locale: 'en',
   pieces: [],
   selectedPieceId: null,
-  locale: 'en',
-  
-  setTheme: (theme) => set({ theme }),
+
   setLocale: (locale) => set({ locale }),
-  
-  addPiece: (key, x, y) => set((state) => {
+
+  addPiece: (paletteId, sealedType, x, y, name) => set((state) => {
     const id = crypto.randomUUID();
     const newPiece: PlacedPiece = {
       id,
-      key,
+      paletteId,
+      sealedType,
       x,
       y,
-      settings: { ...DEFAULT_PIECE_SETTINGS[key] }
+      editableLabel: name,
+      size: 100,
+      color: 'blue',
+      settings: {},
+      assignedBehaviours: [],
+      reviewerWhy: '',
     };
     return { pieces: [...state.pieces, newPiece], selectedPieceId: id };
   }),
-  
-  updatePiecePosition: (id, x, y) => set((state) => ({
-    pieces: state.pieces.map(p => p.id === id ? { ...p, x, y } : p)
+
+  updatePiece: (id, updates) => set((state) => ({
+    pieces: state.pieces.map(p => p.id === id ? { ...p, ...updates } : p)
   })),
-  
-  updatePieceSetting: (id, settingId, value) => set((state) => ({
-    pieces: state.pieces.map(p => p.id === id ? {
-      ...p,
-      settings: { ...p.settings, [settingId]: value }
-    } : p)
-  })),
-  
+
   removePiece: (id) => set((state) => ({
     pieces: state.pieces.filter(p => p.id !== id),
     selectedPieceId: state.selectedPieceId === id ? null : state.selectedPieceId
   })),
-  
+
   setSelectedPiece: (id) => set({ selectedPieceId: id }),
   clearGrid: () => set({ pieces: [], selectedPieceId: null }),
-  loadProject: (theme, pieces) => set({ theme, pieces, selectedPieceId: null })
+  loadProject: (pieces) => set({ pieces, selectedPieceId: null })
 }));

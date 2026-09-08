@@ -1,61 +1,55 @@
-import React from 'react';
 import { useStudioStore } from '@/lib/store';
 import { ScoreState } from '@/lib/scoring';
+import { BEHAVIOURS } from '@/lib/constants';
+import { useParams } from 'wouter';
+import { getGetStudioProjectQueryKey, useGetStudioProject } from '@workspace/api-client-react';
 import { t } from '@/lib/i18n';
-import { THEMES } from '@/lib/constants';
-
-const DIMENSIONS = [
-  { key: 'responsibility', labelEn: 'Responsibility', labelAr: 'المسؤولية', reqPiece: 'bin' },
-  { key: 'respect', labelEn: 'Respect', labelAr: 'الاحترام', reqPiece: 'queue' },
-  { key: 'participation', labelEn: 'Participation', labelAr: 'المشاركة', reqPiece: 'zone' },
-  { key: 'courage', labelEn: 'Courage', labelAr: 'الشجاعة', reqPiece: 'choice' },
-  { key: 'problemSolving', labelEn: 'Problem Solving', labelAr: 'حل المشكلات', reqPiece: 'hint' },
-];
 
 export function Indicators({ score }: { score: ScoreState }) {
-  const { pieces, locale, theme } = useStudioStore();
-  const currentTheme = THEMES.find((item) => item.id === theme) || THEMES[0];
+  const { pieces, locale } = useStudioStore();
+  
+  const params = useParams();
+  const { data: project } = useGetStudioProject(params.id ?? '', {
+    query: { enabled: Boolean(params.id), queryKey: params.id ? getGetStudioProjectQueryKey(params.id) : [] }
+  });
+
+  const briefBehaviours = project?.behaviours || [];
 
   return (
-    <div className="w-full shrink-0 bg-[var(--surface)] p-4 rounded-md shadow-sm border border-[var(--line)] flex flex-col gap-4 lg:w-80">
-      <h3 className="font-display font-semibold text-lg text-[var(--ink)]">
-        {locale === 'en' ? 'Indicators' : 'المؤشرات'}
-      </h3>
-      
-      <div className="space-y-4">
-        {DIMENSIONS.map(dim => {
-          const hasPiece = pieces.some(p => p.key === dim.reqPiece);
-          const val = score[dim.key as keyof ScoreState];
-          
-          return (
-            <div key={dim.key} className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium text-[var(--ink)]">
-                  {locale === 'en' ? dim.labelEn : dim.labelAr}
-                </span>
-                {hasPiece && (
-                  <span className="text-[var(--ink-soft)] font-mono">{val}%</span>
-                )}
-              </div>
-              
-              {hasPiece ? (
-                <div className="h-2 w-full bg-[var(--line-soft)] rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-[var(--block-blue)] transition-all duration-300 ease-out"
-                    style={{ width: `${val}%` }}
-                  />
-                </div>
-              ) : (
-                <div className="h-6 flex items-center bg-[var(--warn)]/10 px-2 rounded border border-[var(--warn)]/20">
-                  <span className="text-xs font-medium text-[var(--warn)] truncate">
-                    {t('nav.missingPiece', locale, { piece: currentTheme.labels[locale][dim.reqPiece as keyof typeof currentTheme.labels.en] })}
-                  </span>
-                </div>
-              )}
+    <div className="w-full lg:w-72 xl:w-80 flex flex-col gap-4 overflow-y-auto max-h-full shrink-0">
+      {briefBehaviours.map(bId => {
+        const behaviour = BEHAVIOURS.find(b => b.id === bId);
+        if (!behaviour) return null;
+
+        const assignedPieces = pieces.filter(p => p.assignedBehaviours?.includes(bId));
+        const val = score[bId as keyof ScoreState] ?? 0;
+        
+        return (
+          <div key={bId} className="bg-[var(--surface)] p-3 rounded-md border border-[var(--line)]">
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-semibold text-[var(--ink)] text-sm">{locale === 'ar' ? behaviour.labelAr : behaviour.label}</span>
+              <span className="font-mono text-xs font-medium text-[var(--ink-soft)]">{val}/100</span>
             </div>
-          );
-        })}
-      </div>
+            
+            <div className="h-2 bg-[var(--line-soft)] rounded-full overflow-hidden mb-2">
+              <div 
+                className="h-full bg-[var(--blue)] transition-all duration-300 ease-out"
+                style={{ width: `${val}%` }}
+              />
+            </div>
+            
+            {assignedPieces.length > 0 ? (
+              <div className="text-xs text-[var(--ink-soft)] leading-relaxed">
+                {t('builder.bars.from', locale)} {assignedPieces.map(p => p.editableLabel).join(', ')}
+              </div>
+            ) : (
+              <div className="text-xs text-[var(--warn)] font-medium">
+                {t('builder.bars.noPiece', locale)}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

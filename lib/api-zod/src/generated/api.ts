@@ -23,8 +23,11 @@ export const HealthCheckResponse = zod.object({
 export const ListStudioProjectsResponseItem = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "theme": zod.string(),
-  "locale": zod.enum(['en', 'ar']),
+  "domain": zod.string(),
+  "ageGroup": zod.enum(['6-8', '9-12', '13-17']),
+  "language": zod.enum(['both', 'ar', 'en']),
+  "behaviours": zod.array(zod.enum(['responsibility', 'respect', 'participation', 'courage', 'problemSolving'])),
+  "status": zod.enum(['draft', 'building', 'inReview']),
   "config": zod.record(zod.string(), zod.unknown()),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -37,22 +40,29 @@ export const ListStudioProjectsResponse = zod.array(ListStudioProjectsResponseIt
  */
 export const createStudioProjectBodyNameMax = 120;
 
-export const createStudioProjectBodyThemeMax = 80;
+export const createStudioProjectBodyDomainMax = 80;
+
 
 
 
 export const CreateStudioProjectBody = zod.object({
   "name": zod.string().min(1).max(createStudioProjectBodyNameMax),
-  "theme": zod.string().min(1).max(createStudioProjectBodyThemeMax),
-  "locale": zod.enum(['en', 'ar']),
+  "domain": zod.string().min(1).max(createStudioProjectBodyDomainMax),
+  "ageGroup": zod.enum(['6-8', '9-12', '13-17']),
+  "language": zod.enum(['both', 'ar', 'en']),
+  "behaviours": zod.array(zod.enum(['responsibility', 'respect', 'participation', 'courage', 'problemSolving'])).min(1),
+  "status": zod.enum(['draft', 'building', 'inReview']),
   "config": zod.record(zod.string(), zod.unknown())
 })
 
 export const CreateStudioProjectResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "theme": zod.string(),
-  "locale": zod.enum(['en', 'ar']),
+  "domain": zod.string(),
+  "ageGroup": zod.enum(['6-8', '9-12', '13-17']),
+  "language": zod.enum(['both', 'ar', 'en']),
+  "behaviours": zod.array(zod.enum(['responsibility', 'respect', 'participation', 'courage', 'problemSolving'])),
+  "status": zod.enum(['draft', 'building', 'inReview']),
   "config": zod.record(zod.string(), zod.unknown()),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -69,8 +79,11 @@ export const GetStudioProjectParams = zod.object({
 export const GetStudioProjectResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "theme": zod.string(),
-  "locale": zod.enum(['en', 'ar']),
+  "domain": zod.string(),
+  "ageGroup": zod.enum(['6-8', '9-12', '13-17']),
+  "language": zod.enum(['both', 'ar', 'en']),
+  "behaviours": zod.array(zod.enum(['responsibility', 'respect', 'participation', 'courage', 'problemSolving'])),
+  "status": zod.enum(['draft', 'building', 'inReview']),
   "config": zod.record(zod.string(), zod.unknown()),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -86,22 +99,29 @@ export const UpdateStudioProjectParams = zod.object({
 
 export const updateStudioProjectBodyNameMax = 120;
 
-export const updateStudioProjectBodyThemeMax = 80;
+export const updateStudioProjectBodyDomainMax = 80;
+
 
 
 
 export const UpdateStudioProjectBody = zod.object({
   "name": zod.string().min(1).max(updateStudioProjectBodyNameMax),
-  "theme": zod.string().min(1).max(updateStudioProjectBodyThemeMax),
-  "locale": zod.enum(['en', 'ar']),
+  "domain": zod.string().min(1).max(updateStudioProjectBodyDomainMax),
+  "ageGroup": zod.enum(['6-8', '9-12', '13-17']),
+  "language": zod.enum(['both', 'ar', 'en']),
+  "behaviours": zod.array(zod.enum(['responsibility', 'respect', 'participation', 'courage', 'problemSolving'])).min(1),
+  "status": zod.enum(['draft', 'building', 'inReview']),
   "config": zod.record(zod.string(), zod.unknown())
 })
 
 export const UpdateStudioProjectResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "theme": zod.string(),
-  "locale": zod.enum(['en', 'ar']),
+  "domain": zod.string(),
+  "ageGroup": zod.enum(['6-8', '9-12', '13-17']),
+  "language": zod.enum(['both', 'ar', 'en']),
+  "behaviours": zod.array(zod.enum(['responsibility', 'respect', 'participation', 'courage', 'problemSolving'])),
+  "status": zod.enum(['draft', 'building', 'inReview']),
   "config": zod.record(zod.string(), zod.unknown()),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -116,5 +136,25 @@ export const DeleteStudioProjectParams = zod.object({
 })
 
 export const DeleteStudioProjectResponse = zod.void()
+
+
+/**
+ * @summary List incoming game requests from Bunyan Abu Dhabi
+ */
+export const ListStudioOrdersResponseItem = zod.object({
+  "id": zod.string(),
+  "requestingBody": zod.string(),
+  "title": zod.string(),
+  "domain": zod.string(),
+  "ageGroup": zod.enum(['6-8', '9-12', '13-17']),
+  "behaviours": zod.array(zod.enum(['responsibility', 'respect', 'participation', 'courage', 'problemSolving'])),
+  "dueDate": zod.coerce.date(),
+  "description": zod.string(),
+  "language": zod.enum(['both', 'ar', 'en']),
+  "buildWeeks": zod.number(),
+  "artWeeks": zod.number(),
+  "productionNeeds": zod.array(zod.string())
+})
+export const ListStudioOrdersResponse = zod.array(ListStudioOrdersResponseItem)
 
 

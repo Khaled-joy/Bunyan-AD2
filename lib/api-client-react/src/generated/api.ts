@@ -21,6 +21,7 @@ import type {
 
 import type {
   HealthStatus,
+  StudioOrder,
   StudioProject,
   StudioProjectInput
 } from './api.schemas';
@@ -497,4 +498,81 @@ export const useDeleteStudioProject = <TError = ErrorType<void>,
       > => {
       return useMutation(getDeleteStudioProjectMutationOptions(options));
     }
+
+export const getListStudioOrdersUrl = () => {
+
+
+
+
+  return `/api/studio/orders`
+}
+
+/**
+ * @summary List incoming game requests from Bunyan Abu Dhabi
+ */
+export const listStudioOrders = async ( options?: Parameters<typeof customFetch>[1]): Promise<StudioOrder[]> => {
+
+  return customFetch<StudioOrder[]>(getListStudioOrdersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListStudioOrdersQueryKey = () => {
+    return [
+    `/api/studio/orders`
+    ] as const;
+    }
+
+
+export const getListStudioOrdersQueryOptions = <TData = Awaited<ReturnType<typeof listStudioOrders>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStudioOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListStudioOrdersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listStudioOrders>>> = ({ signal }) => listStudioOrders({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listStudioOrders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListStudioOrdersQueryResult = NonNullable<Awaited<ReturnType<typeof listStudioOrders>>>
+export type ListStudioOrdersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List incoming game requests from Bunyan Abu Dhabi
+ */
+
+export function useListStudioOrders<TData = Awaited<ReturnType<typeof listStudioOrders>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStudioOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListStudioOrdersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

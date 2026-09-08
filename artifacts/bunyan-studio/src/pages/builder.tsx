@@ -1,59 +1,77 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useParams, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
+import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core';
+
 import { StudioShell } from '@/components/studio/shell';
 import { Palette } from '@/components/studio/palette';
 import { Grid } from '@/components/studio/grid';
 import { Inspector } from '@/components/studio/inspector';
 import { Console } from '@/components/studio/console';
 import { Indicators } from '@/components/studio/indicators';
-import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor, TouchSensor } from '@dnd-kit/core';
-import { restrictToWindowEdges } from '@dnd-kit/modifiers';
-import { useStudioStore, PlacedPiece } from '@/lib/store';
-import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
-import { Trash2, Download, PlayCircle, Save, FileJson } from 'lucide-react';
-import { generateSessionEvents } from '@/lib/simulator';
-import { initialScore, updateScores, ScoreState } from '@/lib/scoring';
-import { PIECES, THEMES } from '@/lib/constants';
-import {
-  getListStudioProjectsQueryKey,
-  getGetStudioProjectQueryKey,
-  useCreateStudioProject,
-  useDeleteStudioProject,
-  useGetStudioProject,
-  useListStudioProjects,
-  useUpdateStudioProject,
-} from '@workspace/api-client-react';
+import { Trash2, Download, PlayCircle, Save, FileJson, PanelTopClose, PanelTopOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { useStudioStore, PlacedPiece } from '@/lib/store';
+import { t } from '@/lib/i18n';
+import { generateSessionEvents } from '@/lib/simulator';
+import { initialScore, updateScores, ScoreState } from '@/lib/scoring';
+import { BEHAVIOURS, SEALED_TYPES, EVENT_CONTRACTS, PRODUCTION_NEEDS, DOMAINS } from '@/lib/constants';
+import {
+  getGetStudioProjectQueryKey,
+  useGetStudioProject,
+  useUpdateStudioProject,
+  getListStudioProjectsQueryKey,
+} from '@workspace/api-client-react';
+
 export default function BuilderPage() {
-  const { theme, pieces, locale, addPiece, updatePiecePosition, clearGrid, loadProject } = useStudioStore();
+  const params = useParams();
+  const [, navigate] = useLocation();
+  const id = params.id;
+  
+  if (!id) {
+    navigate('/');
+    return null;
+  }
+
+  const { pieces, locale, addPiece, clearGrid, loadProject, updatePiece } = useStudioStore();
   const [isSimulating, setIsSimulating] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [score, setScore] = useState<ScoreState>(initialScore);
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const [showBrief, setShowBrief] = useState(false);
   const queryClient = useQueryClient();
   
   const simulationRef = useRef<number | null>(null);
 
-  const { data: projects } = useListStudioProjects();
-  const { data: loadedProject } = useGetStudioProject(projectId ?? '', {
+  const { data: project, isLoading } = useGetStudioProject(id, {
     query: {
-      enabled: Boolean(projectId),
-      queryKey: getGetStudioProjectQueryKey(projectId ?? ''),
+      enabled: Boolean(id),
+      queryKey: getGetStudioProjectQueryKey(id),
     },
   });
-  const createProject = useCreateStudioProject();
-  const updateProject = useUpdateStudioProject();
-  const deleteProject = useDeleteStudioProject();
 
+  const updateProject = useUpdateStudioProject();
+
+  const initRef = useRef(false);
   useEffect(() => {
-    if (!loadedProject) return;
-    const savedPieces = Array.isArray(loadedProject.config.pieces)
-      ? loadedProject.config.pieces as PlacedPiece[]
-      : [];
-    loadProject(loadedProject.theme, savedPieces);
-  }, [loadedProject, loadProject]);
+    if (project && !initRef.current) {
+      const savedPieces = Array.isArray(project.config?.pieces) ? project.config.pieces : [];
+      
+      // Normalize legacy pieces
+      const normalized = savedPieces.map((p: any) => ({
+        ...p,
+        size: p.size ?? 100,
+        color: p.color ?? 'blue',
+        settings: p.settings ?? {},
+        assignedBehaviours: p.assignedBehaviours ?? [],
+        reviewerWhy: p.reviewerWhy ?? ''
+      }));
+      
+      loadProject(normalized as PlacedPiece[]);
+      initRef.current = true;
+    }
+  }, [project, loadProject]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -65,53 +83,75 @@ export default function BuilderPage() {
     if (!over) return;
     
     if (active.data.current?.type === 'palette') {
-      const key = active.data.current.key;
+      const item = active.data.current.item;
       const x = Math.round((event.active.rect.current.translated?.left || 0) / 26) * 26;
       const y = Math.round((event.active.rect.current.translated?.top || 0) / 26) * 26;
       
       const adjustedX = Math.max(0, x - 256);
       
-      addPiece(key, adjustedX, y);
+      addPiece(item.id, item.sealedType, adjustedX, Math.max(0, y), locale === 'ar' ? item.nameAr : item.name);
     } else if (active.data.current?.type === 'piece') {
-      const id = active.data.current.id;
-      const piece = pieces.find(p => p.id === id);
+      const pid = active.data.current.id;
+      const piece = pieces.find(p => p.id === pid);
       if (piece) {
         const x = Math.max(0, Math.round((piece.x + delta.x) / 26) * 26);
         const y = Math.max(0, Math.round((piece.y + delta.y) / 26) * 26);
-        updatePiecePosition(id, x, y);
+        updatePiece(pid, { x, y });
       }
     }
   };
 
-  const checkConformance = () => {
-    const currentTheme = THEMES.find((item) => item.id === theme) || THEMES[0];
-    const hasAgent = pieces.some(p => p.key === 'agent');
-    const hasGoal = pieces.some(p => p.key === 'goal');
-    const hasInteractive = pieces.some(p => ['carryable', 'bin', 'choice', 'zone', 'rule', 'queue'].includes(p.key));
+  const checkReadiness = () => {
+    if (!project) return { status: 'warn', msg: 'Loading...' };
     
-    if (hasAgent && hasGoal && hasInteractive) {
-      const uniqueEvents = new Set(pieces.flatMap(p => PIECES.find(def => def.key === p.key)?.alwaysEmits || []));
-      return { ok: true, msg: t('builder.conformance.pass', locale, { count: String(pieces.length), events: String(uniqueEvents.size) }) };
+    const hasMap = pieces.some(p => SEALED_TYPES[p.sealedType]?.type === 'map');
+    const hasPlayer = pieces.some(p => SEALED_TYPES[p.sealedType]?.type === 'player');
+    const hasGoal = pieces.some(p => SEALED_TYPES[p.sealedType]?.type === 'goal');
+    
+    if (!hasMap || !hasPlayer || !hasGoal) {
+      let missingName = 'map';
+      if (!hasMap) missingName = t('home.pieces.map', locale);
+      else if (!hasPlayer) missingName = locale === 'ar' ? 'طفل لاعب' : 'player child';
+      else if (!hasGoal) missingName = locale === 'ar' ? 'هدف' : 'goal';
+      
+      return { status: 'error', msg: t('builder.readiness.missingSpecific', locale, { missing: missingName }), ready: false };
     }
     
-    const missing = [];
-    if (!hasAgent) missing.push(currentTheme.labels[locale].agent);
-    if (!hasGoal) missing.push(currentTheme.labels[locale].goal);
-    if (!hasInteractive) missing.push(locale === 'ar' ? 'قطعة تفاعلية' : 'interactive piece');
+    const unassignedCount = pieces.filter(p => SEALED_TYPES[p.sealedType]?.needsAssignment && p.assignedBehaviours.length === 0).length;
+    if (unassignedCount > 0) {
+      return { status: 'warn', msg: t('builder.readiness.unassigned', locale, { count: unassignedCount }), ready: true };
+    }
     
-    return { ok: false, msg: t('builder.conformance.fail', locale, { missing: missing.join(', ') }) };
+    const briefBehaviors = project.behaviours || [];
+    for (const b of briefBehaviors) {
+      if (!pieces.some(p => p.assignedBehaviours?.includes(b))) {
+        const label = BEHAVIOURS.find(def => def.id === b)?.[locale === 'ar' ? 'labelAr' : 'label'] || b;
+        return { status: 'warn', msg: t('builder.readiness.uncovered', locale, { behaviour: label }), ready: true };
+      }
+    }
+    
+    const uniqueEvents = new Set();
+    pieces.forEach(p => {
+      SEALED_TYPES[p.sealedType]?.alwaysRecords.forEach(e => uniqueEvents.add(e));
+    });
+    
+    return { 
+      status: 'ok', 
+      msg: t('builder.readiness.ready', locale, { pieces: pieces.length, events: uniqueEvents.size }), 
+      ready: true 
+    };
   };
 
-  const conf = checkConformance();
+  const readiness = checkReadiness();
 
   const handleRun = () => {
-    if (!conf.ok) return;
+    if (!readiness.ready || !project) return;
     
     setIsSimulating(true);
     setEvents([]);
-    setScore(initialScore);
+    setScore(initialScore); 
     
-    const generated = generateSessionEvents(pieces);
+    const generated = generateSessionEvents(pieces, project.ageGroup, project.id);
     let index = 0;
     let currentScore = { ...initialScore };
     
@@ -124,7 +164,7 @@ export default function BuilderPage() {
           return next;
         });
         index++;
-        simulationRef.current = window.setTimeout(stream, 55);
+        simulationRef.current = window.setTimeout(stream, 52);
       } else {
         setIsSimulating(false);
       }
@@ -139,6 +179,50 @@ export default function BuilderPage() {
     };
   }, []);
 
+  const handleSave = () => {
+    if (!project) return;
+    const mutateFn = updateProject.mutate;
+    mutateFn({
+      id: project.id,
+      data: {
+        name: project.name,
+        domain: project.domain,
+        ageGroup: project.ageGroup as any,
+        language: project.language as any,
+        behaviours: project.behaviours as any,
+        status: project.status as any,
+        config: {
+          ...((project.config as any) || {}),
+          pieces
+        }
+      }
+    }, {
+      onSuccess: () => {
+        toast.success(t('nav.gameSaved', locale));
+        queryClient.invalidateQueries({ queryKey: getListStudioProjectsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetStudioProjectQueryKey(project.id) });
+        lastSavedPieces.current = pieces; // Update ref only on success
+      },
+      onError: () => {
+        toast.error(t('nav.gameSaveFailed', locale));
+      }
+    });
+  };
+
+  // Autosave
+  const lastSavedPieces = useRef<PlacedPiece[]>([]);
+  useEffect(() => {
+    if (!initRef.current || !project || updateProject.isPending) return;
+    if (JSON.stringify(pieces) === JSON.stringify(lastSavedPieces.current)) return;
+    
+    const handler = setTimeout(() => {
+      handleSave();
+    }, 1500);
+
+    return () => clearTimeout(handler);
+  }, [pieces, project, updateProject.isPending]);
+
+
   const downloadJson = (filename: string, value: unknown) => {
     const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -150,164 +234,125 @@ export default function BuilderPage() {
   };
 
   const handleExport = () => {
-    downloadJson('bunyan-studio-project.json', {
+    downloadJson(`bunyan-project-${project?.id}.json`, {
       schemaVersion: 1,
-      name: loadedProject?.name ?? 'My Studio Project',
-      theme,
+      project,
       locale,
-      config: { pieces },
     });
   };
 
   const handleManifestExport = () => {
-    downloadJson('bunyan-studio-event-manifest.json', {
+    const uniqueEvents = new Set<string>();
+    pieces.forEach(p => {
+      SEALED_TYPES[p.sealedType]?.alwaysRecords.forEach(e => uniqueEvents.add(e));
+    });
+
+    const mappedPieces = pieces.filter(p => p.assignedBehaviours.length > 0).map(p => ({
+      name: p.editableLabel,
+      type: p.sealedType,
+      behaviours: p.assignedBehaviours
+    }));
+
+    downloadJson(`bunyan-manifest-${project?.id}.json`, {
       sealed: true,
       scoringVersion: '1.0',
-      events: Array.from(new Set(pieces.flatMap(p => PIECES.find(def => def.key === p.key)?.alwaysEmits || []))),
+      events: Array.from(uniqueEvents),
+      assignments: mappedPieces
     });
   };
 
-  const loadSample = () => {
-    const samplePieces: PlacedPiece[] = [
-      { id: crypto.randomUUID(), key: 'agent', x: 52, y: 52, settings: {} },
-      { id: crypto.randomUUID(), key: 'carryable', x: 156, y: 104, settings: {} },
-      { id: crypto.randomUUID(), key: 'bin', x: 260, y: 156, settings: {} },
-      { id: crypto.randomUUID(), key: 'queue', x: 364, y: 52, settings: {} },
-      { id: crypto.randomUUID(), key: 'goal', x: 468, y: 208, settings: {} },
-    ];
-    loadProject('waste', samplePieces);
-    
-    setProjectId(null);
-  };
+  if (isLoading) return <StudioShell><div className="p-8 font-sans">Loading...</div></StudioShell>;
+  if (!project) return <StudioShell><div className="p-8 font-sans">Project not found</div></StudioShell>;
 
-  const projectData = {
-    name: loadedProject?.name ?? "My Studio Project",
-    theme,
-    locale: locale as 'en' | 'ar',
-    config: { pieces },
-  };
-
-  const handleSave = () => {
-    if (projectId) {
-      updateProject.mutate({ id: projectId, data: projectData }, {
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: getListStudioProjectsQueryKey() }),
-      });
-      return;
-    }
-    createProject.mutate({ data: projectData }, {
-      onSuccess: (project) => {
-        setProjectId(project.id);
-        queryClient.invalidateQueries({ queryKey: getListStudioProjectsQueryKey() });
-      },
-    });
-  };
-
-  const handleDelete = () => {
-    if (!projectId) return;
-    deleteProject.mutate({ id: projectId }, {
-      onSuccess: () => {
-        setProjectId(null);
-        clearGrid();
-        queryClient.invalidateQueries({ queryKey: getListStudioProjectsQueryKey() });
-      },
-    });
-  };
-
-  // Debounced Autosave
-  const lastSavedPieces = useRef<PlacedPiece[]>(pieces);
-  const lastSavedTheme = useRef<string>(theme);
-  
-  useEffect(() => {
-    if (pieces === lastSavedPieces.current && theme === lastSavedTheme.current) return;
-    
-    const handler = setTimeout(() => {
-      if (projectId) {
-        updateProject.mutate({ id: projectId, data: projectData });
-      } else {
-        createProject.mutate({ data: projectData }, {
-          onSuccess: (res) => setProjectId(res.id)
-        });
-      }
-      
-      lastSavedPieces.current = pieces;
-      lastSavedTheme.current = theme;
-    }, 1000);
-
-    return () => clearTimeout(handler);
-  }, [pieces, theme, projectId, locale]);
+  const config = (project.config || {}) as any;
+  const domain = DOMAINS.find(item => item.id === project.domain);
+  const domainLabel = domain ? (locale === 'ar' ? domain.labelAr : domain.label) : project.domain;
+  const languageLabel = t(`home.form.langOptions.${project.language}`, locale);
 
   return (
     <StudioShell>
       <div className="flex min-h-full flex-col overflow-visible lg:h-full lg:overflow-hidden">
         
-        {/* Top Controls */}
-        <div className="min-h-12 bg-[var(--surface)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2 px-3 py-2 shrink-0 shadow-sm z-20 relative">
-          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1">
-            <label className="sr-only" htmlFor="saved-projects">{t('nav.savedProjects', locale)}</label>
-            <select
-              id="saved-projects"
-              value={projectId ?? ''}
-              onChange={(event) => {
-                const id = event.target.value;
-                setProjectId(id || null);
-                if (!id) clearGrid();
-              }}
-              className="h-8 max-w-44 rounded-md border border-[var(--line)] bg-white px-2 text-xs"
-            >
-              <option value="">{t('nav.newProject', locale)}</option>
-              {projects?.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
-            </select>
-            <Button variant="outline" size="sm" onClick={loadSample}>
-              {t('nav.loadSample', locale)}
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
-              {t('nav.save', locale)}
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
-              {t('nav.export', locale)}
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleManifestExport}>
-              <FileJson className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
-              {t('nav.exportManifest', locale)}
-            </Button>
-            {updateProject.isPending && <span className="text-xs text-[var(--ink-faint)]">{t('nav.saving', locale)}</span>}
-          </div>
-          
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 lg:gap-4">
-            <div className={`text-sm font-medium ${conf.ok ? 'text-[var(--ok)]' : 'text-[var(--warn)]'}`}>
-              {conf.msg}
+        {/* Header Bar */}
+        <div className="bg-[var(--surface)] border-b border-[var(--line)] flex flex-wrap items-center justify-between px-4 py-2 shrink-0 shadow-sm z-20 relative">
+          <div>
+            <h1 className="font-display font-bold text-[var(--ink)] text-xl">{project.name}</h1>
+            <div className="text-xs text-[var(--ink-soft)] font-medium">
+              {domainLabel} • {t('builder.ages', locale)} {project.ageGroup} • {languageLabel} • {t('builder.buildShort', locale)} {config.buildWeeks}{t('builder.weeksShort', locale)}, {t('builder.artShort', locale)} {config.artWeeks}{t('builder.weeksShort', locale)}
             </div>
-            
-            <div className="h-6 w-px bg-[var(--line)]" />
-            
-            <Button variant="ghost" size="sm" onClick={clearGrid}>
-              <Trash2 className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} aria-label={t('nav.exportJson', locale)}>
+              <Download className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              <span className="hidden sm:inline">{t('nav.exportJson', locale)}</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleManifestExport} aria-label={t('nav.exportManifest', locale)}>
+              <FileJson className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              <span className="hidden sm:inline">{t('nav.exportManifest', locale)}</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowBrief(!showBrief)}>
+              {showBrief ? <PanelTopClose className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" /> : <PanelTopOpen className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />}
+              {showBrief ? t('nav.hideBrief', locale) : t('nav.showBrief', locale)}
+            </Button>
+            <Button size="sm" onClick={handleSave} className="bg-[var(--blue)] hover:bg-[var(--blue)]/90 text-white" disabled={updateProject.isPending}>
+              <Save className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              {updateProject.isPending ? t('nav.saving', locale) : t('nav.save', locale)}
+            </Button>
+          </div>
+        </div>
+
+        {/* Toggleable Brief Panel */}
+        {showBrief && (
+          <div className="bg-[var(--paper)] border-b border-[var(--line)] p-4 shrink-0 shadow-inner max-h-48 overflow-y-auto grid grid-cols-1 md:grid-cols-3 gap-6 text-sm relative z-10">
+            <div>
+              <h3 className="font-bold text-[var(--ink)] mb-1">{t('builder.description', locale)}</h3>
+              <p className="text-[var(--ink-soft)]">{config.description}</p>
+            </div>
+            <div>
+              <h3 className="font-bold text-[var(--ink)] mb-1">{t('builder.behavioursReq', locale)}</h3>
+              <ul className="list-disc ltr:pl-4 rtl:pr-4 text-[var(--ink-soft)]">
+                {project.behaviours.map((b: string) => (
+                  <li key={b}>{BEHAVIOURS.find(def => def.id === b)?.[locale === 'ar' ? 'labelAr' : 'label'] || b}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-bold text-[var(--ink)] mb-1">{t('builder.productionReq', locale)}</h3>
+              <ul className="list-disc ltr:pl-4 rtl:pr-4 text-[var(--ink-soft)]">
+                {(config.productionNeeds || []).map((n: string) => (
+                  <li key={n}>{PRODUCTION_NEEDS.find(def => def.id === n)?.[locale === 'ar' ? 'labelAr' : 'label'] || n}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Readiness Bar */}
+        <div className={`px-4 py-1.5 text-xs font-medium flex items-center justify-between border-b border-[var(--line)] ${
+          readiness.status === 'error' ? 'bg-[var(--warn)]/10 text-[var(--warn)]' :
+          readiness.status === 'warn' ? 'bg-[var(--amber)]/10 text-[var(--amber)]' :
+          'bg-[var(--ok)]/10 text-[var(--ok)]'
+        }`}>
+          <span>{readiness.msg}</span>
+          <div className="flex gap-2 items-center">
+            <Button variant="ghost" size="sm" onClick={clearGrid} className="h-7 text-xs">
+              <Trash2 className="w-3 h-3 mr-1 rtl:ml-1 rtl:mr-0" />
               {t('nav.clear', locale)}
             </Button>
-            {projectId && (
-              <Button variant="ghost" size="sm" onClick={handleDelete} disabled={deleteProject.isPending}>
-                {t('nav.deleteProject', locale)}
-              </Button>
-            )}
             <Button 
               size="sm" 
-              className="bg-[var(--block-teal)] hover:bg-[var(--block-teal)]/90 text-white" 
-              disabled={!conf.ok || isSimulating}
+              className="h-7 text-xs bg-[var(--ink)] hover:bg-[var(--ink)]/90 text-white transition-transform active:scale-95" 
+              disabled={!readiness.ready || isSimulating}
               onClick={handleRun}
             >
-              <PlayCircle className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              <PlayCircle className="w-3 h-3 mr-1 rtl:ml-1 rtl:mr-0" />
               {t('nav.run', locale)}
             </Button>
           </div>
         </div>
 
         {/* Workspace */}
-        <DndContext 
-          sensors={sensors} 
-          onDragEnd={handleDragEnd}
-        >
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="flex min-h-0 flex-1 flex-col overflow-visible lg:flex-row lg:overflow-hidden">
             <Palette />
             <Grid />
@@ -316,7 +361,7 @@ export default function BuilderPage() {
         </DndContext>
         
         {/* Output */}
-        <div className="min-h-64 border-t border-[var(--line)] bg-[var(--paper)] flex flex-col shrink-0 p-4 gap-4 z-20 relative shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:h-64 lg:flex-row">
+        <div className="min-h-[220px] border-t border-[var(--line)] bg-[var(--paper)] flex flex-col shrink-0 p-4 gap-4 z-20 relative shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:h-[260px] lg:flex-row">
           <Console events={events} />
           <Indicators score={score} />
         </div>

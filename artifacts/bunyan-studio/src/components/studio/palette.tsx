@@ -1,60 +1,69 @@
-import { useDraggable } from '@dnd-kit/core';
-import { PIECES, PieceDef, THEMES } from '@/lib/constants';
-import { t } from '@/lib/i18n';
 import { useStudioStore } from '@/lib/store';
-import { Plus } from 'lucide-react';
+import { useDraggable } from '@dnd-kit/core';
+import { t } from '@/lib/i18n';
+import { PALETTE, PieceGroup } from '@/lib/constants';
 
-function PaletteItem({ piece, label }: { piece: PieceDef, label: string }) {
+function DraggablePaletteItem({ item }: { item: any }) {
+  const { locale, addPiece } = useStudioStore();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `palette-${piece.key}`,
-    data: {
-      type: 'palette',
-      key: piece.key,
-    },
+    id: `palette-${item.id}`,
+    data: { type: 'palette', key: item.id, item }
   });
-  
-  const { addPiece } = useStudioStore();
-  
+
   const handleClick = () => {
-    addPiece(piece.key, 100, 100);
+    // Fallback for touch users who tap instead of drag
+    addPiece(item.id, item.sealedType, 20, 20, item.name);
   };
 
+  const name = locale === 'ar' ? item.nameAr : item.name;
+
   return (
-    <div className="relative group touch-none">
-      <div
-        ref={setNodeRef}
-        {...listeners}
-        {...attributes}
-        className={`piece-block h-12 flex items-center px-3 cursor-grab hover:brightness-110 active:cursor-grabbing transition-all ${isDragging ? 'opacity-50' : 'opacity-100'}`}
-        style={{ backgroundColor: piece.color, color: 'var(--surface)' }}
-      >
-        <span className="font-medium text-sm flex-1 truncate">{label}</span>
-      </div>
-      
-      <button 
-        onClick={handleClick}
-        className="absolute top-1/2 -translate-y-1/2 rtl:left-2 ltr:right-2 w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label={`Add ${label}`}
-      >
-        <Plus className="w-4 h-4 text-white" />
-      </button>
-    </div>
+    <button
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={handleClick}
+      className={`piece-block w-full p-2 mb-2 text-left rtl:text-right text-sm font-medium bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--paper)] transition-colors flex items-center justify-between ${isDragging ? 'opacity-50' : ''}`}
+      style={{
+        '--background-color': 'var(--ink)' // Preview color
+      } as React.CSSProperties}
+    >
+      <span>{name}</span>
+      <div className="w-3 h-3 rounded-full bg-[var(--ink)]" />
+    </button>
   );
 }
 
 export function Palette() {
-  const { locale, theme } = useStudioStore();
-  const currentTheme = THEMES.find(t => t.id === theme) || THEMES[0];
+  const { locale } = useStudioStore();
+  
+  const groups: PieceGroup[] = ['Maps', 'Characters', 'Objects', 'Actions'];
+  const groupLabels: Record<string, string> = {
+    'Maps': t('home.pieces.map', locale),
+    'Characters': t('home.pieces.characters', locale),
+    'Objects': t('home.pieces.objects', locale),
+    'Actions': t('home.pieces.actions', locale),
+  };
   
   return (
-    <div className="w-full shrink-0 bg-[var(--surface)] border-b lg:w-64 lg:border-b-0 lg:border-r rtl:lg:border-l rtl:lg:border-r-0 border-[var(--line)] flex flex-col z-10">
-      <div className="p-4 border-b border-[var(--line)] bg-[var(--paper)]">
-        <h2 className="font-display font-semibold text-lg">{t('builder.palette', locale)}</h2>
+    <div className="w-full max-h-[420px] lg:max-h-none lg:w-64 bg-[var(--surface)] border-b lg:border-b-0 lg:border-r rtl:lg:border-r-0 rtl:lg:border-l border-[var(--line)] flex flex-col shrink-0">
+      <div className="p-3 border-b border-[var(--line)] bg-[var(--paper)]">
+        <h2 className="font-display font-bold text-[var(--ink)]">{t('builder.palette', locale)}</h2>
       </div>
-      <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:block lg:flex-1 lg:overflow-y-auto lg:space-y-4">
-        {PIECES.map(p => {
-          const label = (currentTheme.labels as any)[locale][p.key] || p.key;
-          return <PaletteItem key={p.key} piece={p} label={label} />;
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {groups.map(group => {
+          const items = PALETTE.filter(p => p.group === group);
+          if (items.length === 0) return null;
+          return (
+            <div key={group}>
+              <h3 className="text-xs font-semibold text-[var(--ink-faint)] uppercase tracking-wider mb-3">{groupLabels[group]}</h3>
+              <div>
+                {items.map(item => (
+                  <DraggablePaletteItem key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+          );
         })}
       </div>
     </div>
