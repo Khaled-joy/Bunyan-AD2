@@ -2,3 +2,4 @@
 - [Player persistence modes](player-persistence-modes.md) — Named profiles persist locally; guest play must stay session-scoped and isolated.
 - [Analysis executor workflow](analysis-executor-workflow.md) — The Python executor must bind to all interfaces for Replit workflow health checks, while API access stays signed.
 - [Safe analysis file exchange](safe-analysis-file-exchange.md) — Analysis import/export uses allowlisted aggregate schemas, small-cell suppression, and formula-safe spreadsheet values.
+- [Bunyan Studio persistence](studio-persistence.md) — Studio projects use the shared PostgreSQL/Drizzle API, not a second embedded database stack.

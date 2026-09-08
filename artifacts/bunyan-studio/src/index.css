@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-block-blue: var(--block-blue);
+  --color-block-amber: var(--block-amber);
+  --color-block-coral: var(--block-coral);
+  --color-block-teal: var(--block-teal);
+  --color-block-violet: var(--block-violet);
+  --color-locked: var(--locked);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --font-display: var(--app-font-display);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+:root {
+  --ink: #10243A;
+  --ink-soft: #4A5D72;
+  --ink-faint: #8A99AA;
+  --paper: #E9EEF2;
+  --surface: #FFFFFF;
+  --line: #CBD6E0;
+  --line-soft: #E2E9EF;
+  --block-blue: #2D6BD4;
+  --block-amber: #E9A320;
+  --block-coral: #DE5B45;
+  --block-teal: #1D9E85;
+  --block-violet: #6B5BC4;
+  --locked: #1B3350;
+  --ok: #1D9E85;
+  --warn: #C9741A;
+
+  /* shadcn mappings - Mapping to Bunyan palette where applicable */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  
+  --primary: var(--ink);
+  --primary-foreground: var(--surface);
+  
+  --secondary: var(--paper);
+  --secondary-foreground: var(--ink);
+  
+  --muted: var(--paper);
+  --muted-foreground: var(--ink-soft);
+  
+  --accent: var(--paper);
+  --accent-foreground: var(--ink);
+  
+  --destructive: var(--warn);
+  --destructive-foreground: var(--surface);
+
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--ink-soft);
+
+  --radius: 0.5rem;
+
+  --app-font-sans: 'IBM Plex Sans', 'IBM Plex Sans Arabic', sans-serif;
+  --app-font-display: 'Bricolage Grotesque', 'IBM Plex Sans Arabic', sans-serif;
+  --app-font-mono: 'IBM Plex Mono', monospace;
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+
+  body {
+    @apply font-sans antialiased bg-[var(--paper)] text-[var(--ink)];
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+.font-display {
+  font-family: var(--app-font-display);
+}
+
+.font-mono {
+  font-family: var(--app-font-mono);
+}
+
+/* RTL Layout utilities */
+[dir="rtl"] {
+  text-align: right;
+}
+
+.grid-bg {
+  background-size: 26px 26px;
+  background-image:
+    linear-gradient(to right, var(--line-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line-soft) 1px, transparent 1px);
+  background-position: center center;
+}
+
+.piece-block {
+  position: relative;
+  box-shadow: 0 4px 0 0 rgba(16, 36, 58, 0.1);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 4px;
+}
+
+.piece-block::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 4px;
+  background-color: inherit;
+  border-radius: 2px 2px 0 0;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-bottom: none;
+}

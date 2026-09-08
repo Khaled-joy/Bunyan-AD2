@@ -5,6 +5,7 @@ import analyticsRouter from "./analytics";
 import telemetryRouter from "./telemetry";
 import analysisWorkbenchRouter from "./analysis-workbench";
 import playerRouter from "./player";
+import studioProjectsRouter from "./studio-projects";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(analyticsRouter);
 router.use(telemetryRouter);
 router.use(analysisWorkbenchRouter);
 router.use(playerRouter);
+router.use(studioProjectsRouter);
 
 export default router;

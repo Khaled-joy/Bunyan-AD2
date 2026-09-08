@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/bunyan-studio/"
+title = "Bunyan Studio"
+description = "A bilingual game-authoring prototype for Bunyan Abu Dhabi that lets creators assemble themed games from sealed behavioral-event pieces, simulate sessions, inspect derived indicators, save projects, and export project and event manifests."
+version = "1.0.0"
+id = "artifacts/bunyan-studio"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/bunyan-studio/" ]
+localPort = 21850
+
+[services.development]
+run = "pnpm --filter @workspace/bunyan-studio run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bunyan-studio", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/bunyan-studio/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21850"
+BASE_PATH = "/bunyan-studio/"

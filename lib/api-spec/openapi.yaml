@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: studio
+    description: Bunyan Studio project operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,85 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /studio/projects:
+    get:
+      operationId: listStudioProjects
+      tags: [studio]
+      summary: List Bunyan Studio projects
+      responses:
+        "200":
+          description: Saved projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudioProject"
+    post:
+      operationId: createStudioProject
+      tags: [studio]
+      summary: Create a Bunyan Studio project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudioProjectInput"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudioProject"
+  /studio/projects/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getStudioProject
+      tags: [studio]
+      summary: Load one Bunyan Studio project
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudioProject"
+        "404":
+          description: Project not found
+    put:
+      operationId: updateStudioProject
+      tags: [studio]
+      summary: Update and autosave a Bunyan Studio project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudioProjectInput"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudioProject"
+        "404":
+          description: Project not found
+    delete:
+      operationId: deleteStudioProject
+      tags: [studio]
+      summary: Delete a Bunyan Studio project
+      responses:
+        "204":
+          description: Project deleted
+        "404":
+          description: Project not found
 components:
   schemas:
     HealthStatus:
@@ -33,4 +114,44 @@ components:
           type: string
       required:
         - status
+    StudioProject:
+      type: object
+      required: [id, name, theme, locale, config, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        theme:
+          type: string
+        locale:
+          type: string
+          enum: [en, ar]
+        config:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    StudioProjectInput:
+      type: object
+      required: [name, theme, locale, config]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        theme:
+          type: string
+          minLength: 1
+          maxLength: 80
+        locale:
+          type: string
+          enum: [en, ar]
+        config:
+          type: object
+          additionalProperties: true
 
