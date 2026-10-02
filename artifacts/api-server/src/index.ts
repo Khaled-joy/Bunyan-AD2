@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { runDatabaseMigrations } from "@workspace/db";
 
 const rawPort = process.env["PORT"];
 
@@ -13,6 +14,13 @@ const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+try {
+  await runDatabaseMigrations();
+} catch (error) {
+  logger.fatal({ err: error }, "Database migration failed");
+  process.exit(1);
 }
 
 app.listen(port, (err) => {

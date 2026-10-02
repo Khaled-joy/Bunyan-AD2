@@ -6,6 +6,7 @@ import telemetryRouter from "./telemetry";
 import analysisWorkbenchRouter from "./analysis-workbench";
 import playerRouter from "./player";
 import studioProjectsRouter from "./studio-projects";
+import gameRequestsRouter from "./game-requests";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(telemetryRouter);
 router.use(analysisWorkbenchRouter);
 router.use(playerRouter);
 router.use(studioProjectsRouter);
+router.use(gameRequestsRouter);
 
 export default router;

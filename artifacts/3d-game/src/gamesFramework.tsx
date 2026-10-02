@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { Link, useRoute } from 'wouter';
+import { Link, useLocation, useRoute } from 'wouter';
 import {
   Activity, ArrowLeft, ArrowRight, BarChart3, BookOpen, Brain, Check,
   ChevronRight, Compass, Crown, Drama, GitBranch, Layers3, Leaf,
@@ -301,10 +301,9 @@ export function TiersPage({ lang }: { lang: FrameworkLang }) {
   return <DetailLayout lang={lang}><Breadcrumbs section={c('Domains and Indicators', 'المجالات والمؤشرات')} current={c('Indicator tiers', 'مستويات المؤشرات')} lang={lang} /><Link href="/games#domains-indicators" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#0b6a79]"><Arrow direction="back" />{text(c('Back to Domains and Indicators', 'العودة إلى المجالات والمؤشرات'), lang)}</Link><FrameworkHeader eyebrow={c('Domains and indicators', 'المجالات والمؤشرات')} title={c('Three tiers of evidential strength.', 'ثلاثة مستويات من القوة الإثباتية.')} intro={c('The tiers are cumulative — each includes the sources of the tier below and adds one class of evidence.', 'المستويات تراكمية — يضم كل مستوى مصادر المستوى الذي يسبقه ويضيف فئة واحدة من الأدلة.')} lang={lang} /><div className="mt-8 overflow-x-auto rounded-2xl border border-[#dfd2bd] bg-[#fcf8f0]"><table className="w-full min-w-[760px] border-collapse text-start text-sm"><caption className="sr-only">{text(c('Indicator tier comparison', 'مقارنة مستويات المؤشرات'), lang)}</caption><thead><tr className="border-b border-[#dfd2bd] text-[#174b44]"><th className="p-4 text-start">{text(c(' ', ' '), lang)}</th>{tiers.map((tier, index) => <th key={tier.name.en} className="p-4 text-start font-display text-lg">{text(tier.name, lang)}<span className="mt-1 block text-xs font-sans font-bold text-[#688079]">Tier {index + 1}</span></th>)}</tr></thead><tbody>{[['Sources', 'sources'], ['Indicator class', 'indicator'], ['Appropriate for', 'appropriate'], ['Not appropriate for', 'notAppropriate']].map(([label, key]) => <tr key={key} className="border-b border-[#efe4cf] last:border-0"><th className="w-40 p-4 text-start align-top font-bold text-[#688079]">{text(c(label, label === 'Sources' ? 'المصادر' : label === 'Indicator class' ? 'فئة المؤشر' : label === 'Appropriate for' ? 'مناسب لـ' : 'غير مناسب لـ'), lang)}</th>{tiers.map((tier) => <td key={tier.name.en} className="p-4 align-top leading-relaxed text-[#557068]">{text(tier[key as keyof Tier] as Copy, lang)}</td>)}</tr>)}</tbody></table></div><div className="mt-8 grid gap-5">{tiers.map((tier, index) => <section key={tier.name.en} className={`rounded-2xl border p-6 sm:p-7 ${index === 0 ? 'border-[#c7ded1] bg-[#e6f1eb]' : index === 1 ? 'border-[#a9c7d8] bg-[#e7f8fb]' : 'border-[#d8c37b] bg-[#fff3cc]'}`}><p className="text-xs font-bold uppercase tracking-[.14em] text-[#688079]">Tier {index + 1}</p><h2 className="mt-2 font-display text-2xl font-bold text-[#174b44]">{text(tier.name, lang)}</h2><p className="mt-4 text-base leading-[1.8] text-[#557068]">{text(tier.supporting, lang)}</p></section>)}</div><aside className="mt-6 rounded-2xl border-s-4 border-[#c27a12] bg-[#fff3cc] p-6 text-base font-bold leading-relaxed text-[#557068]"><p className="mb-2 text-xs uppercase tracking-[.14em] text-[#79621d]">{text(c('Operating rule', 'قاعدة التشغيل'), lang)}</p>{text(operatingRule, lang)}</aside><section className="mt-14"><p className="text-xs font-bold uppercase tracking-[.16em] text-[#16a7bc]">{text(c('Combining sources', 'جمع المصادر'), lang)}</p><h2 className="mt-2 font-display text-3xl font-bold text-[#174b44]">{text(c('Three merge operations', 'ثلاث عمليات للدمج'), lang)}</h2><p className="mt-3 text-[#557068]">{text(c('Every multi-source indicator we produce is an instance of one of these three.', 'كل مؤشر متعدد المصادر ننتجه هو مثال على واحدة من هذه العمليات الثلاث.'), lang)}</p><div className="mt-6 grid gap-4 md:grid-cols-3">{mergeOperations.map((operation) => <article key={operation.name.en} className="rounded-2xl border border-[#dfd2bd] bg-[#fcf8f0] p-6 shadow-soft"><operation.icon className="h-7 w-7 text-[#0b6a79]" /><h3 className="mt-4 font-display text-xl font-bold text-[#174b44]">{text(operation.name, lang)}</h3><p className="mt-3 text-sm leading-relaxed text-[#557068]">{text(operation.definition, lang)}</p><p className="mt-4 border-t border-[#efe4cf] pt-4 text-xs font-bold leading-relaxed text-[#688079]">{text(operation.example, lang)}</p></article>)}</div><p className="mt-6 rounded-2xl bg-[#e6f1eb] p-5 text-sm font-semibold leading-relaxed text-[#557068]">{text(mergeClose, lang)}</p></section></DetailLayout>;
 }
 
-export function RequestGamePage({ lang }: { lang: FrameworkLang }) {
+export function LegacyRequestGamePage({ lang }: { lang: FrameworkLang }) {
   return <DetailLayout lang={lang}><Breadcrumbs section={c('Games', 'الألعاب')} current={c('Request a game', 'اطلب لعبة')} lang={lang} /><Link href="/games" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#0b6a79]"><Arrow direction="back" />{text(c('Back to Games', 'العودة إلى الألعاب'), lang)}</Link><div className="mt-8 rounded-[28px] border border-[#dfd2bd] bg-[#fcf8f0] p-7 shadow-soft sm:p-10"><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e8755f]">{text(c('Games', 'الألعاب'), lang)}</p><h1 className="mt-3 font-display text-4xl font-black text-[#174b44]">{text(c('Request Game Development', 'طلب تطوير لعبة'), lang)}</h1><p className="mt-4 max-w-2xl text-base leading-relaxed text-[#557068]">{text(c('Submit a request and it enters review. You will be notified at each stage. Fields marked required must be completed before the request can be submitted.', 'أرسل طلباً وسيدخل مرحلة المراجعة. سيتم إعلامك في كل مرحلة. يجب إكمال الحقول المطلوبة قبل إرسال الطلب.'), lang)}</p><div className="mt-8 rounded-2xl border border-dashed border-[#a9c7d8] bg-[#e7f8fb] p-6"><p className="font-display text-xl font-bold text-[#174b44]">{text(c('The request workflow is being prepared.', 'يجري إعداد سير عمل الطلبات.'), lang)}</p><p className="mt-2 text-sm leading-relaxed text-[#557068]">{text(c('Explore the framework first, then return here when the request form is available.', 'استكشف الإطار أولاً، ثم عد إلى هنا عندما يتوفر نموذج الطلب.'), lang)}</p><Link href="/games" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#2140a8] px-5 py-3 font-bold text-white">{text(c('Explore the framework', 'استكشف الإطار'), lang)} <Arrow /></Link></div></div></DetailLayout>;
 }
-
 type GameRequestDraft = {
   fullName: string;
   email: string;
@@ -341,7 +340,7 @@ function RequestSection({ number, title, children, lang }: { number: number; tit
   </section>;
 }
 
-export function RequestGamePageForm({ lang }: { lang: FrameworkLang }) {
+function LegacyRequestGamePageForm({ lang }: { lang: FrameworkLang }) {
   const [form, setForm] = useState<GameRequestDraft>(() => {
     try {
       const saved = localStorage.getItem('bunayn-game-request-draft');
@@ -441,7 +440,291 @@ export function RequestGamePageForm({ lang }: { lang: FrameworkLang }) {
     </form>
   </DetailLayout>;
 }
+export function RequestGamePageForm({ lang }: { lang: FrameworkLang }) {
+  const [, setLocation] = useLocation();
+  const [isNew] = useRoute('/games/request/new');
+  const [, draftParams] = useRoute<{ id: string }>('/games/request/edit/:id');
+  const draftId = draftParams?.id ?? null;
+  const [values, setValues] = useState<RequestFormValues>(requestEmpty);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState('');
+  const [loading, setLoading] = useState(Boolean(draftId));
+  const [saving, setSaving] = useState(false);
+  const [submitted, setSubmitted] = useState<any>(null);
+  const [message, setMessage] = useState('');
+  const update = (key: keyof RequestFormValues, value: string | string[]) => setValues((current) => ({ ...current, [key]: value }));
+  const blur = (field: string) => {
+    const nextTouched = { ...touched, [field]: true };
+    setTouched(nextTouched);
+    setErrors(validateRequest(values));
+  };
+  useEffect(() => {
+    if (!draftId) { setLoading(false); return; }
+    requestJson('/api/game-requests/drafts').then((body) => {
+      const draft = (body.drafts ?? []).find((item: any) => item.id === draftId);
+      if (!draft) throw new Error('Draft not found.');
+      setValues(valuesFromDraft(draft));
+    }).catch((reason) => setMessage(reason instanceof Error ? reason.message : 'Unable to load draft.')).finally(() => setLoading(false));
+  }, [draftId]);
+  if (!draftId && !isNew) return <RequestDraftList lang={lang} onNew={() => setLocation('/games/request/new')} />;
+  if (loading) return <DetailLayout lang={lang}><div className="mt-10 rounded-[24px] border border-[#d6e2e9] bg-white p-8 text-center font-semibold text-[#557068]">{text(c('Loading draft…', 'جارٍ تحميل المسودة…'), lang)}</div></DetailLayout>;
+  if (submitted) return <DetailLayout lang={lang}><div className="mt-10 rounded-[28px] border border-[#b9d6c7] bg-[#e6f1eb] p-8 text-center shadow-soft sm:p-12"><span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#33705f] text-white"><Check className="h-8 w-8" /></span><h1 className="mt-6 font-display text-4xl font-black text-[#174b44]">{text(c('Your request was submitted.', 'تم إرسال طلبك.'), lang)}</h1><p className="mt-4 text-[#557068]">{text(c('Reference number', 'الرقم المرجعي'), lang)}: <strong dir="ltr">{submitted.reference}</strong></p><div className="mx-auto mt-7 max-w-xl rounded-2xl bg-white p-5 text-start"><p className="font-display text-xl font-bold text-[#174b44]">{submitted.game_name}</p><p className="mt-2 text-sm text-[#557068]">{text(requestDomainLabels[submitted.domain] ?? c(submitted.domain, submitted.domain), lang)} · {submitted.source_classes.map((source: string) => text(requestSourceLabels[source] ?? c(source, source), lang)).join(' · ')}</p></div><div className="mt-7 flex flex-wrap justify-center gap-3"><Link href={`/games/request/${submitted.reference}`} className="rounded-full bg-[#2140a8] px-5 py-3 font-bold text-white">{text(c('Track this request', 'تتبع هذا الطلب'), lang)}</Link><Link href="/games/request" className="rounded-full border border-[#33705f] px-5 py-3 font-bold text-[#174b44]">{text(c('Back to drafts', 'العودة إلى المسودات'), lang)}</Link></div></div></DetailLayout>;
+  const individualIndicator = /child|student|individual|طفل|طالب|فرد/i.test(values.indicator_needed);
+  const fullSources = values.source_classes.length === 4;
+  const tier = fullSources ? 'Tier 3 — Full multi-source' : values.source_classes.includes('student_self_report') ? 'Tier 2 — Game + student self-report' : 'Tier 1 — Game-only';
+  const fieldProps = (field: keyof RequestFormValues) => ({ onBlur: () => blur(field), 'aria-invalid': Boolean(errors[field]), 'aria-describedby': errors[field] ? `request-error-${field}` : undefined });
+  const saveDraft = async () => {
+    setSaving(true); setMessage('');
+    try {
+      const body = await requestMultipart(draftId ? `/api/game-requests/drafts/${draftId}` : '/api/game-requests/drafts', draftId ? 'PATCH' : 'POST', requestPayload(values), file);
+      setLocation('/games/request');
+      setMessage(body.draft ? text(c('Draft saved.', 'تم حفظ المسودة.'), lang) : '');
+    } catch (reason) { setMessage(reason instanceof Error ? reason.message : 'Unable to save draft.'); } finally { setSaving(false); }
+  };
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (saving) return;
+    const nextErrors = validateRequest(values);
+    setErrors(nextErrors);
+    setTouched(Object.fromEntries(Object.keys(nextErrors).map((key) => [key, true])));
+    if (Object.keys(nextErrors).length || fileError) {
+      const first = Object.keys(nextErrors)[0];
+      if (first) document.getElementById(`request-${first}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    setSaving(true); setMessage('');
+    try {
+      const draftBody = await requestMultipart(draftId ? `/api/game-requests/drafts/${draftId}` : '/api/game-requests/drafts', draftId ? 'PATCH' : 'POST', requestPayload(values), file);
+      const submittedBody = await requestJson(`/api/game-requests/drafts/${draftBody.draft.id}/submit`, { method: 'POST', body: JSON.stringify({}) });
+      setSubmitted(submittedBody.request);
+    } catch (reason: any) {
+      setErrors(reason.fields ?? {});
+      setMessage(reason instanceof Error ? reason.message : 'Unable to submit request.');
+    } finally { setSaving(false); }
+  };
+  const categoryTest = gameCategories.find((item) => item.slug === values.category);
+  const toggleArray = (key: 'secondary_tags' | 'languages' | 'source_classes', item: string) => update(key, values[key].includes(item) ? values[key].filter((value) => value !== item) : [...values[key], item]);
+  const inputClass = 'mt-2 w-full rounded-2xl border border-[#c7ded1] bg-white px-4 py-3 text-[#174b44] outline-none transition placeholder:text-[#9aaba0] focus:border-[#16a7bc] focus:ring-4 focus:ring-[#16a7bc]/15';
+  return <DetailLayout lang={lang}><Breadcrumbs section={c('Games', 'الألعاب')} current={c('Request a game', 'اطلب لعبة')} lang={lang} /><Link href="/games/request" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#0b6a79]"><Arrow direction="back" />{text(c('Back to drafts', 'العودة إلى المسودات'), lang)}</Link>
+    <header className="mt-8 rounded-[28px] bg-[#174b44] p-7 text-[#fff4df] shadow-float sm:p-10"><p className="text-xs font-bold uppercase tracking-[.16em] text-[#f2c95c]">{text(c('Build with Bunayn', 'ابنِ مع بنيان'), lang)}</p><h1 className="mt-3 font-display text-4xl font-black sm:text-5xl">{text(c('Request Game Development', 'طلب تطوير لعبة'), lang)}</h1><p className="mt-4 max-w-3xl leading-relaxed text-[#b7d1c5]">{text(c('Submit a request and it enters review. You will be notified at each stage. Fields marked required must be completed before the request can be submitted.', 'أرسل طلباً وسيدخل مرحلة المراجعة. سيتم إعلامك في كل مرحلة. يجب إكمال الحقول المطلوبة قبل إرسال الطلب.'), lang)}</p></header>
+    <form className="mt-8 space-y-5" onSubmit={submit} noValidate>
+      <RequestSection number={1} title={c('Requester', 'مقدم الطلب')} lang={lang}><div className="grid gap-5 sm:grid-cols-2">
+        {(['requester_name', 'requester_email', 'requester_entity', 'requester_phone'] as const).map((field) => <label key={field} id={`request-${field}`} className="font-bold text-[#174b44]">{text(field === 'requester_phone' ? c('Phone', 'الهاتف') : requestFieldLabels[field], lang)}{field !== 'requester_phone' && ' *'}<input type={field === 'requester_email' ? 'email' : field === 'requester_phone' ? 'tel' : 'text'} maxLength={field === 'requester_name' ? 160 : field === 'requester_entity' ? 200 : undefined} value={values[field]} onChange={(event) => update(field, event.target.value)} className={inputClass} {...fieldProps(field)} />{requestError({ field, errors: touched[field] ? errors : {} })}</label>)}
+      </div></RequestSection>
+      <RequestSection number={2} title={c('The game', 'اللعبة')} lang={lang}><div className="grid gap-5">
+        <label id="request-game_name" className="font-bold text-[#174b44]">{text(requestFieldLabels.game_name, lang)} *<input maxLength={120} value={values.game_name} onChange={(event) => update('game_name', event.target.value)} className={inputClass} {...fieldProps('game_name')} />{requestError({ field: 'game_name', errors: touched.game_name ? errors : {} })}</label>
+        <label id="request-game_description" className="font-bold text-[#174b44]">{text(requestFieldLabels.game_description, lang)} *<textarea minLength={100} maxLength={2000} rows={6} value={values.game_description} onChange={(event) => update('game_description', event.target.value)} placeholder={text(c('What happens in the game, who plays it, and what a session looks like from start to finish.', 'ماذا يحدث في اللعبة، ومن يلعبها، وكيف تبدو الجلسة من البداية إلى النهاية.'), lang)} className={inputClass} {...fieldProps('game_description')} /><span className="mt-1 block text-end text-xs font-semibold text-[#688079]">{values.game_description.length} / 2000</span>{requestError({ field: 'game_description', errors: touched.game_description ? errors : {} })}</label>
+        <label id="request-category" className="font-bold text-[#174b44]">{text(requestFieldLabels.category, lang)} *<select value={values.category} onChange={(event) => update('category', event.target.value)} className={inputClass} {...fieldProps('category')}><option value="">{text(c('Choose a category', 'اختر فئة'), lang)}</option>{Object.entries(requestCategoryLabels).map(([value, label]) => <option key={value} value={value}>{text(label, lang)}</option>)}</select>{categoryTest && <span className="mt-2 block text-xs leading-relaxed text-[#557068]">{text(categoryTest.test, lang)} · <Link href={`/games/categories/${categoryTest.slug}`} className="font-bold text-[#0b6a79]">{text(c('View category', 'عرض الفئة'), lang)}</Link></span>}{requestError({ field: 'category', errors: touched.category ? errors : {} })}</label>
+        <fieldset id="request-secondary_tags"><legend className="font-bold text-[#174b44]">{text(c('Secondary category tags', 'وسوم الفئات الثانوية'), lang)}</legend><div className="mt-3 grid gap-2 sm:grid-cols-3">{Object.entries(requestCategoryLabels).filter(([value]) => value !== values.category).map(([value, label]) => <label key={value} className="flex items-center gap-2 rounded-xl border border-[#d6e2e9] bg-white p-3 text-sm font-semibold text-[#557068]"><input type="checkbox" checked={values.secondary_tags.includes(value)} onChange={() => toggleArray('secondary_tags', value)} />{text(label, lang)}</label>)}</div></fieldset>
+        <div className="grid gap-5 sm:grid-cols-2"><label id="request-age_group" className="font-bold text-[#174b44]">{text(requestFieldLabels.age_group, lang)} *<select value={values.age_group} onChange={(event) => update('age_group', event.target.value)} className={inputClass} {...fieldProps('age_group')}><option value="">{text(c('Choose an age group', 'اختر فئة عمرية'), lang)}</option>{[['4_6', '4–6'], ['7_9', '7–9'], ['10_12', '10–12'], ['13_15', '13–15'], ['16_18', '16–18']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>{requestError({ field: 'age_group', errors: touched.age_group ? errors : {} })}</label><fieldset id="request-languages"><legend className="font-bold text-[#174b44]">{text(requestFieldLabels.languages, lang)} *</legend><div className="mt-2 flex flex-wrap gap-2">{[['ar', c('Arabic', 'العربية')], ['en', c('English', 'الإنجليزية')]].map(([value, label]) => <label key={value as string} className="flex items-center gap-2 rounded-xl border border-[#d6e2e9] bg-white px-4 py-3 font-semibold text-[#557068]"><input type="checkbox" checked={values.languages.includes(value as string)} onChange={() => toggleArray('languages', value as string)} />{text(label as Copy, lang)}</label>)}</div>{requestError({ field: 'languages', errors: touched.languages ? errors : {} })}</fieldset></div>
+        <div><label id="request-sample_url" className="font-bold text-[#174b44]">{text(c('Sample or reference link', 'رابط العينة أو المرجع'), lang)}<input type="url" value={values.sample_url} onChange={(event) => update('sample_url', event.target.value)} placeholder="https://example.com" className={inputClass} {...fieldProps('sample_url')} /></label><p className="mt-2 text-xs text-[#557068]">{text(c('A link or file showing something close to what you have in mind — an existing game, a sketch, a screenshot, a deck.', 'رابط أو ملف يعرض شيئاً قريباً مما تفكر فيه — لعبة قائمة أو رسم أو لقطة شاشة أو عرض.'), lang)}</p>{requestError({ field: 'sample_url', errors: touched.sample_url ? errors : {} })}<label className="mt-4 block font-bold text-[#174b44]">{text(c('Reference file', 'ملف مرجعي'), lang)}<input type="file" accept=".pdf,.png,.jpg,.jpeg,.pptx,.mp4" onChange={(event) => { const selected = event.target.files?.[0] ?? null; if (selected && (selected.size > 25 * 1024 * 1024 || !/\.(pdf|png|jpe?g|pptx|mp4)$/i.test(selected.name))) { setFile(null); setFileError(text(c('Use a PDF, PNG, JPG, PPTX, or MP4 file no larger than 25MB.', 'استخدم ملف PDF أو PNG أو JPG أو PPTX أو MP4 لا يتجاوز 25 ميغابايت.'), lang)); } else { setFile(selected); setFileError(''); } }} className={`${inputClass} file:me-3 file:rounded-full file:border-0 file:bg-[#e7f8fb] file:px-3 file:py-2 file:font-bold`} />{file && <span className="mt-2 block text-sm text-[#557068]">{file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB</span>}{fileError && <span className="mt-2 block text-sm font-semibold text-[#a94d40]" role="alert">{fileError}</span>}</label></div>
+      </div></RequestSection>
+      <RequestSection number={3} title={c('What it must measure', 'ما الذي يجب أن تقيسه')} lang={lang}><div className="grid gap-5">
+        <label id="request-domain" className="font-bold text-[#174b44]">{text(requestFieldLabels.domain, lang)} *<select value={values.domain} onChange={(event) => update('domain', event.target.value)} className={inputClass} {...fieldProps('domain')}><option value="">{text(c('Choose a domain', 'اختر مجالاً'), lang)}</option>{Object.entries(requestDomainLabels).map(([value, label]) => <option key={value} value={value}>{text(label, lang)}</option>)}</select>{values.domain && <span className="mt-2 block text-xs leading-relaxed text-[#557068]">{text(c('Starter suggestion only — you can choose any category. Suggested categories:', 'اقتراح أولي فقط — يمكنك اختيار أي فئة. الفئات المقترحة:'), lang)} <strong>{requestDomainMapping[values.domain].map((value) => text(requestCategoryLabels[value], lang)).join(' · ')}</strong> · <Link href={`/games/domains/${values.domain}`} className="font-bold text-[#0b6a79]">{text(c('View domain', 'عرض المجال'), lang)}</Link></span>}{requestError({ field: 'domain', errors: touched.domain ? errors : {} })}</label>
+        <label id="request-indicator_needed" className="font-bold text-[#174b44]">{text(requestFieldLabels.indicator_needed, lang)} *<textarea minLength={50} maxLength={2000} rows={5} value={values.indicator_needed} onChange={(event) => update('indicator_needed', event.target.value)} placeholder={text(c('What do you need to be able to say at the end? Name the indicator if you have one, or describe the decision it has to support.', 'ما الذي تحتاج إلى قوله في النهاية؟ اذكر المؤشر إن وجد أو صف القرار الذي يجب أن يدعمه.'), lang)} className={inputClass} {...fieldProps('indicator_needed')} /><span className="mt-1 block text-end text-xs font-semibold text-[#688079]">{values.indicator_needed.length} / 2000</span>{requestError({ field: 'indicator_needed', errors: touched.indicator_needed ? errors : {} })}</label>
+        <fieldset id="request-indicator_is_new" aria-describedby={errors.indicator_is_new ? 'request-error-indicator_is_new' : undefined}><legend className="font-bold text-[#174b44]">{text(requestFieldLabels.indicator_is_new, lang)} *</legend><div className="mt-3 grid gap-2 sm:grid-cols-2">{[['existing', c('Existing indicator in this domain', 'مؤشر قائم في هذا المجال')], ['new', c('New construct to be defined', 'بنية جديدة تحتاج إلى تعريف')]].map(([value, label]) => <label key={value as string} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 font-semibold text-[#557068] ${values.indicator_is_new === value ? 'border-[#2140a8] bg-[#e7f8fb]' : 'border-[#d6e2e9] bg-white'}`}><input type="radio" name="indicator_type" value={value as string} checked={values.indicator_is_new === value} onChange={(event) => update('indicator_is_new', event.target.value)} />{text(label as Copy, lang)}</label>)}</div>{requestError({ field: 'indicator_is_new', errors: touched.indicator_is_new ? errors : {} })}</fieldset>
+      </div></RequestSection>
+      <RequestSection number={4} title={c('Data collection tier', 'مستوى جمع البيانات')} lang={lang}><fieldset id="request-source_classes" aria-describedby={errors.source_classes ? 'request-error-source_classes' : undefined}><legend className="font-bold text-[#174b44]">{text(c('Choose the source classes to include', 'اختر فئات المصادر التي تريد تضمينها'), lang)} *</legend><p className="mt-2 text-sm leading-relaxed text-[#557068]">{text(c('Select only what your entity can provide. Evidence coverage is shown below and unchecked classes are never added automatically.', 'حدد فقط ما تستطيع جهتك توفيره. تظهر تغطية الأدلة أدناه ولا تتم إضافة الفئات غير المحددة تلقائياً.'), lang)}</p><div className="mt-4 grid gap-3 sm:grid-cols-2">{Object.entries(requestSourceLabels).map(([value, label]) => <label key={value} className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 ${values.source_classes.includes(value) ? 'border-[#2140a8] bg-[#e7f8fb] ring-2 ring-[#2140a8]/10' : 'border-[#d6e2e9] bg-white'}`}><input type="checkbox" checked={values.source_classes.includes(value)} onChange={() => toggleArray('source_classes', value)} className="mt-1" /><span><strong className="text-[#174b44]">{text(label, lang)}</strong><span className="mt-1 block text-sm text-[#557068]">{text(value === 'game_telemetry' ? c('In-game behaviour and process evidence.', 'سلوك اللعبة وأدلة العملية داخلها.') : value === 'student_self_report' ? c('Motivation, attitudes, and the child’s own account.', 'الدافعية والاتجاهات ورواية الطفل نفسه.') : value === 'proxy_report' ? c('Observation from adults around the child.', 'ملاحظة البالغين المحيطين بالطفل.') : c('Longitudinal opportunity and context records.', 'سجلات الفرص والسياق الطولية.'), lang)}</span></span></label>)}</div><p className="mt-4 rounded-2xl border border-[#a9c7d8] bg-[#e7f8fb] p-4 text-sm font-semibold text-[#557068]">{tier} · {text(c('Tiers are cumulative, but this selection stores exactly the classes you checked.', 'المستويات تراكمية، لكن هذا الاختيار يحفظ الفئات التي حددتها بالضبط.'), lang)}</p>{requestError({ field: 'source_classes', errors: touched.source_classes ? errors : {} })}</fieldset>
+        {fullSources && <div className="mt-4 flex gap-3 rounded-2xl border border-[#d8c37b] bg-[#fff3cc] p-4 text-sm leading-relaxed text-[#557068]"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#c27a12]" />{text(c('Tier 3 requires a data-sharing agreement with your entity covering each source class to be linked, and consent that is specific to linkage rather than to collection alone. Review will confirm this is in place.', 'يتطلب المستوى الثالث اتفاقية لمشاركة البيانات مع جهتك تغطي كل فئة مصدر سيتم ربطها، وموافقة خاصة بالربط لا بالجمع فقط. ستؤكد المراجعة توفر ذلك.'), lang)}</div>}
+        {values.domain === 'social_relations' && <div className="mt-4 flex gap-3 rounded-2xl border border-[#e8755f] bg-[#fff0eb] p-4 text-sm leading-relaxed text-[#a94d40]"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />{text(c('Indicators in this domain are reported as referral rates requiring professional review, never as diagnoses. Any indicator that could trigger a safeguarding response requires Tier 3 and convergence of at least two independent sources.', 'تُعرض مؤشرات هذا المجال كمعدلات إحالة تتطلب مراجعة مهنية وليست تشخيصات. وأي مؤشر قد يؤدي إلى استجابة حماية يتطلب المستوى الثالث وتقارب مصدرين مستقلين على الأقل.'), lang)}</div>}
+        {values.source_classes.length === 1 && values.source_classes[0] === 'game_telemetry' && individualIndicator && <div className="mt-4 flex gap-3 rounded-2xl border border-[#d8c37b] bg-[#fff3cc] p-4 text-sm leading-relaxed text-[#557068]"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#c27a12]" />{text(c('Tier 1 indicators are not appropriate for decisions about an identified child. Consider Tier 2 or Tier 3, or confirm this indicator is for population monitoring only.', 'مؤشرات المستوى الأول غير مناسبة للقرارات المتعلقة بطفل محدد. فكّر في المستوى الثاني أو الثالث، أو أكد أن المؤشر لمراقبة السكان فقط.'), lang)}</div>}
+      </RequestSection>
+      <RequestSection number={5} title={c('Scope', 'النطاق')} lang={lang}><fieldset id="request-scope" aria-describedby={errors.scope ? 'request-error-scope' : undefined}><legend className="sr-only">{text(requestFieldLabels.scope, lang)}</legend><div className="grid gap-3 sm:grid-cols-2">{[['collection', c('Data collection only', 'جمع البيانات فقط'), c('We build the game and deliver the validated event stream and calculated features. Your team performs the analysis.', 'نبني اللعبة ونسلّم تدفق الأحداث المعتمد والخصائص المحسوبة. يتولى فريقك التحليل.')], ['analysis', c('Data collection and analysis', 'جمع البيانات والتحليل'), c('We build the game, run the analytics pipeline, produce the indicator against your specification, and deliver it with documentation of its derivation and limitations.', 'نبني اللعبة ونشغل مسار التحليلات وننتج المؤشر وفق مواصفاتك ونسلمه مع توثيق اشتقاقه وحدوده.')]].map(([value, title, description]) => <label key={value as string} className={`cursor-pointer rounded-2xl border p-5 ${values.scope === value ? 'border-[#33705f] bg-[#e6f1eb]' : 'border-[#d6e2e9] bg-white'}`}><input type="radio" name="scope" value={value as string} checked={values.scope === value} onChange={(event) => update('scope', event.target.value)} /> <span className="ms-2 font-display text-lg font-bold text-[#174b44]">{text(title as Copy, lang)}</span><span className="mt-3 block text-sm leading-relaxed text-[#557068]">{text(description as Copy, lang)}</span></label>)}</div>{requestError({ field: 'scope', errors: touched.scope ? errors : {} })}</fieldset></RequestSection>
+      <RequestSection number={6} title={c('Timing', 'التوقيت')} lang={lang}><div className="grid gap-5 sm:grid-cols-2"><label id="request-target_date" className="font-bold text-[#174b44]">{text(c('Target delivery date', 'تاريخ التسليم المستهدف'), lang)}<input type="date" value={values.target_date} onChange={(event) => update('target_date', event.target.value)} className={inputClass} {...fieldProps('target_date')} />{requestError({ field: 'target_date', errors: touched.target_date ? errors : {} })}</label><label className="font-bold text-[#174b44] sm:col-span-2">{text(c('Notes for the review team', 'ملاحظات لفريق المراجعة'), lang)}<textarea maxLength={4000} rows={4} value={values.notes} onChange={(event) => update('notes', event.target.value)} className={inputClass} /><span className="mt-1 block text-end text-xs font-semibold text-[#688079]">{values.notes.length} / 4000</span></label></div></RequestSection>
+      {message && <p role="status" className="rounded-2xl border border-[#a9c7d8] bg-[#e7f8fb] p-4 font-bold text-[#174b44]">{message}</p>}
+      <div className="flex flex-col-reverse gap-3 rounded-2xl border border-[#d6e2e9] bg-white p-4 sm:flex-row sm:items-center sm:justify-end"><button type="button" disabled={saving} onClick={saveDraft} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#33705f] px-5 py-3 font-bold text-[#174b44] disabled:opacity-50"><Save className="h-4 w-4" />{text(c('Save as draft', 'حفظ كمسودة'), lang)}</button><button type="submit" disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#2140a8] px-6 py-3 font-bold text-white shadow-[0_4px_0_#152c79] transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"><Send className="h-4 w-4" />{saving ? text(c('Saving…', 'جارٍ الحفظ…'), lang) : text(c('Submit game request', 'إرسال طلب اللعبة'), lang)}</button></div>
+    </form>
+  </DetailLayout>;
+}
 
 function NotFoundFramework({ lang }: { lang: FrameworkLang }) {
   return <DetailLayout lang={lang}><div className="rounded-[28px] border border-[#dfd2bd] bg-[#fcf8f0] p-10 text-center"><h1 className="font-display text-3xl font-bold text-[#174b44]">{text(c('Framework page not found', 'صفحة الإطار غير موجودة'), lang)}</h1><Link href="/games" className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#2140a8] px-5 py-3 font-bold text-white">{text(c('Back to Games', 'العودة إلى الألعاب'), lang)} <Arrow /></Link></div></DetailLayout>;
 }
+
+const requestFieldLabels: Record<string, Copy> = {
+  requester_name: c('Full name', 'الاسم الكامل'), requester_email: c('Email', 'البريد الإلكتروني'),
+  requester_entity: c('Entity / department', 'الجهة / القسم'), game_name: c('Game name', 'اسم اللعبة'),
+  game_description: c('Game description', 'وصف اللعبة'), category: c('Game category', 'فئة اللعبة'),
+  age_group: c('Target age group', 'الفئة العمرية المستهدفة'), languages: c('Language', 'اللغة'),
+  domain: c('Domain', 'المجال'), indicator_needed: c('Indicator needed', 'المؤشر المطلوب'),
+  indicator_is_new: c('Indicator type', 'نوع المؤشر'), source_classes: c('Data sources', 'مصادر البيانات'),
+  scope: c('Scope', 'النطاق'),
+};
+
+const requestEmpty: RequestFormValues = {
+  requester_name: '', requester_email: '', requester_entity: '', requester_phone: '',
+  game_name: '', game_description: '', category: '', secondary_tags: [], age_group: '',
+  languages: [], sample_url: '', domain: '', indicator_needed: '', indicator_is_new: '',
+  source_classes: [], scope: '', target_date: '', notes: '',
+};
+
+async function requestJson(url: string, options: RequestInit = {}) {
+  const headers = new Headers(options.headers);
+  headers.set('x-game-request-access', requestAccessHandle());
+  if (options.body && !(options.body instanceof FormData) && !headers.has('content-type')) headers.set('content-type', 'application/json');
+  const response = await fetch(url, {
+    credentials: 'include',
+    ...options,
+    headers,
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw Object.assign(new Error(body.error || 'Request failed.'), { fields: body.fields as Record<string, string> | undefined, status: response.status });
+  return body;
+}
+
+const requestCategoryLabels: Record<string, Copy> = {
+  role_based: c('Role-based', 'قائمة على الأدوار'), scenario_based: c('Scenario-based', 'قائمة على السيناريو'),
+  simulation_strategy: c('Simulation / Strategy', 'المحاكاة / الاستراتيجية'), puzzle: c('Puzzle', 'الألغاز'),
+  mini_games: c('Mini games', 'الألعاب المصغرة'), creative: c('Creative', 'إبداعية'), exploration: c('Exploration', 'الاستكشاف'),
+};
+
+function requestError({ field, errors }: { field: string; errors: Record<string, string> }) {
+  if (!errors[field]) return null;
+  return <p id={`request-error-${field}`} className="mt-1 text-sm font-semibold text-[#a94d40]" role="alert">{errors[field]}</p>;
+}
+
+function RequestDraftList({ lang, onNew }: { lang: FrameworkLang; onNew: () => void }) {
+  const [, setLocation] = useLocation();
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    requestJson('/api/game-requests/drafts').then((body) => setDrafts(body.drafts ?? [])).catch((reason) => setError(reason instanceof Error ? reason.message : 'Unable to load drafts.')).finally(() => setLoading(false));
+  }, []);
+  return <DetailLayout lang={lang}>
+    <Breadcrumbs section={c('Games', 'الألعاب')} current={c('Request a game', 'اطلب لعبة')} lang={lang} />
+    <div className="mt-8 rounded-[28px] bg-[#174b44] p-7 text-[#fff4df] shadow-float sm:p-10">
+      <p className="text-xs font-bold uppercase tracking-[.16em] text-[#f2c95c]">{text(c('Build with Bunayn', 'ابنِ مع بنيان'), lang)}</p>
+      <h1 className="mt-3 font-display text-4xl font-black sm:text-5xl">{text(c('Request Game Development', 'طلب تطوير لعبة'), lang)}</h1>
+      <p className="mt-4 max-w-3xl leading-relaxed text-[#b7d1c5]">{text(c('Submit a request and it enters review. You will be notified at each stage. Fields marked required must be completed before the request can be submitted.', 'أرسل طلباً وسيدخل مرحلة المراجعة. سيتم إعلامك في كل مرحلة. يجب إكمال الحقول المطلوبة قبل إرسال الطلب.'), lang)}</p>
+    </div>
+    <section className="mt-8 rounded-[24px] border border-[#dfd2bd] bg-[#fcf8f0] p-6 shadow-soft sm:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="font-display text-2xl font-bold text-[#174b44]">{text(c('Your drafts', 'مسوداتك'), lang)}</h2><p className="mt-1 text-sm text-[#557068]">{text(c('Drafts are private to this browser and can be edited until submitted.', 'المسودات خاصة بهذا المتصفح ويمكن تعديلها حتى إرسالها.'), lang)}</p></div><button type="button" onClick={onNew} className="inline-flex items-center gap-2 rounded-full bg-[#2140a8] px-5 py-3 font-bold text-white"><Sparkles className="h-4 w-4" />{text(c('Start a new request', 'ابدأ طلباً جديداً'), lang)}</button></div>
+      {loading && <p className="mt-6 text-sm font-semibold text-[#557068]">{text(c('Loading drafts…', 'جارٍ تحميل المسودات…'), lang)}</p>}
+      {error && <p className="mt-6 rounded-2xl bg-[#fff0eb] p-4 font-semibold text-[#a94d40]" role="alert">{error}</p>}
+      {!loading && !error && drafts.length === 0 && <div className="mt-6 rounded-2xl border border-dashed border-[#a9c7d8] bg-[#e7f8fb] p-6 text-sm leading-relaxed text-[#557068]">{text(c('No drafts yet. Start a request and save your progress at any time.', 'لا توجد مسودات بعد. ابدأ طلباً واحفظ تقدمك في أي وقت.'), lang)}</div>}
+      <div className="mt-6 grid gap-3">{drafts.map((draft) => <article key={draft.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#d6e2e9] bg-white p-5"><div><h3 className="font-display text-lg font-bold text-[#174b44]">{draft.game_name || text(c('Untitled game', 'لعبة بلا عنوان'), lang)}</h3><p className="mt-1 text-sm text-[#688079]">{text(c('Last updated', 'آخر تحديث'), lang)} · {new Date(draft.updated_at).toLocaleDateString(lang === 'ar' ? 'ar-AE' : 'en-GB')}</p></div><button type="button" onClick={() => setLocation(`/games/request/edit/${draft.id}`)} className="rounded-full border border-[#33705f] px-4 py-2 font-bold text-[#174b44]">{text(c('Edit draft', 'تعديل المسودة'), lang)}</button></article>)}</div>
+    </section>
+  </DetailLayout>;
+}
+
+function validateRequest(values: RequestFormValues) {
+  const errors: Record<string, string> = {};
+  const required: Array<[keyof RequestFormValues, number, number]> = [
+    ['requester_name', 1, 160], ['requester_email', 1, 254], ['requester_entity', 1, 200],
+    ['game_name', 1, 120], ['game_description', 100, 2000], ['indicator_needed', 50, 2000],
+  ];
+  required.forEach(([key, min, max]) => {
+    if (values[key].toString().trim().length < min || values[key].toString().trim().length > max) errors[key] = `${text(requestFieldLabels[key], 'en')} must be between ${min} and ${max} characters.`;
+  });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.requester_email)) errors.requester_email = 'Enter a valid email address.';
+  if (values.category === '') errors.category = 'Choose a game category.';
+  if (values.age_group === '') errors.age_group = 'Choose an age group.';
+  if (!values.languages.length) errors.languages = 'Choose at least one language.';
+  if (values.domain === '') errors.domain = 'Choose a domain.';
+  if (!values.indicator_is_new) errors.indicator_is_new = 'Choose an indicator type.';
+  if (!values.source_classes.length) errors.source_classes = 'Choose at least one source class.';
+  if (!values.scope) errors.scope = 'Choose a scope.';
+  if (values.sample_url && !/^https?:\/\/[^\s]+$/i.test(values.sample_url)) errors.sample_url = 'Enter a valid http or https URL.';
+  if (values.target_date && !/^\d{4}-\d{2}-\d{2}$/.test(values.target_date)) errors.target_date = 'Enter a valid date.';
+  return errors;
+}
+
+type RequestFormValues = {
+  requester_name: string;
+  requester_email: string;
+  requester_entity: string;
+  requester_phone: string;
+  game_name: string;
+  game_description: string;
+  category: string;
+  secondary_tags: string[];
+  age_group: string;
+  languages: string[];
+  sample_url: string;
+  domain: string;
+  indicator_needed: string;
+  indicator_is_new: string;
+  source_classes: string[];
+  scope: string;
+  target_date: string;
+  notes: string;
+};
+
+function valuesFromDraft(draft: Record<string, any>): RequestFormValues {
+  return {
+    requester_name: draft.requester_name ?? '', requester_email: draft.requester_email ?? '', requester_entity: draft.requester_entity ?? '',
+    requester_phone: draft.requester_phone ?? '', game_name: draft.game_name ?? '', game_description: draft.game_description ?? '',
+    category: draft.category ?? '', secondary_tags: Array.isArray(draft.secondary_tags) ? draft.secondary_tags : [],
+    age_group: draft.age_group ?? '', languages: Array.isArray(draft.languages) ? draft.languages : [],
+    sample_url: draft.sample_url ?? '', domain: draft.domain ?? '', indicator_needed: draft.indicator_needed ?? '',
+    indicator_is_new: draft.indicator_is_new ? 'new' : draft.indicator_is_new === false ? 'existing' : '',
+    source_classes: Array.isArray(draft.source_classes) ? draft.source_classes : [], scope: draft.scope === 'collection_and_analysis' ? 'analysis' : draft.scope === 'collection_only' ? 'collection' : '',
+    target_date: draft.target_date ?? '', notes: draft.notes ?? '',
+  };
+}
+
+function requestAccessHandle() {
+  const storage = (() => {
+    try { return sessionStorage.getItem('bunayn-guest-mode') === 'true' ? sessionStorage : localStorage; } catch { return null; }
+  })();
+  if (!storage) return 'bunayn-browser-access-fallback';
+  let handle = storage.getItem('bunayn-game-request-access');
+  if (!handle) {
+    handle = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    storage.setItem('bunayn-game-request-access', handle);
+  }
+  return handle;
+}
+
+const requestDomainLabels: Record<string, Copy> = {
+  literacy: c('Literacy', 'القراءة والكتابة'), activities: c('Activities', 'الأنشطة'),
+  environment: c('Environment', 'البيئة'), developmental_skills: c('Developmental skills', 'المهارات النمائية'),
+  social_relations: c('Social relations', 'العلاقات الاجتماعية'),
+};
+
+export function GameRequestTrackingPage({ lang }: { lang: FrameworkLang }) {
+  const [, params] = useRoute<{ reference: string }>('/games/request/:reference');
+  const [request, setRequest] = useState<any>(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (!params?.reference) return;
+    requestJson(`/api/game-requests/${encodeURIComponent(params.reference)}`).then((body) => setRequest(body.request)).catch((reason) => setError(reason instanceof Error ? reason.message : 'Unable to load this request.'));
+  }, [params?.reference]);
+  if (error) return <DetailLayout lang={lang}><div className="mt-10 rounded-[24px] bg-[#fff0eb] p-8 text-center font-semibold text-[#a94d40]" role="alert">{error}</div></DetailLayout>;
+  if (!request) return <DetailLayout lang={lang}><div className="mt-10 rounded-[24px] border border-[#d6e2e9] bg-white p-8 text-center font-semibold text-[#557068]">{text(c('Loading secure request…', 'جارٍ تحميل الطلب الآمن…'), lang)}</div></DetailLayout>;
+  return <DetailLayout lang={lang}><Breadcrumbs section={c('Games', 'الألعاب')} current={c('Request tracking', 'تتبع الطلب')} lang={lang} /><Link href="/games/request" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#0b6a79]"><Arrow direction="back" />{text(c('Back to drafts', 'العودة إلى المسودات'), lang)}</Link>
+    <header className="mt-8 rounded-[28px] bg-[#174b44] p-7 text-[#fff4df] shadow-float sm:p-10"><p className="text-xs font-bold uppercase tracking-[.16em] text-[#f2c95c]">{text(c('Private request tracking', 'تتبع الطلب الخاص'), lang)}</p><h1 className="mt-3 font-display text-4xl font-black">{text(c('Request status', 'حالة الطلب'), lang)}</h1><p className="mt-4 text-[#b7d1c5]"><span dir="ltr">{request.reference}</span> · <strong>{request.status.replace('_', ' ')}</strong></p></header>
+    <section className="mt-8 rounded-[24px] border border-[#dfd2bd] bg-[#fcf8f0] p-6 shadow-soft sm:p-8"><h2 className="font-display text-2xl font-bold text-[#174b44]">{request.game_name}</h2><dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2"><div><dt className="font-bold text-[#688079]">{text(c('Domain', 'المجال'), lang)}</dt><dd className="mt-1 font-semibold text-[#174b44]">{text(requestDomainLabels[request.domain] ?? c(request.domain, request.domain), lang)}</dd></div><div><dt className="font-bold text-[#688079]">{text(c('Evidence coverage', 'تغطية الأدلة'), lang)}</dt><dd className="mt-1 font-semibold text-[#174b44]">{(request.source_classes ?? []).map((source: string) => text(requestSourceLabels[source] ?? c(source, source), lang)).join(' · ')}</dd></div></dl>{request.sample_file && <button type="button" onClick={async () => { const response = await fetch(`/api/game-requests/${encodeURIComponent(request.reference)}/sample`, { headers: { 'x-game-request-access': requestAccessHandle() } }); if (!response.ok) return; const url = URL.createObjectURL(await response.blob()); const anchor = document.createElement('a'); anchor.href = url; anchor.download = request.sample_file.name || 'sample'; anchor.click(); URL.revokeObjectURL(url); }} className="mt-5 inline-flex font-bold text-[#0b6a79]">{text(c('Download sample reference', 'تنزيل العينة المرجعية'), lang)}</button>}</section>
+    <section className="mt-8 rounded-[24px] border border-[#dfd2bd] bg-[#fcf8f0] p-6 shadow-soft sm:p-8"><h2 className="font-display text-2xl font-bold text-[#174b44]">{text(c('Event timeline', 'الخط الزمني للأحداث'), lang)}</h2><ol className="mt-6 space-y-5">{(request.events ?? []).map((event: any, index: number) => <li key={event.id} className="relative flex gap-4"><span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e7f8fb] font-bold text-[#0b6a79]">{index + 1}</span><div><p className="font-bold capitalize text-[#174b44]">{event.to_status.replace('_', ' ')}</p><p className="mt-1 text-sm text-[#688079]">{new Date(event.created_at).toLocaleString(lang === 'ar' ? 'ar-AE' : 'en-GB')}</p>{event.comment && <p className="mt-2 text-sm leading-relaxed text-[#557068]">{event.comment}</p>}</div></li>)}</ol></section>
+  </DetailLayout>;
+}
+
+const requestDomainMapping: Record<string, string[]> = {
+  literacy: ['puzzle', 'mini_games'], activities: ['scenario_based', 'exploration', 'simulation_strategy'],
+  environment: ['simulation_strategy', 'scenario_based', 'mini_games'], developmental_skills: ['puzzle', 'simulation_strategy', 'creative'],
+  social_relations: ['role_based', 'scenario_based'],
+};
+
+async function requestMultipart(url: string, method: 'POST' | 'PATCH', payload: Record<string, unknown>, file: File | null) {
+  const body = new FormData();
+  body.append('payload', JSON.stringify(payload));
+  if (file) body.append('sample_file', file, file.name);
+  return requestJson(url, { method, body, headers: { 'x-game-request-access': requestAccessHandle() } });
+}
+
+function requestPayload(values: RequestFormValues) {
+  return {
+    ...values,
+    indicator_is_new: values.indicator_is_new === 'new',
+    tier: values.source_classes.length === 4 ? 'tier_3' : values.source_classes.includes('student_self_report') ? 'tier_2' : 'tier_1',
+    scope: values.scope === 'analysis' ? 'collection_and_analysis' : values.scope === 'collection' ? 'collection_only' : '',
+  };
+}
+
+const requestSourceLabels: Record<string, Copy> = {
+  game_telemetry: c('Game telemetry', 'بيانات اللعبة التشغيلية'), student_self_report: c('Student self-report', 'التقرير الذاتي للطالب'),
+  proxy_report: c('Proxy report', 'تقرير الوكيل'), administrative_data: c('Administrative data', 'البيانات الإدارية'),
+};

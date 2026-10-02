@@ -3,3 +3,4 @@
 - [Analysis executor workflow](analysis-executor-workflow.md) — The Python executor must bind to all interfaces for Replit workflow health checks, while API access stays signed.
 - [Safe analysis file exchange](safe-analysis-file-exchange.md) — Analysis import/export uses allowlisted aggregate schemas, small-cell suppression, and formula-safe spreadsheet values.
 - [Bunyan Studio persistence](studio-persistence.md) — Studio projects use the shared PostgreSQL/Drizzle API, not a second embedded database stack.
+- [Incomplete request drafts](incomplete-request-drafts.md) — Keep missing-required-field state explicit when draft rows use non-null enums and submitted rows require full validation.
